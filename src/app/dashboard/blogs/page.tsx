@@ -38,12 +38,16 @@ export default function BlogsPage() {
         setError(null)
 
         try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error("Authentication required")
+
             // Basic URL validation
             const url = newBlog.url.replace(/\/$/, "")
 
             const { data, error } = await supabase
                 .from("blogs")
                 .insert([{
+                    user_id: user.id,
                     name: newBlog.name,
                     url,
                     wp_api_key: newBlog.wp_api_key
