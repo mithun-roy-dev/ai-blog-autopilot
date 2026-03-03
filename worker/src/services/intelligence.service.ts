@@ -10,9 +10,9 @@ export class IntelligenceService {
 
         try {
             // 1. Fetch all synced articles/urls for this blog
-            const { data: articles, error } = await this.supabase.getClient()
+            const { data: articles, error } = await SupabaseService.getClient()
                 .from('articles')
-                .select('id, url, title')
+                .select('id, source_url, title')
                 .eq('blog_id', blogId);
 
             if (error) throw error;
@@ -26,9 +26,9 @@ export class IntelligenceService {
             // 2. Process each URL
             for (const article of articles) {
                 try {
-                    await this.crawlAndExtract(blogId, article.id, article.url);
+                    await this.crawlAndExtract(blogId, article.id, article.source_url);
                 } catch (err: any) {
-                    console.error(`[Intelligence] Failed to process ${article.url}:`, err.message);
+                    console.error(`[Intelligence] Failed to process ${article.source_url}:`, err.message);
                 }
             }
 
@@ -43,7 +43,7 @@ export class IntelligenceService {
         console.log(`[Intelligence] Crawling: ${url}`);
 
         // Update status to processing
-        await this.supabase.getClient()
+        await SupabaseService.getClient()
             .from('site_intelligence')
             .upsert({
                 article_id: articleId,
@@ -106,11 +106,12 @@ export class IntelligenceService {
             const canonical = $('link[rel="canonical"]').attr('href') || '';
 
             // 3. Save to database
-            const { error } = await this.supabase.getClient()
+            const { error } = await SupabaseService.getClient()
                 .from('site_intelligence')
                 .upsert({
                     blog_id: blogId,
                     article_id: articleId,
+                    url: url,
                     title,
                     meta_description: metaDescription,
                     h1,
@@ -134,7 +135,7 @@ export class IntelligenceService {
 
         } catch (err: any) {
             console.error(`[Intelligence] Crawl failed for ${url}:`, err.message);
-            await this.supabase.getClient()
+            await SupabaseService.getClient()
                 .from('site_intelligence')
                 .upsert({
                     article_id: articleId,
