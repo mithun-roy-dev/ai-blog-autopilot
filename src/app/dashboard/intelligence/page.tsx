@@ -89,6 +89,13 @@ export default function SiteIntelligencePage() {
     }
 
     const triggerDeepCrawl = async (blogId: string) => {
+        // Check if there are any URLs to crawl
+        const blogStats = stats[blogId] || { total: 0 };
+        if (blogStats.total === 0) {
+            toast.error("No URLs found for generating intelligence. Please sync the site first.");
+            return;
+        }
+
         setIsProcessing(blogId)
         const toastId = toast.loading("Starting Site Intelligence Deep Crawl...")
 
