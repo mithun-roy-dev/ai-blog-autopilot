@@ -1,8 +1,21 @@
 "use client"
 
 import { Search, Bell, User } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
+import { useEffect, useState } from "react"
 
 export function Header() {
+    const supabase = createClient()
+    const [user, setUser] = useState<any>(null)
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setUser(user)
+        }
+        getUser()
+    }, [supabase])
+
     return (
         <header className="flex h-16 items-center justify-between border-b bg-card/50 px-8 backdrop-blur-xl sticky top-0 z-40">
             <div className="relative w-96">
@@ -19,8 +32,15 @@ export function Header() {
                     <Bell className="h-5 w-5 text-muted-foreground" />
                     <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary border-2 border-card" />
                 </button>
-                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-violet-400 flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
+                <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-violet-400 flex items-center justify-center border border-white/10 shadow-lg shadow-primary/20">
+                        <User className="h-4 w-4 text-white" />
+                    </div>
+                    {user && (
+                        <span className="hidden md:block text-xs font-medium text-muted-foreground">
+                            {user.email?.split('@')[0]}
+                        </span>
+                    )}
                 </div>
             </div>
         </header>

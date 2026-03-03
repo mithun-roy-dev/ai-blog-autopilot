@@ -1,6 +1,8 @@
 import { FileText, Globe, Zap, ArrowUpRight, TrendingUp } from "lucide-react"
 import { cn } from "@/utils/cn"
 
+export const dynamic = "force-dynamic"
+
 const stats = [
     { name: "Total Blogs", value: "12", icon: Globe, change: "+2 this month", color: "text-blue-500", bg: "bg-blue-500/10" },
     { name: "Articles Generated", value: "458", icon: FileText, change: "+85 last week", color: "text-indigo-500", bg: "bg-indigo-500/10" },
