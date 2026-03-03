@@ -79,29 +79,35 @@ export class IntelligenceService {
 
             const $ = cheerio.load(response.data);
 
+            // 1. Identify main content container for cleaner extraction
+            const $content = this.getMainContentContainer($);
+
             // Extract data
             const title = $('title').text().trim() || $('meta[property="og:title"]').attr('content') || '';
             const metaDescription = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
-            const h1 = $('h1').first().text().trim();
 
-            const h2 = $('h2').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            const h3 = $('h3').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            const h4 = $('h4').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            const h5 = $('h5').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            const h6 = $('h6').map((_, el) => $(el).text().trim()).get().filter(t => t);
+            // Prioritize headers inside the main content
+            const h1 = $content.find('h1').first().text().trim() || $('h1').first().text().trim();
+            const h2 = $content.find('h2').map((_, el) => $(el).text().trim()).get().filter(t => t);
+            if (h2.length === 0) h2.push(...$('h2').map((_, el) => $(el).text().trim()).get().filter(t => t));
 
-            // Word count (rough estimate from readable text)
-            const textContent = $('body').text();
+            const h3 = $content.find('h3').map((_, el) => $(el).text().trim()).get().filter(t => t);
+            const h4 = $content.find('h4').map((_, el) => $(el).text().trim()).get().filter(t => t);
+            const h5 = $content.find('h5').map((_, el) => $(el).text().trim()).get().filter(t => t);
+            const h6 = $content.find('h6').map((_, el) => $(el).text().trim()).get().filter(t => t);
+
+            // Word count (only from relevant content)
+            const textContent = $content.text();
             const wordCount = textContent.split(/\s+/).filter(w => w.length > 0).length;
 
             // Categories/Tags (common patterns in WP and others)
             const categories = $('meta[property="article:section"]').attr('content') || '';
             const tags = $('meta[property="article:tag"]').map((_, el) => $(el).attr('content')).get().filter(t => t);
 
-            // Internal links
+            // Internal links (ONLY inside the main content)
             const internalLinks: any[] = [];
             const baseUrl = new URL(url).origin;
-            $('a[href]').each((_, el) => {
+            $content.find('a[href]').each((_, el) => {
                 const href = $(el).attr('href');
                 if (href && (href.startsWith('/') || href.startsWith(baseUrl))) {
                     internalLinks.push({
@@ -110,6 +116,24 @@ export class IntelligenceService {
                     });
                 }
             });
+
+            // If content links are empty, fallback to whole page restricted by common noise reduction
+            if (internalLinks.length === 0) {
+                $('a[href]').each((_, el) => {
+                    const href = $(el).attr('href');
+                    const isInternal = href && (href.startsWith('/') || href.startsWith(baseUrl));
+                    // Simple heuristic to ignore menu/footer links if we couldn't find a container
+                    const parentClass = $(el).parents().map((_, p) => $(p).attr('class') || '').get().join(' ');
+                    const isNoise = /menu|nav|sidebar|footer/i.test(parentClass);
+
+                    if (isInternal && !isNoise) {
+                        internalLinks.push({
+                            text: $(el).text().trim(),
+                            href: href!.startsWith('/') ? `${baseUrl}${href}` : href
+                        });
+                    }
+                });
+            }
 
             const schemaType = $('script[type="application/ld+json"]').map((_, el) => {
                 try {
@@ -186,5 +210,38 @@ export class IntelligenceService {
         } catch (err: any) {
             console.error(`[Intelligence] Failed to update progress for ${blogId}:`, err.message);
         }
+    }
+
+    /**
+     * Attempts to find the primary content container of a page.
+     * This helps ignore menus, footers, and sidebars.
+     */
+    private getMainContentContainer($: cheerio.CheerioAPI): cheerio.Cheerio<any> {
+        const selectors = [
+            '.entry-content',    // WordPress standard
+            '.post-content',     // Common WP and others
+            'article',           // Semantic HTML
+            '.article-content',
+            '.post-body',
+            'main',              // Semantic HTML
+            '#content',          // Common ID
+            '.content',          // Common class
+            '#main',             // Common ID
+            '.body-content'
+        ];
+
+        for (const selector of selectors) {
+            const $el = $(selector);
+            // Ensure the container has significant text content (avoid empty sidebars/navs)
+            if ($el.length > 0 && $el.text().trim().length > 200) {
+                return $el;
+            }
+        }
+
+        // Fallback to body but attempt to remove obvious noise if possible
+        const $body = $('body').clone();
+        $body.find('nav, footer, header, .sidebar, #sidebar, .menu, #menu, script, style, .nav').remove();
+
+        return $body;
     }
 }
