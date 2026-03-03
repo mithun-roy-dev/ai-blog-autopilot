@@ -88,26 +88,26 @@ export class IntelligenceService {
 
             // Prioritize headers inside the main content
             const h1 = $content.find('h1').first().text().trim() || $('h1').first().text().trim();
-            const h2 = $content.find('h2').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            if (h2.length === 0) h2.push(...$('h2').map((_, el) => $(el).text().trim()).get().filter(t => t));
+            const h2 = $content.find('h2').map((_: any, el: any) => $(el).text().trim()).get().filter((t: any) => t);
+            if (h2.length === 0) h2.push(...$('h2').map((_: any, el: any) => $(el).text().trim()).get().filter((t: any) => t));
 
-            const h3 = $content.find('h3').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            const h4 = $content.find('h4').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            const h5 = $content.find('h5').map((_, el) => $(el).text().trim()).get().filter(t => t);
-            const h6 = $content.find('h6').map((_, el) => $(el).text().trim()).get().filter(t => t);
+            const h3 = $content.find('h3').map((_: any, el: any) => $(el).text().trim()).get().filter((t: any) => t);
+            const h4 = $content.find('h4').map((_: any, el: any) => $(el).text().trim()).get().filter((t: any) => t);
+            const h5 = $content.find('h5').map((_: any, el: any) => $(el).text().trim()).get().filter((t: any) => t);
+            const h6 = $content.find('h6').map((_: any, el: any) => $(el).text().trim()).get().filter((t: any) => t);
 
             // Word count (only from relevant content)
             const textContent = $content.text();
-            const wordCount = textContent.split(/\s+/).filter(w => w.length > 0).length;
+            const wordCount = textContent.split(/\s+/).filter((w: any) => w.length > 0).length;
 
             // Categories/Tags (common patterns in WP and others)
             const categories = $('meta[property="article:section"]').attr('content') || '';
-            const tags = $('meta[property="article:tag"]').map((_, el) => $(el).attr('content')).get().filter(t => t);
+            const tags = $('meta[property="article:tag"]').map((_: any, el: any) => $(el).attr('content')).get().filter((t: any) => t);
 
             // Internal links (ONLY inside the main content)
             const internalLinks: any[] = [];
             const baseUrl = new URL(url).origin;
-            $content.find('a[href]').each((_, el) => {
+            $content.find('a[href]').each((_: any, el: any) => {
                 const href = $(el).attr('href');
                 if (href && (href.startsWith('/') || href.startsWith(baseUrl))) {
                     internalLinks.push({
@@ -119,11 +119,11 @@ export class IntelligenceService {
 
             // If content links are empty, fallback to whole page restricted by common noise reduction
             if (internalLinks.length === 0) {
-                $('a[href]').each((_, el) => {
+                $('a[href]').each((_: any, el: any) => {
                     const href = $(el).attr('href');
                     const isInternal = href && (href.startsWith('/') || href.startsWith(baseUrl));
                     // Simple heuristic to ignore menu/footer links if we couldn't find a container
-                    const parentClass = $(el).parents().map((_, p) => $(p).attr('class') || '').get().join(' ');
+                    const parentClass = $(el).parents().map((_: any, p: any) => $(p).attr('class') || '').get().join(' ');
                     const isNoise = /menu|nav|sidebar|footer/i.test(parentClass);
 
                     if (isInternal && !isNoise) {
@@ -135,14 +135,14 @@ export class IntelligenceService {
                 });
             }
 
-            const schemaType = $('script[type="application/ld+json"]').map((_, el) => {
+            const schemaType = $('script[type="application/ld+json"]').map((_: any, el: any) => {
                 try {
                     const json = JSON.parse($(el).html() || '{}');
                     return json['@type'] || (Array.isArray(json['@graph']) ? json['@graph'].map((i: any) => i['@type']) : null);
                 } catch {
                     return null;
                 }
-            }).get().filter(t => t).join(', ');
+            }).get().filter((t: any) => t).join(', ');
 
             const canonical = $('link[rel="canonical"]').attr('href') || '';
 
