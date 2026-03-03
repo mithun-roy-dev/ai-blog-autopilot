@@ -33,25 +33,81 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-const supabase_js_1 = require("@supabase/supabase-js");
 const dotenv = __importStar(require("dotenv"));
 const zod_1 = require("zod");
+const wordpress_service_1 = require("./services/wordpress.service");
+const supabase_service_1 = require("./services/supabase.service");
 // Load environment variables
 dotenv.config();
 const envSchema = zod_1.z.object({
     SUPABASE_URL: zod_1.z.string().url(),
     SUPABASE_SERVICE_ROLE_KEY: zod_1.z.string().min(1),
 });
-function main() {
+async function processCrawlJob(job) {
+    const { blogId } = job.payload;
+    console.log(`[Job ${job.id}] 🕷️ Starting crawl for blog: ${blogId}`);
+    try {
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'processing');
+        // 1. Fetch blog details
+        const supabase = supabase_service_1.SupabaseService.getClient();
+        const { data: blog, error: blogError } = await supabase
+            .from('blogs')
+            .select('*')
+            .eq('id', blogId)
+            .single();
+        if (blogError || !blog)
+            throw new Error(`Blog not found: ${blogId}`);
+        // 2. Fetch posts from WordPress
+        console.log(`[Job ${job.id}] 📖 Fetching posts from: ${blog.url}`);
+        const posts = await wordpress_service_1.WordPressService.fetchPosts(blog.url, blog.wp_api_key);
+        // 3. Store articles in Supabase
+        console.log(`[Job ${job.id}] 💾 Storing ${posts.length} articles...`);
+        await supabase_service_1.SupabaseService.upsertArticles(job.user_id, blogId, posts);
+        // 4. Update job status
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'completed');
+        console.log(`[Job ${job.id}] ✅ Crawl completed successfully!`);
+    }
+    catch (error) {
+        console.error(`[Job ${job.id}] ❌ Crawl failed:`, error.message);
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'failed', error.message);
+    }
+}
+async function pollJobs() {
+    const supabase = supabase_service_1.SupabaseService.getClient();
+    // Find the next queued job
+    const { data: job, error } = await supabase
+        .from('job_queue')
+        .select('*')
+        .eq('status', 'queued')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+    if (error || !job) {
+        // No jobs to process
+        return;
+    }
+    if (job.type === 'crawl') {
+        await processCrawlJob(job);
+    }
+    else {
+        console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`);
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'failed', `Unknown job type: ${job.type}`);
+    }
+}
+async function main() {
     console.log('🚀 AI Blog Autopilot Worker starting...');
     try {
-        const env = envSchema.parse({
+        envSchema.parse({
             SUPABASE_URL: process.env.SUPABASE_URL,
             SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
         });
-        const supabase = (0, supabase_js_1.createClient)(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
         console.log('✅ Connected to Supabase');
-        // Start heartbeat
+        // Start polling loop
+        console.log('🕵️ Polling for jobs...');
+        setInterval(async () => {
+            await pollJobs();
+        }, 5000);
+        // Heartbeat
         setInterval(() => {
             console.log(`💓 Heartbeat: ${new Date().toISOString()} - Worker active`);
         }, 60000);
@@ -64,7 +120,6 @@ function main() {
             console.error('❌ Failed to initialize worker:', error);
         }
         console.log('⚠️ Running in restricted mode (waiting for environment variables...)');
-        // Fallback heartbeat for local testing without credentials
         setInterval(() => {
             console.log(`💓 Heartbeat (Restricted): ${new Date().toISOString()} - Worker waiting for config`);
         }, 60000);
