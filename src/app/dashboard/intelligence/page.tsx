@@ -56,14 +56,20 @@ export default function SiteIntelligencePage() {
             const statsMap: Record<string, any> = {}
             data?.forEach(blog => {
                 const total = blog.articles?.[0]?.count || 0
-                const analyzed = blog.site_intelligence?.[0]?.count || 0
+                let analyzed = blog.site_intelligence?.[0]?.count || 0
                 let progress = total > 0 ? Math.round((analyzed / total) * 100) : 0
 
                 // Real-time metadata override
                 const intel = blog.metadata?.intelligence
-                if (intel && intel.status === 'processing') {
+                const isResetting = intel?.status === 'queued' || (intel?.status === 'processing' && intel?.progress === 0)
+
+                if (isResetting) {
+                    analyzed = 0
+                    progress = 0
+                } else if (intel && intel.status === 'processing') {
                     const metaProgress = intel.total > 0 ? Math.round((intel.progress / intel.total) * 100) : 0
                     progress = Math.max(progress, metaProgress)
+                    analyzed = intel.progress
                 }
 
                 statsMap[blog.id] = {
@@ -90,7 +96,30 @@ export default function SiteIntelligencePage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error("User not authenticated")
 
-            // Trigger the job in Supabase
+            // 1. Immediately reset progress in metadata for visual feedback
+            const { data: blog } = await supabase
+                .from('blogs')
+                .select('metadata')
+                .eq('id', blogId)
+                .single();
+
+            const newMetadata = {
+                ...(blog?.metadata || {}),
+                intelligence: {
+                    status: 'queued',
+                    current_url: 'Starting...',
+                    progress: 0,
+                    total: stats[blogId]?.total || 0,
+                    last_updated: new Date().toISOString()
+                }
+            };
+
+            await supabase
+                .from('blogs')
+                .update({ metadata: newMetadata })
+                .eq('id', blogId);
+
+            // 2. Trigger the job in Supabase
             const { error } = await supabase
                 .from('job_queue')
                 .insert({
@@ -103,13 +132,16 @@ export default function SiteIntelligencePage() {
 
             if (error) throw error
 
+            // Refresh local state immediately
+            fetchBlogs(true)
+
             toast.success("Intelligence gathering started! This will take a few minutes to crawl all URLs.", { id: toastId })
         } catch (error: any) {
             toast.error(error.message, { id: toastId })
         } finally {
             setIsProcessing(null)
             // Refresh to show "pending" status if we added it to UI
-            setTimeout(fetchBlogs, 2000)
+            setTimeout(() => fetchBlogs(true), 1000)
         }
     }
 
@@ -239,16 +271,21 @@ export default function SiteIntelligencePage() {
                                 </div>
 
                                 <button
-                                    onClick={() => triggerDeepCrawl(blog.id)}
-                                    disabled={isProcessing === blog.id}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        triggerDeepCrawl(blog.id);
+                                    }}
+                                    disabled={isProcessing === blog.id || s.intelStatus === 'queued' || s.intelStatus === 'processing'}
                                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-primary text-white font-bold transition-all hover:shadow-lg hover:shadow-primary/30 active:scale-95 disabled:opacity-50"
                                 >
-                                    {isProcessing === blog.id ? (
+                                    {isProcessing === blog.id || s.intelStatus === 'queued' || s.intelStatus === 'processing' ? (
                                         <Loader2 className="h-5 w-5 animate-spin" />
                                     ) : (
                                         <Activity className="h-5 w-5" />
                                     )}
-                                    {s.progress === 100 ? "Re-generate Intelligence" : "Generate Site Intelligence"}
+                                    {s.intelStatus === 'queued' || s.intelStatus === 'processing'
+                                        ? "Intelligence Gathering..."
+                                        : (s.progress === 100 ? "Re-generate Intelligence" : "Generate Site Intelligence")}
                                 </button>
 
                                 {blog.site_intelligence?.[0]?.count > 0 && (
