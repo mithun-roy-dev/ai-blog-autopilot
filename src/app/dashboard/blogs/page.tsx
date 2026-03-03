@@ -32,6 +32,24 @@ export default function BlogsPage() {
         setIsLoading(false)
     }
 
+    const triggerSync = async (blogId: string) => {
+        setIsLoading(true)
+        setError(null)
+        try {
+            const res = await fetch("/api/blogs/crawl", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ blogId })
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || "Failed to trigger sync")
+        } catch (err: any) {
+            setError(err.message)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     const handleAddBlog = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
@@ -57,11 +75,7 @@ export default function BlogsPage() {
             if (error) throw error
 
             // Trigger initial crawl job via API route
-            await fetch("/api/blogs/crawl", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ blogId: data[0].id })
-            })
+            await triggerSync(data[0].id)
 
             setNewBlog({ name: "", url: "", wp_api_key: "" })
             setIsAdding(false)
@@ -179,8 +193,12 @@ export default function BlogsPage() {
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                 Status: <span className="text-emerald-500">Connected</span>
                             </span>
-                            <button className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                                <RefreshCw className="h-3 w-3" /> Sync Now
+                            <button
+                                onClick={() => triggerSync(blog.id)}
+                                disabled={isLoading}
+                                className="flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                            >
+                                <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} /> Sync Now
                             </button>
                         </div>
                     </div>
