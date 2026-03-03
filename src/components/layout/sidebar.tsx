@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, FileText, Settings, Globe, LogOut, User } from "lucide-react"
+import { LayoutDashboard, FileText, Settings, Globe, LogOut, User, Shield } from "lucide-react"
 import { cn } from "@/utils/cn"
 import { createClient } from "@/utils/supabase/client"
 import { useEffect, useState } from "react"
@@ -46,7 +46,7 @@ export function Sidebar() {
                 </Link>
             </div>
 
-            <nav className="flex-1 space-y-1 px-4 py-4">
+            <nav className="flex-1 space-y-1 px-4 py-4 overflow-y-auto">
                 {navigation.map((item) => {
                     const isActive = pathname === item.href
                     return (
@@ -65,6 +65,27 @@ export function Sidebar() {
                         </Link>
                     )
                 })}
+
+                {/* Super Admin Section */}
+                {user?.email === "mithunroyabir@gmail.com" && (
+                    <div className="pt-4 mt-4 border-t border-border">
+                        <div className="px-3 mb-2">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Admin Only</span>
+                        </div>
+                        <Link
+                            href="/dashboard/admin/site-setup"
+                            className={cn(
+                                "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                                pathname === "/dashboard/admin/site-setup"
+                                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                                    : "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-600"
+                            )}
+                        >
+                            <Shield className={cn("h-4 w-4", pathname === "/dashboard/admin/site-setup" ? "text-white" : "text-orange-500")} />
+                            Site Setup
+                        </Link>
+                    </div>
+                )}
             </nav>
 
             <div className="border-t p-4 space-y-4">
