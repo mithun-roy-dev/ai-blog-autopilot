@@ -10,6 +10,7 @@ import { useEffect, useState } from "react"
 const navigation = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Blogs", href: "/dashboard/blogs", icon: Globe },
+    { name: "Clusters", href: "/dashboard/clusters", icon: FileText }, // Semantic agrupation
     { name: "Articles", href: "/dashboard/articles", icon: FileText },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
