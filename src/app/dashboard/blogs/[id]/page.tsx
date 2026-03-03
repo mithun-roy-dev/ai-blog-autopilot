@@ -17,6 +17,10 @@ export default function BlogDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 5
+
     useEffect(() => {
         if (params.id) {
             fetchBlogDetails()
@@ -188,32 +192,46 @@ export default function BlogDetailPage() {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold">Synced Knowledge Base</h2>
-                    <p className="text-xs text-muted-foreground">Showing latest {articles.length} articles</p>
+                    <p className="text-xs text-muted-foreground">
+                        Showing {Math.min((currentPage * itemsPerPage) - itemsPerPage + 1, articles.length)}-{Math.min(currentPage * itemsPerPage, articles.length)} of {articles.length} articles
+                    </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                    {articles.map((article) => (
-                        <div key={article.id} className="group relative overflow-hidden rounded-2xl border bg-card p-5 transition-all hover:shadow-xl hover:shadow-primary/5">
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="space-y-1">
-                                    <h4 className="font-bold group-hover:text-primary transition-colors">{article.title}</h4>
-                                    <p className="text-sm text-muted-foreground line-clamp-2" dangerouslySetInnerHTML={{ __html: article.excerpt || "No excerpt available." }} />
+                <div className="grid grid-cols-1 gap-6">
+                    {articles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((article) => (
+                        <div key={article.id} className="group relative overflow-hidden rounded-3xl border bg-card/40 p-6 transition-all hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1 backdrop-blur-sm border-white/5">
+                            <div className="flex flex-col gap-5">
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-primary/60 uppercase tracking-widest">
+                                        <FileText className="h-3 w-3" />
+                                        <span>Synced Intelligence</span>
+                                    </div>
+                                    <h4 className="text-xl font-bold leading-tight group-hover:text-primary transition-colors pr-10">{article.title}</h4>
+                                    <p className="text-sm text-muted-foreground/80 line-clamp-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: article.excerpt || "No summary available for this sync point." }} />
                                 </div>
-                                <span className="text-[10px] font-bold px-2 py-1 rounded bg-accent text-accent-foreground uppercase tracking-widest leading-none">
-                                    {article.status}
-                                </span>
+
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-5 border-t border-white/5 mt-auto">
+                                    <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
+                                        <div className="flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-accent/50">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                                            <span>Synced {new Date(article.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+
+                                    <a
+                                        href={article.source_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-2 py-2 px-5 rounded-xl bg-primary/5 text-primary text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-all group/link"
+                                    >
+                                        Visit Original Post
+                                        <ExternalLink className="h-3.5 w-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                                    </a>
+                                </div>
                             </div>
-                            <div className="mt-4 pt-4 border-t flex items-center justify-between text-[10px] text-muted-foreground">
-                                <span>Synced on {new Date(article.created_at).toLocaleDateString()}</span>
-                                <a
-                                    href={article.source_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex items-center gap-1 hover:text-primary transition-colors"
-                                >
-                                    Original Post <ExternalLink className="h-2 w-2" />
-                                </a>
-                            </div>
+
+                            {/* Decorative background element */}
+                            <div className="absolute top-0 right-0 -mr-10 -mt-10 h-32 w-32 rounded-full bg-primary/5 blur-3xl group-hover:bg-primary/10 transition-colors" />
                         </div>
                     ))}
 
@@ -224,6 +242,46 @@ export default function BlogDetailPage() {
                         </div>
                     )}
                 </div>
+
+                {/* Pagination Controls */}
+                {articles.length > itemsPerPage && (
+                    <div className="flex items-center justify-center gap-2 pt-4">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="px-4 py-2 text-sm font-medium rounded-lg border bg-card hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Previous
+                        </button>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.ceil(articles.length / itemsPerPage) }, (_, i) => i + 1)
+                                .filter(page => page === 1 || page === Math.ceil(articles.length / itemsPerPage) || Math.abs(page - currentPage) <= 1)
+                                .map((page, index, array) => (
+                                    <div key={page} className="flex items-center">
+                                        {index > 0 && array[index - 1] !== page - 1 && <span className="px-2 text-muted-foreground">...</span>}
+                                        <button
+                                            onClick={() => setCurrentPage(page)}
+                                            className={cn(
+                                                "w-10 h-10 text-sm font-medium rounded-lg transition-all",
+                                                currentPage === page
+                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                    : "hover:bg-accent border border-transparent"
+                                            )}
+                                        >
+                                            {page}
+                                        </button>
+                                    </div>
+                                ))}
+                        </div>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(articles.length / itemsPerPage), prev + 1))}
+                            disabled={currentPage === Math.ceil(articles.length / itemsPerPage)}
+                            className="px-4 py-2 text-sm font-medium rounded-lg border bg-card hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )
