@@ -24,13 +24,30 @@ export class IntelligenceService {
             console.log(`[Intelligence] Found ${articles.length} URLs to process`);
 
             // 2. Process each URL
-            for (const article of articles) {
+            for (let i = 0; i < articles.length; i++) {
+                const article = articles[i];
                 try {
+                    // Update progress
+                    await this.updateProgress(blogId, {
+                        status: 'processing',
+                        current_url: article.source_url,
+                        progress: i,
+                        total: articles.length
+                    });
+
                     await this.crawlAndExtract(blogId, article.id, article.source_url);
                 } catch (err: any) {
                     console.error(`[Intelligence] Failed to process ${article.source_url}:`, err.message);
                 }
             }
+
+            // Final progress update
+            await this.updateProgress(blogId, {
+                status: 'completed',
+                current_url: '',
+                progress: articles.length,
+                total: articles.length
+            });
 
             console.log(`[Intelligence] Completed deep crawl for blog: ${blogId}`);
         } catch (err: any) {
@@ -143,6 +160,31 @@ export class IntelligenceService {
                     status: 'failed',
                     updated_at: new Date().toISOString()
                 }, { onConflict: 'article_id' });
+        }
+    }
+
+    private async updateProgress(blogId: string, info: any) {
+        try {
+            const { data: blog } = await SupabaseService.getClient()
+                .from('blogs')
+                .select('metadata')
+                .eq('id', blogId)
+                .single();
+
+            const newMetadata = {
+                ...(blog?.metadata || {}),
+                intelligence: {
+                    ...info,
+                    last_updated: new Date().toISOString()
+                }
+            };
+
+            await SupabaseService.getClient()
+                .from('blogs')
+                .update({ metadata: newMetadata })
+                .eq('id', blogId);
+        } catch (err: any) {
+            console.error(`[Intelligence] Failed to update progress for ${blogId}:`, err.message);
         }
     }
 }

@@ -19,8 +19,24 @@ export default function SiteIntelligencePage() {
         fetchBlogs()
     }, [])
 
-    const fetchBlogs = async () => {
+    // Real-time polling for processing sites
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const hasProcessing = blogs.some(blog => {
+                const intel = blog.metadata?.intelligence
+                return intel?.status === 'processing'
+            })
+
+            if (hasProcessing || isProcessing) {
+                fetchBlogs(true) // Silently refresh
+            }
+        }, 3000)
+        return () => clearInterval(interval)
+    }, [blogs, isProcessing])
+
+    const fetchBlogs = async (silent = false) => {
         try {
+            if (!silent) setIsLoading(true)
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
@@ -38,14 +54,28 @@ export default function SiteIntelligencePage() {
             data?.forEach(blog => {
                 const total = blog.articles?.[0]?.count || 0
                 const analyzed = blog.site_intelligence?.[0]?.count || 0
-                const progress = total > 0 ? Math.round((analyzed / total) * 100) : 0
-                statsMap[blog.id] = { total, analyzed, progress }
+                let progress = total > 0 ? Math.round((analyzed / total) * 100) : 0
+
+                // Real-time metadata override
+                const intel = blog.metadata?.intelligence
+                if (intel && intel.status === 'processing') {
+                    const metaProgress = intel.total > 0 ? Math.round((intel.progress / intel.total) * 100) : 0
+                    progress = Math.max(progress, metaProgress)
+                }
+
+                statsMap[blog.id] = {
+                    total,
+                    analyzed,
+                    progress,
+                    currentUrl: intel?.current_url || '',
+                    intelStatus: intel?.status || 'idle'
+                }
             })
             setStats(statsMap)
         } catch (error: any) {
-            toast.error(error.message)
+            if (!silent) toast.error(error.message)
         } finally {
-            setIsLoading(false)
+            if (!silent) setIsLoading(false)
         }
     }
 
@@ -149,9 +179,16 @@ export default function SiteIntelligencePage() {
                                 </div>
 
                                 <div className="space-y-4 mb-8">
-                                    <div className="flex justify-between text-xs mb-1">
-                                        <span className="text-muted-foreground font-medium">Intelligence Gathering</span>
-                                        <span className="text-primary font-bold">{s.progress}%</span>
+                                    <div className="flex justify-between text-[10px] mb-1 overflow-hidden">
+                                        <span className="text-muted-foreground font-medium truncate flex-1">
+                                            {s.intelStatus === 'processing' ? (
+                                                <span className="flex items-center gap-1.5 text-primary animate-pulse">
+                                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                                    Crawling: {s.currentUrl}
+                                                </span>
+                                            ) : "Intelligence Gathering"}
+                                        </span>
+                                        <span className="text-primary font-bold ml-2">{s.progress}%</span>
                                     </div>
                                     <div className="h-2 w-full bg-accent rounded-full overflow-hidden">
                                         <div
