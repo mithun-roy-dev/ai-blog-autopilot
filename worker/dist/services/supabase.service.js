@@ -50,5 +50,17 @@ class SupabaseService {
         if (error)
             throw error;
     }
+    /**
+     * Updates blog metadata with site insights (e.g., sitemap count).
+     */
+    static async updateBlogMetadata(blogId, metadata) {
+        const client = this.getClient();
+        const { error } = await client
+            .from("blogs")
+            .update({ metadata, updated_at: new Date() })
+            .match({ id: blogId });
+        if (error)
+            throw error;
+    }
 }
 exports.SupabaseService = SupabaseService;

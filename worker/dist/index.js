@@ -37,6 +37,7 @@ const dotenv = __importStar(require("dotenv"));
 const zod_1 = require("zod");
 const wordpress_service_1 = require("./services/wordpress.service");
 const supabase_service_1 = require("./services/supabase.service");
+const intelligence_service_1 = require("./services/intelligence.service");
 // Load environment variables
 dotenv.config();
 const envSchema = zod_1.z.object({
@@ -57,18 +58,78 @@ async function processCrawlJob(job) {
             .single();
         if (blogError || !blog)
             throw new Error(`Blog not found: ${blogId}`);
-        // 2. Fetch posts from WordPress
-        console.log(`[Job ${job.id}] 📖 Fetching posts from: ${blog.url}`);
-        const posts = await wordpress_service_1.WordPressService.fetchPosts(blog.url, blog.wp_api_key);
-        // 3. Store articles in Supabase
-        console.log(`[Job ${job.id}] 💾 Storing ${posts.length} articles...`);
-        await supabase_service_1.SupabaseService.upsertArticles(job.user_id, blogId, posts);
-        // 4. Update job status
+        // 2. Fetch content based on site type and auth
+        let allContent = [];
+        let postCount = 0;
+        let pageCount = 0;
+        let sitemapUrls = [];
+        console.log(`[Job ${job.id}] 📖 Processing ${blog.site_type} site: ${blog.url}`);
+        if (blog.site_type === 'wordpress' && blog.wp_api_key && blog.wp_username) {
+            // Priority 1: Authenticated WP REST API
+            console.log(`[Job ${job.id}] 🔐 Fetching via WordPress REST API...`);
+            const [posts, pages] = await Promise.all([
+                wordpress_service_1.WordPressService.fetchContent(blog.url, 'posts', blog.wp_api_key, blog.wp_username),
+                wordpress_service_1.WordPressService.fetchContent(blog.url, 'pages', blog.wp_api_key, blog.wp_username)
+            ]);
+            allContent = [...posts, ...pages];
+            postCount = posts.length;
+            pageCount = pages.length;
+        }
+        else {
+            // Priority 2: Sitemap Discovery (for 'Other' sites or unauthenticated WP)
+            console.log(`[Job ${job.id}] 🌐 Discovering content via sitemap...`);
+            sitemapUrls = await wordpress_service_1.WordPressService.discoverSitemapUrls(blog.url);
+            // Limit to first 100 for discovery depth
+            const limitedUrls = sitemapUrls.slice(0, 100);
+            console.log(`[Job ${job.id}] 🕷️ Fetching metadata for ${limitedUrls.length} discovered links...`);
+            const metadataResults = await Promise.all(limitedUrls.map(url => wordpress_service_1.WordPressService.fetchUrlMetadata(url)));
+            allContent = limitedUrls.map((url, index) => ({
+                id: `sitemap-${index}`,
+                title: { rendered: metadataResults[index].title },
+                content: { rendered: '' },
+                excerpt: { rendered: metadataResults[index].excerpt },
+                link: url,
+                slug: url.split('/').pop() || '',
+                date: new Date().toISOString()
+            }));
+            // Treat sitemap-discovered links as posts for stat visibility
+            postCount = allContent.length;
+        }
+        // 3. Update Blog Metadata for visibility
+        await supabase_service_1.SupabaseService.updateBlogMetadata(blogId, {
+            last_sync: new Date().toISOString(),
+            post_count: postCount,
+            page_count: pageCount,
+            total_content: allContent.length,
+            sitemap_links: sitemapUrls.length,
+            discovery_method: blog.wp_api_key && blog.wp_username ? "WordPress REST API" : "Sitemap Discovery"
+        });
+        // 4. Store items in Supabase
+        if (allContent.length > 0) {
+            console.log(`[Job ${job.id}] 💾 Storing ${allContent.length} discovered items...`);
+            await supabase_service_1.SupabaseService.upsertArticles(job.user_id, blogId, allContent);
+        }
+        // 5. Update job status
         await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'completed');
         console.log(`[Job ${job.id}] ✅ Crawl completed successfully!`);
     }
     catch (error) {
         console.error(`[Job ${job.id}] ❌ Crawl failed:`, error.message);
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'failed', error.message);
+    }
+}
+async function processIntelligenceJob(job) {
+    const { blogId } = job.payload;
+    console.log(`[Job ${job.id}] 🧠 Starting intelligence gathering for blog: ${blogId}`);
+    try {
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'processing');
+        const intelligenceService = new intelligence_service_1.IntelligenceService();
+        await intelligenceService.processSiteIntelligence(blogId);
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'completed');
+        console.log(`[Job ${job.id}] ✅ Intelligence gathering completed successfully!`);
+    }
+    catch (error) {
+        console.error(`[Job ${job.id}] ❌ Intelligence gathering failed:`, error.message);
         await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'failed', error.message);
     }
 }
@@ -88,6 +149,9 @@ async function pollJobs() {
     }
     if (job.type === 'crawl') {
         await processCrawlJob(job);
+    }
+    else if (job.type === 'intelligence_sync') {
+        await processIntelligenceJob(job);
     }
     else {
         console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`);
