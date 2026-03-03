@@ -54,10 +54,14 @@ export default function SiteIntelligencePage() {
         const toastId = toast.loading("Starting Site Intelligence Deep Crawl...")
 
         try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error("User not authenticated")
+
             // Trigger the job in Supabase
             const { error } = await supabase
                 .from('job_queue')
                 .insert({
+                    user_id: user.id,
                     blog_id: blogId,
                     type: 'intelligence_sync',
                     status: 'queued',
