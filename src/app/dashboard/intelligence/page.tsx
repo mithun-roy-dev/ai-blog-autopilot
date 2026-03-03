@@ -56,11 +56,12 @@ export default function SiteIntelligencePage() {
         try {
             // Trigger the job in Supabase
             const { error } = await supabase
-                .from('jobs')
+                .from('job_queue')
                 .insert({
                     blog_id: blogId,
                     type: 'intelligence_sync',
-                    status: 'pending'
+                    status: 'queued',
+                    payload: { blogId }
                 })
 
             if (error) throw error

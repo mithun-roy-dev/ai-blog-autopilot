@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv'
 import { z } from 'zod'
 import { WordPressService } from './services/wordpress.service'
 import { SupabaseService } from './services/supabase.service'
+import { IntelligenceService } from './services/intelligence.service'
 
 // Load environment variables
 dotenv.config()
@@ -100,6 +101,24 @@ async function processCrawlJob(job: any) {
     }
 }
 
+async function processIntelligenceJob(job: any) {
+    const { blogId } = job.payload
+    console.log(`[Job ${job.id}] 🧠 Starting intelligence gathering for blog: ${blogId}`)
+
+    try {
+        await SupabaseService.updateJobStatus(job.id, 'processing')
+
+        const intelligenceService = new IntelligenceService()
+        await intelligenceService.processSiteIntelligence(blogId)
+
+        await SupabaseService.updateJobStatus(job.id, 'completed')
+        console.log(`[Job ${job.id}] ✅ Intelligence gathering completed successfully!`)
+    } catch (error: any) {
+        console.error(`[Job ${job.id}] ❌ Intelligence gathering failed:`, error.message)
+        await SupabaseService.updateJobStatus(job.id, 'failed', error.message)
+    }
+}
+
 async function pollJobs() {
     const supabase = SupabaseService.getClient()
 
@@ -119,6 +138,8 @@ async function pollJobs() {
 
     if (job.type === 'crawl') {
         await processCrawlJob(job)
+    } else if (job.type === 'intelligence_sync') {
+        await processIntelligenceJob(job)
     } else {
         console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`)
         await SupabaseService.updateJobStatus(job.id, 'failed', `Unknown job type: ${job.type}`)
