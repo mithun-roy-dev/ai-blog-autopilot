@@ -14,6 +14,10 @@ const PROVIDERS = [
 ]
 
 const OPENROUTER_MODELS = [
+    { id: "google/gemini-3-flash-preview", name: "Gemini 3 Flash Preview" },
+    { id: "google/gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
+    { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6" },
+    { id: "google/gemma-3-27b-it:free", name: "Gemma 3 27B IT (Free)" },
     { id: "openai/gpt-oss-120b:free", name: "GPT-OSS 120B (Free)" },
     { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large Preview (Free)" },
     { id: "google/gemini-2.0-flash-001", name: "Gemini 2.0 Flash" },

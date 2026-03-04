@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, FileText, Settings, Globe, LogOut, User, Shield, BrainCircuit } from "lucide-react"
+import { LayoutDashboard, FileText, Settings, Globe, LogOut, User, Shield, BrainCircuit, Layers } from "lucide-react"
 import { cn } from "@/utils/cn"
 import { createClient } from "@/utils/supabase/client"
 import { useEffect, useState } from "react"
@@ -11,7 +11,7 @@ const navigation = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Sites", href: "/dashboard/blogs", icon: Globe },
     { name: "Intelligence", href: "/dashboard/intelligence", icon: BrainCircuit },
-    { name: "Clusters", href: "/dashboard/clusters", icon: FileText }, // Semantic agrupation
+    { name: "Clusters", href: "/dashboard/clusters", icon: Layers },
     { name: "Articles", href: "/dashboard/articles", icon: FileText },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]

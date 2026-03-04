@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { WordPressService } from './services/wordpress.service'
 import { SupabaseService } from './services/supabase.service'
 import { IntelligenceService } from './services/intelligence.service'
+import { ClusterService } from './services/cluster.service'
 
 // Load environment variables
 dotenv.config()
@@ -119,6 +120,24 @@ async function processIntelligenceJob(job: any) {
     }
 }
 
+async function processClusterJob(job: any) {
+    const { blogId } = job.payload
+    console.log(`[Job ${job.id}] 📂 Starting cluster generation for blog: ${blogId}`)
+
+    try {
+        await SupabaseService.updateJobStatus(job.id, 'processing')
+
+        const clusterService = new ClusterService()
+        await clusterService.generateClusters(blogId, job.user_id)
+
+        await SupabaseService.updateJobStatus(job.id, 'completed')
+        console.log(`[Job ${job.id}] ✅ Cluster generation completed successfully!`)
+    } catch (error: any) {
+        console.error(`[Job ${job.id}] ❌ Cluster generation failed:`, error.message)
+        await SupabaseService.updateJobStatus(job.id, 'failed', error.message)
+    }
+}
+
 async function pollJobs() {
     const supabase = SupabaseService.getClient()
 
@@ -140,6 +159,8 @@ async function pollJobs() {
         await processCrawlJob(job)
     } else if (job.type === 'intelligence_sync') {
         await processIntelligenceJob(job)
+    } else if (job.type === 'cluster_generation') {
+        await processClusterJob(job)
     } else {
         console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`)
         await SupabaseService.updateJobStatus(job.id, 'failed', `Unknown job type: ${job.type}`)
