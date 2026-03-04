@@ -211,13 +211,13 @@ export class ClusterService {
         try {
             // Try direct parse first
             return JSON.parse(text);
-        } catch (e) {
+        } catch (e: any) {
             // Try to extract from markdown backticks
             const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
             if (match && match[1]) {
                 try {
                     return JSON.parse(match[1]);
-                } catch (e2) {
+                } catch (e2: any) {
                     throw new Error("Found JSON block but failed to parse it: " + e2.message);
                 }
             }
