@@ -18,7 +18,8 @@ import {
     Zap,
     ExternalLink,
     Square,
-    Star
+    Star,
+    ChevronDown
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
@@ -41,6 +42,7 @@ export default function JobDetailPage() {
     const [job, setJob] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [selectedViewStep, setSelectedViewStep] = useState<string | null>(null)
+    const [expandedHeadings, setExpandedHeadings] = useState<{ [pageIndex: number]: 'h1' | 'h2' | 'h3' | null }>({})
     const detailsRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -134,6 +136,13 @@ export default function JobDetailPage() {
         setTimeout(() => {
             detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 100)
+    }
+
+    const toggleHeadingExpansion = (pageIndex: number, type: 'h1' | 'h2' | 'h3') => {
+        setExpandedHeadings(prev => ({
+            ...prev,
+            [pageIndex]: prev[pageIndex] === type ? null : type
+        }))
     }
 
     if (isLoading) {
@@ -237,7 +246,7 @@ export default function JobDetailPage() {
             </div>
 
             {/* Progress Stepper */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div ref={detailsRef} className="grid grid-cols-1 md:grid-cols-6 gap-4 scroll-mt-12">
                 {STEPS.map((step, index) => {
                     const isDone = currentStepIndex > index || isCompleted
                     const isCurrent = currentStepIndex === index && !isCompleted && !isFailed
@@ -295,7 +304,7 @@ export default function JobDetailPage() {
             )}
 
             {/* Main Content Area - Full Width */}
-            <div ref={detailsRef} className="space-y-8 pt-4">
+            <div className="space-y-8 pt-4">
                 {/* SERP Results Preview (Step 1) */}
                 {selectedViewStep === 'serp_calling' && job?.generation_data?.serp && (
                     <div className="bg-card rounded-[2.5rem] border border-border/50 overflow-hidden shadow-xl animate-in zoom-in-95 duration-500">
@@ -414,19 +423,77 @@ export default function JobDetailPage() {
                                             </div>
                                         </div>
 
-                                        {/* Headings Preview */}
+                                        {/* Headings Preview & Expandable Toggles */}
                                         {!page.error && (
-                                            <div className="pl-12 grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                                                {page.h1 && (
-                                                    <div className="text-[11px] bg-accent/30 p-2.5 rounded-xl border border-border/30">
-                                                        <span className="font-black text-muted-foreground mr-2 shrink-0">H1</span>
-                                                        <span className="font-medium text-foreground line-clamp-1">{page.h1}</span>
-                                                    </div>
-                                                )}
-                                                {page.h2?.length > 0 && (
-                                                    <div className="text-[11px] bg-accent/30 p-2.5 rounded-xl border border-border/30 flex items-center">
-                                                        <span className="font-black text-muted-foreground mr-2 shrink-0">H2</span>
-                                                        <span className="font-bold text-primary px-2 py-0.5 rounded-md bg-primary/10">{page.h2.length} extracted</span>
+                                            <div className="pl-12 space-y-3 mt-1">
+                                                <div className="flex flex-wrap gap-2">
+                                                    {page.h1 && (
+                                                        <button
+                                                            onClick={() => toggleHeadingExpansion(i, 'h1')}
+                                                            className={cn(
+                                                                "flex items-center text-[11px] p-2 rounded-xl border transition-all hover:bg-accent/50",
+                                                                expandedHeadings[i] === 'h1' ? "bg-accent/50 border-primary/30" : "bg-accent/20 border-border/30"
+                                                            )}
+                                                        >
+                                                            <span className="font-black text-muted-foreground mr-1.5">H1</span>
+                                                            <span className="font-medium text-foreground truncate max-w-[200px]">{page.h1}</span>
+                                                            <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h1' && "rotate-180 text-primary")} />
+                                                        </button>
+                                                    )}
+                                                    {page.h2?.length > 0 && (
+                                                        <button
+                                                            onClick={() => toggleHeadingExpansion(i, 'h2')}
+                                                            className={cn(
+                                                                "flex items-center text-[11px] p-2 rounded-xl border transition-all hover:bg-accent/50",
+                                                                expandedHeadings[i] === 'h2' ? "bg-accent/50 border-primary/30" : "bg-accent/20 border-border/30"
+                                                            )}
+                                                        >
+                                                            <span className="font-black text-muted-foreground mr-1.5">H2</span>
+                                                            <span className="font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/10">{page.h2.length} items</span>
+                                                            <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h2' && "rotate-180 text-primary")} />
+                                                        </button>
+                                                    )}
+                                                    {page.h3?.length > 0 && (
+                                                        <button
+                                                            onClick={() => toggleHeadingExpansion(i, 'h3')}
+                                                            className={cn(
+                                                                "flex items-center text-[11px] p-2 rounded-xl border transition-all hover:bg-accent/50",
+                                                                expandedHeadings[i] === 'h3' ? "bg-accent/50 border-primary/30" : "bg-accent/20 border-border/30"
+                                                            )}
+                                                        >
+                                                            <span className="font-black text-muted-foreground mr-1.5">H3</span>
+                                                            <span className="font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/10">{page.h3.length} items</span>
+                                                            <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h3' && "rotate-180 text-primary")} />
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {/* Expanded Details View */}
+                                                {expandedHeadings[i] && (
+                                                    <div className="bg-accent/10 border border-border/40 rounded-2xl p-4 mt-2 animate-in slide-in-from-top-2 duration-200">
+                                                        <h6 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                                                            Detail View: {expandedHeadings[i].toUpperCase()} Tags
+                                                            <span className="h-px bg-border flex-1"></span>
+                                                        </h6>
+                                                        <div className="space-y-2">
+                                                            {expandedHeadings[i] === 'h1' && (
+                                                                <div className="text-sm font-medium text-foreground bg-background p-3 rounded-xl border border-border/50">
+                                                                    {page.h1}
+                                                                </div>
+                                                            )}
+                                                            {expandedHeadings[i] === 'h2' && page.h2?.map((text: string, hIndex: number) => (
+                                                                <div key={hIndex} className="text-sm font-medium text-foreground bg-background p-3 rounded-xl border border-border/50 flex gap-3">
+                                                                    <span className="text-[10px] font-black text-muted-foreground pt-0.5 shrink-0">{hIndex + 1}.</span>
+                                                                    <span>{text}</span>
+                                                                </div>
+                                                            ))}
+                                                            {expandedHeadings[i] === 'h3' && page.h3?.map((text: string, hIndex: number) => (
+                                                                <div key={hIndex} className="text-sm font-medium text-foreground bg-background p-3 rounded-xl border border-border/50 flex gap-3">
+                                                                    <span className="text-[10px] font-black text-muted-foreground pt-0.5 shrink-0">{hIndex + 1}.</span>
+                                                                    <span>{text}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
