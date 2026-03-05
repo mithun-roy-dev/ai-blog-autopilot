@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { SupabaseService } from './supabase.service';
+import * as cheerio from 'cheerio';
 
 export class GenerationService {
     /**
@@ -25,15 +26,21 @@ export class GenerationService {
                 return await this.step1SerpApi(job);
             });
 
+            // Step 2: SERP Analyzer
+            await this.executeStep(jobId, 'serp_analyzing', async () => {
+                const updatedJobData = await this.getGenerationData(jobId);
+                return await this.step2SerpAnalyzer(job, updatedJobData);
+            });
+
             // Future steps will be implemented here...
 
-            // Finalize overall job status
+            // Move to the next step so the UI properly animates and shows Step 2 as completed
             await supabase
                 .from('writing_jobs')
-                .update({ status: 'completed', generation_status: 'completed', updated_at: new Date() })
+                .update({ generation_status: 'briefing', updated_at: new Date() })
                 .eq('id', jobId);
 
-            console.log(`[Job ${jobId}] ✅ Article generation completed!`);
+            console.log(`[Job ${jobId}] ⏸️ Pausing before Content Brief generation (Step 3 not yet implemented)`);
 
         } catch (error: any) {
             console.error(`[Job ${jobId}] ❌ Generation failed:`, error.message);
@@ -189,6 +196,98 @@ export class GenerationService {
                     related_questions,
                     related_searches,
                     intent
+                }
+            }
+        };
+    }
+
+    /**
+     * Step 2: SERP Analyzer (Crawl, Extract SEO tags & Word Counts)
+     */
+    private static async step2SerpAnalyzer(job: any, data: any) {
+        console.log(`[Job ${job.id}] 🖥️ Starting SERP analysis for ${data.serp?.organic_results?.length || 0} organic links...`);
+
+        const organicLinks = data.serp?.organic_results || [];
+        const analysisPages: any[] = [];
+        let totalWordCount = 0;
+        let successfulPagesCount = 0;
+
+        for (const [index, result] of organicLinks.entries()) {
+            if (!result.link) continue;
+
+            try {
+                console.log(`[Job ${job.id}] 🌐 Analyzing link ${index + 1}/${organicLinks.length}: ${result.link}`);
+
+                // Fetch the HTML with a slight timeout to prevent hanging forever
+                const response = await axios.get(result.link, { timeout: 10000 });
+                const html = response.data;
+                const $ = cheerio.load(html);
+
+                // Extract Meta Title
+                const metaTitle = $('title').text() || $('meta[property="og:title"]').attr('content') || '';
+
+                // Extract Headings
+                const h1 = $('h1').first().text().trim();
+
+                const h2: string[] = [];
+                $('h2').each((_, el) => {
+                    const text = $(el).text().trim();
+                    if (text && text.length > 5) h2.push(text);
+                });
+
+                const h3: string[] = [];
+                $('h3').each((_, el) => {
+                    const text = $(el).text().trim();
+                    if (text && text.length > 5) h3.push(text);
+                });
+
+                // Calculate Word Count from Body Text
+                // Strip out scripts, styles, navigation, and footers for a more accurate content word count
+                $('script, style, nav, footer, header, noscript, svg, button').remove();
+                const bodyText = $('body').text() || '';
+
+                // Remove extra whitespace and count words
+                const cleanText = bodyText.replace(/\s+/g, ' ').trim();
+                const wordCount = cleanText ? cleanText.split(' ').length : 0;
+
+                analysisPages.push({
+                    link: result.link,
+                    meta_title: metaTitle,
+                    h1,
+                    h2,
+                    h3,
+                    word_count: wordCount
+                });
+
+                totalWordCount += wordCount;
+                successfulPagesCount++;
+
+            } catch (err: any) {
+                console.warn(`[Job ${job.id}] ⚠️ Failed to analyze ${result.link}: ${err.message}`);
+                // Add a placeholder record for failed extractions so we maintain the link context
+                analysisPages.push({
+                    link: result.link,
+                    meta_title: result.title || "Failed to parse",
+                    h1: "",
+                    h2: [],
+                    h3: [],
+                    word_count: 0,
+                    error: true
+                });
+            }
+        }
+
+        const averageWordCount = successfulPagesCount > 0
+            ? Math.round(totalWordCount / successfulPagesCount)
+            : 0;
+
+        console.log(`[Job ${job.id}] 📊 SERP Analysis Complete! Average Word Count: ${averageWordCount} across ${successfulPagesCount} successful parses.`);
+
+        return {
+            dataUpdate: {
+                analysis: {
+                    pages: analysisPages,
+                    average_word_count: averageWordCount
                 }
             }
         };

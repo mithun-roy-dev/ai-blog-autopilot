@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
     ChevronLeft,
@@ -41,6 +41,7 @@ export default function JobDetailPage() {
     const [job, setJob] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [selectedViewStep, setSelectedViewStep] = useState<string | null>(null)
+    const detailsRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         if (!id) return
@@ -126,6 +127,13 @@ export default function JobDetailPage() {
         } catch (error: any) {
             toast.error(error.message)
         }
+    }
+
+    const handleStepClick = (stepId: string) => {
+        setSelectedViewStep(stepId)
+        setTimeout(() => {
+            detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
     }
 
     if (isLoading) {
@@ -240,7 +248,7 @@ export default function JobDetailPage() {
                     return (
                         <button
                             key={step.id}
-                            onClick={() => canView && setSelectedViewStep(step.id)}
+                            onClick={() => canView && handleStepClick(step.id)}
                             disabled={!canView}
                             className={cn(
                                 "relative p-5 rounded-3xl border transition-all duration-500 overflow-hidden group text-left",
@@ -287,7 +295,7 @@ export default function JobDetailPage() {
             )}
 
             {/* Main Content Area - Full Width */}
-            <div className="space-y-8">
+            <div ref={detailsRef} className="space-y-8 pt-4">
                 {/* SERP Results Preview (Step 1) */}
                 {selectedViewStep === 'serp_calling' && job?.generation_data?.serp && (
                     <div className="bg-card rounded-[2.5rem] border border-border/50 overflow-hidden shadow-xl animate-in zoom-in-95 duration-500">
@@ -360,8 +368,86 @@ export default function JobDetailPage() {
                     </div>
                 )}
 
-                {/* Placeholder for steps > 1 since they aren't implemented in UI yet */}
-                {selectedViewStep && selectedViewStep !== 'serp_calling' && (
+                {/* SERP Analysis Preview (Step 2) */}
+                {selectedViewStep === 'serp_analyzing' && job?.generation_data?.analysis && (
+                    <div className="bg-card rounded-[2.5rem] border border-border/50 overflow-hidden shadow-xl animate-in zoom-in-95 duration-500">
+                        <div className="p-8 border-b border-border/50 flex items-center justify-between bg-card/60">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                                    <PieChart className="h-6 w-6 text-indigo-500" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black italic uppercase tracking-tight">Step 2: SERP Analyzer</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                                            Avg Word Count: {job.generation_data.analysis.average_word_count?.toLocaleString() || 0}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-8 bg-card/30">
+                            <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-6">Analyzed Competitors ({job.generation_data.analysis.pages?.length || 0})</h4>
+                            <div className="space-y-4">
+                                {job.generation_data.analysis.pages?.map((page: any, i: number) => (
+                                    <div key={i} className="p-5 rounded-[1.5rem] bg-background border border-border/60 hover:border-primary/40 hover:shadow-md transition-all flex flex-col gap-4">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex-1 min-w-0 flex items-start gap-4">
+                                                <span className={cn(
+                                                    "h-8 w-8 rounded-xl flex items-center justify-center font-black shrink-0 text-xs shadow-sm bg-card border",
+                                                    page.error ? "text-red-500 border-red-500/20" : "text-foreground"
+                                                )}>{i + 1}</span>
+                                                <div className="min-w-0 flex-1 pt-1">
+                                                    <h5 className="font-bold text-foreground line-clamp-2 leading-snug text-sm select-all">
+                                                        {page.meta_title || (page.error ? 'Failed to parse page content' : 'No Meta Title Found')}
+                                                    </h5>
+                                                    <p className="text-[10px] font-mono mt-1.5 text-muted-foreground truncate opacity-80">{page.link}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <span className={cn(
+                                                    "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest shadow-sm",
+                                                    page.error ? "bg-red-500/5 text-red-500 border-red-500/20" : "bg-card text-foreground border-border/50"
+                                                )}>
+                                                    {page.word_count?.toLocaleString()} words
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Headings Preview */}
+                                        {!page.error && (
+                                            <div className="pl-12 grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
+                                                {page.h1 && (
+                                                    <div className="text-[11px] bg-accent/30 p-2.5 rounded-xl border border-border/30">
+                                                        <span className="font-black text-muted-foreground mr-2 shrink-0">H1</span>
+                                                        <span className="font-medium text-foreground line-clamp-1">{page.h1}</span>
+                                                    </div>
+                                                )}
+                                                {page.h2?.length > 0 && (
+                                                    <div className="text-[11px] bg-accent/30 p-2.5 rounded-xl border border-border/30 flex items-center">
+                                                        <span className="font-black text-muted-foreground mr-2 shrink-0">H2</span>
+                                                        <span className="font-bold text-primary px-2 py-0.5 rounded-md bg-primary/10">{page.h2.length} extracted</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Placeholder for pending or currently generating step without data yet */}
+                {selectedViewStep === 'serp_analyzing' && !(job?.generation_data?.analysis) && !isFailed && (
+                    <div className="h-64 rounded-[2.5rem] border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground space-y-4">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <p className="font-bold text-sm uppercase tracking-widest animate-pulse">Running competitive intelligence tools...</p>
+                    </div>
+                )}
+
+                {/* Placeholder for steps > 2 since they aren't implemented in UI yet */}
+                {selectedViewStep && selectedViewStep !== 'serp_calling' && selectedViewStep !== 'serp_analyzing' && (
                     <div className="h-64 rounded-[2.5rem] bg-card/50 border border-border flex flex-col items-center justify-center text-muted-foreground space-y-4 shadow-inner">
                         <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center mb-2">
                             <PieChart className="h-8 w-8 text-muted-foreground opacity-50" />
