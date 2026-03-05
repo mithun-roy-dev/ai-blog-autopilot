@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Globe, FileText, CheckCircle2, Clock, AlertCircle, Trash2, Save, ChevronLeft, LayoutGrid, Search, Edit3, Loader2 } from "lucide-react"
+import { Globe, FileText, CheckCircle2, Clock, AlertCircle, Trash2, Save, ChevronLeft, LayoutGrid, Search, Edit3, Loader2, Zap, X, Star, Square, Play } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
@@ -15,6 +15,7 @@ function WriteContent() {
 
     const [sites, setSites] = useState<any[]>([])
     const [jobs, setJobs] = useState<any[]>([])
+    const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(new Set())
     const [isLoading, setIsLoading] = useState(true)
     const [isJobsLoading, setIsJobsLoading] = useState(false)
     const [editingJobId, setEditingJobId] = useState<string | null>(null)
@@ -54,7 +55,10 @@ function WriteContent() {
             .eq('blog_id', id)
             .order('created_at', { ascending: false })
 
-        if (!error) setJobs(data || [])
+        if (!error) {
+            setJobs(data || [])
+            setSelectedJobIds(new Set())
+        }
         setIsJobsLoading(false)
     }
 
@@ -89,6 +93,62 @@ function WriteContent() {
             const { error } = await supabase.from('writing_jobs').delete().eq('id', jobId)
             if (error) throw error
             toast.success("Job removed")
+            if (blogId) fetchJobs(blogId)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
+    const handleToggleSelect = (jobId: string) => {
+        const next = new Set(selectedJobIds)
+        if (next.has(jobId)) {
+            next.delete(jobId)
+        } else {
+            next.add(jobId)
+        }
+        setSelectedJobIds(next)
+    }
+
+    const handleSelectAll = () => {
+        if (selectedJobIds.size === jobs.length) {
+            setSelectedJobIds(new Set())
+        } else {
+            setSelectedJobIds(new Set(jobs.map(j => j.id)))
+        }
+    }
+
+    const handleUpdateStatus = async (jobId: string, status: string) => {
+        try {
+            const { error } = await supabase
+                .from('writing_jobs')
+                .update({ status })
+                .eq('id', jobId)
+            if (error) throw error
+            if (blogId) fetchJobs(blogId)
+        } catch (error: any) {
+            toast.error(error.message)
+        }
+    }
+
+    const handleStartSelected = async () => {
+        try {
+            const idsToStart = Array.from(selectedJobIds).filter(id => {
+                const job = jobs.find(j => j.id === id)
+                return job?.status === 'awaiting_start'
+            })
+
+            if (idsToStart.length === 0) {
+                toast.error("No jobs to start")
+                return
+            }
+
+            const { error } = await supabase
+                .from('writing_jobs')
+                .update({ status: 'processing' })
+                .in('id', idsToStart)
+
+            if (error) throw error
+            toast.success(`${idsToStart.length} jobs started`)
             if (blogId) fetchJobs(blogId)
         } catch (error: any) {
             toast.error(error.message)
@@ -171,14 +231,32 @@ function WriteContent() {
                         <p className="text-muted-foreground font-medium">{currentSite?.url}</p>
                     </div>
                 </div>
+
+                {selectedJobIds.size > 0 && (
+                    <button
+                        onClick={handleStartSelected}
+                        className="flex items-center gap-3 px-8 py-3 bg-primary text-white font-black rounded-2xl shadow-lg shadow-primary/30 hover:scale-[1.05] active:scale-95 transition-all"
+                    >
+                        <Zap className="h-4 w-4" />
+                        Start {selectedJobIds.size} Selected
+                    </button>
+                )}
             </div>
 
             <div className="bg-card/40 rounded-[2.5rem] border border-border/50 backdrop-blur-sm overflow-hidden shadow-xl">
                 <div className="p-8 border-b border-border/50 flex items-center justify-between bg-card/60">
-                    <h3 className="text-xl font-black flex items-center gap-3">
-                        <FileText className="h-6 w-6 text-primary" />
-                        Writing Job Queue
-                    </h3>
+                    <div className="flex items-center gap-6">
+                        <input
+                            type="checkbox"
+                            checked={jobs.length > 0 && selectedJobIds.size === jobs.length}
+                            onChange={handleSelectAll}
+                            className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                        <h3 className="text-xl font-black flex items-center gap-3">
+                            <FileText className="h-6 w-6 text-primary" />
+                            Writing Job Queue
+                        </h3>
+                    </div>
                     <div className="px-4 py-2 bg-accent/50 rounded-2xl text-xs font-bold text-muted-foreground">
                         {jobs.length} Active Jobs
                     </div>
@@ -224,43 +302,75 @@ function WriteContent() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                                    <div className="space-y-4 flex-1">
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn(
-                                                "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm",
-                                                job.status === 'completed' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                                                    job.status === 'processing' ? "bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse" :
-                                                        "bg-red-500/10 text-red-600 border-red-500/20"
-                                            )}>
-                                                {job.status === 'processing' && <Clock className="h-3 w-3 animate-spin" />}
-                                                {job.status === 'completed' && <CheckCircle2 className="h-3 w-3" />}
-                                                {job.status === 'failed' && <AlertCircle className="h-3 w-3" />}
-                                                {job.status}
+                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 cursor-pointer hover:bg-black/[0.01] p-2 rounded-xl" onClick={() => toast.info(`Viewing details for: ${job.title}`)}>
+                                    <div className="flex items-center gap-6 flex-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedJobIds.has(job.id)}
+                                            onChange={(e) => {
+                                                e.stopPropagation();
+                                                handleToggleSelect(job.id);
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                        />
+                                        <div className="space-y-4 flex-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn(
+                                                    "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border shadow-sm",
+                                                    job.status === 'completed' ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
+                                                        job.status === 'processing' ? "bg-amber-500/10 text-amber-600 border-amber-500/20 animate-pulse" :
+                                                            job.status === 'awaiting_start' ? "bg-blue-500/10 text-blue-600 border-blue-500/20" :
+                                                                "bg-red-500/10 text-red-600 border-red-500/20"
+                                                )}>
+                                                    {job.status === 'processing' && <Clock className="h-3 w-3 animate-spin" />}
+                                                    {job.status === 'completed' && <CheckCircle2 className="h-3 w-3" />}
+                                                    {job.status === 'awaiting_start' && <Zap className="h-3 w-3 text-blue-500" />}
+                                                    {job.status === 'failed' && <AlertCircle className="h-3 w-3" />}
+                                                    {job.status === 'awaiting_start' ? 'Awaiting Start' : job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                                                </div>
+                                                {job.content_clusters?.topic && (
+                                                    <span className="px-3 py-1.5 rounded-xl bg-indigo-500/10 text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
+                                                        Cluster: {job.content_clusters.topic}
+                                                    </span>
+                                                )}
                                             </div>
-                                            {job.content_clusters?.topic && (
-                                                <span className="px-3 py-1.5 rounded-xl bg-indigo-500/10 text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20">
-                                                    Cluster: {job.content_clusters.topic}
-                                                </span>
-                                            )}
-                                        </div>
 
-                                        <div>
-                                            <h4 className="text-2xl font-black text-foreground group-hover:text-primary transition-colors">{job.title}</h4>
-                                            <div className="flex items-center gap-4 mt-2 font-medium text-xs text-muted-foreground">
-                                                <span className="flex items-center gap-1.5 bg-accent/50 px-3 py-1 rounded-lg">
-                                                    <LayoutGrid className="h-3.5 w-3.5" />
-                                                    Slug: {job.slug}
-                                                </span>
-                                                <span className="flex items-center gap-1.5 bg-primary/5 px-3 py-1 rounded-lg text-primary/80">
-                                                    <Edit3 className="h-3.5 w-3.5" />
-                                                    Keyword: <span className="font-bold underline decoration-primary/30 underline-offset-4">{job.primary_keyword || 'Not set'}</span>
-                                                </span>
+                                            <div>
+                                                <h4 className="text-2xl font-black text-foreground group-hover:text-primary transition-colors">{job.title}</h4>
+                                                <div className="flex items-center gap-4 mt-2 font-medium text-xs text-muted-foreground">
+                                                    <span className="flex items-center gap-1.5 bg-accent/50 px-3 py-1 rounded-lg">
+                                                        <LayoutGrid className="h-3.5 w-3.5" />
+                                                        Slug: {job.slug}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5 bg-primary/5 px-3 py-1 rounded-lg text-primary/80">
+                                                        <Edit3 className="h-3.5 w-3.5" />
+                                                        Keyword: <span className="font-bold underline decoration-primary/30 underline-offset-4">{job.primary_keyword || 'Not set'}</span>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 shrink-0">
+                                    <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                        {job.status === 'awaiting_start' && (
+                                            <button
+                                                onClick={() => handleUpdateStatus(job.id, 'processing')}
+                                                className="h-12 w-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center hover:bg-indigo-600 hover:scale-[1.05] transition-all shadow-md active:scale-95"
+                                                title="Start Job"
+                                            >
+                                                <Star className="h-5 w-5 fill-white" />
+                                            </button>
+                                        )}
+                                        {job.status === 'processing' && (
+                                            <button
+                                                onClick={() => handleUpdateStatus(job.id, 'awaiting_start')}
+                                                className="h-12 w-12 rounded-2xl bg-red-500 text-white flex items-center justify-center hover:bg-red-600 hover:scale-[1.05] transition-all shadow-md active:scale-95"
+                                                title="Stop Job"
+                                            >
+                                                <Square className="h-5 w-5 fill-white" />
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => handleEditJob(job)}
                                             className="h-12 w-12 rounded-2xl bg-card border border-border/50 flex items-center justify-center hover:bg-accent hover:border-border transition-all shadow-sm"

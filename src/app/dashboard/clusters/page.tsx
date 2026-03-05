@@ -290,15 +290,14 @@ export default function ClustersPage() {
                     title: page.title,
                     slug: page.slug,
                     primary_keyword: primaryKeyword,
-                    status: 'processing'
+                    status: 'awaiting_start'
                 })
                 .select()
                 .single()
 
             if (error) throw error
 
-            toast.success("Writing job initiated!", { id: toastId })
-            router.push(`/dashboard/write?blog_id=${selectedBlog.id}`)
+            toast.success("Article added to writing queue!", { id: toastId })
         } catch (error: any) {
             toast.error(error.message, { id: toastId })
         }
