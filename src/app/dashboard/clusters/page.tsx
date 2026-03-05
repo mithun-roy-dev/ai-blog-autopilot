@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Globe, Search, RefreshCw, ChevronRight, Share2, Layers, CheckCircle2, AlertCircle, Loader2, Database, LayoutGrid, List, Plus, Edit3, Trash2, ExternalLink, Zap, FileText } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
@@ -8,6 +9,7 @@ import { cn } from "@/utils/cn"
 import Link from "next/link"
 
 export default function ClustersPage() {
+    const router = useRouter()
     const supabase = createClient()
     const [blogs, setBlogs] = useState<any[]>([])
     const [selectedBlog, setSelectedBlog] = useState<any | null>(null)
@@ -267,6 +269,41 @@ export default function ClustersPage() {
         }
     }
 
+    const initiateWritingJob = async (page: any, cluster: any) => {
+        if (!selectedBlog) return
+        const toastId = toast.loading("Initializing writing job...")
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error("Unauthorized")
+
+            // Create primary keyword from slug (replace dashes with spaces)
+            const primaryKeyword = (page.slug || "").replace(/^\/+/, "").split('/').pop()?.replace(/-/g, ' ') || ""
+
+            const { data, error } = await supabase
+                .from('writing_jobs')
+                .insert({
+                    user_id: user.id,
+                    blog_id: selectedBlog.id,
+                    cluster_id: cluster.id,
+                    page_id: page.id,
+                    title: page.title,
+                    slug: page.slug,
+                    primary_keyword: primaryKeyword,
+                    status: 'processing'
+                })
+                .select()
+                .single()
+
+            if (error) throw error
+
+            toast.success("Writing job initiated!", { id: toastId })
+            router.push(`/dashboard/write?blog_id=${selectedBlog.id}`)
+        } catch (error: any) {
+            toast.error(error.message, { id: toastId })
+        }
+    }
+
     if (isLoading) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
@@ -513,7 +550,10 @@ export default function ClustersPage() {
                                                     >
                                                         <Edit3 className="h-4 w-4" />
                                                     </button>
-                                                    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 text-white font-black text-xs hover:bg-indigo-600 hover:scale-[1.05] shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
+                                                    <button
+                                                        onClick={() => initiateWritingJob(page, cluster)}
+                                                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 text-white font-black text-xs hover:bg-indigo-600 hover:scale-[1.05] shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
+                                                    >
                                                         <Plus className="h-3.5 w-3.5" />
                                                         Write
                                                     </button>
