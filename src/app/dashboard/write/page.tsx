@@ -119,11 +119,25 @@ function WriteContent() {
 
     const handleUpdateStatus = async (jobId: string, status: string) => {
         try {
-            const { error } = await supabase
+            const { error: updateError } = await supabase
                 .from('writing_jobs')
                 .update({ status })
                 .eq('id', jobId)
-            if (error) throw error
+
+            if (updateError) throw updateError
+
+            // If starting the job, add to job_queue
+            if (status === 'processing') {
+                const { error: queueError } = await supabase
+                    .from('job_queue')
+                    .insert({
+                        type: 'article_generation',
+                        payload: { jobId },
+                        user_id: (await supabase.auth.getUser()).data.user?.id
+                    })
+                if (queueError) throw queueError
+            }
+
             if (blogId) fetchJobs(blogId)
         } catch (error: any) {
             toast.error(error.message)
@@ -142,13 +156,30 @@ function WriteContent() {
                 return
             }
 
-            const { error } = await supabase
+            // 1. Update writing_jobs status
+            const { error: updateError } = await supabase
                 .from('writing_jobs')
                 .update({ status: 'processing' })
                 .in('id', idsToStart)
 
-            if (error) throw error
+            if (updateError) throw updateError
+
+            // 2. Queue jobs in job_queue
+            const { data: userData } = await supabase.auth.getUser()
+            const queueItems = idsToStart.map(id => ({
+                type: 'article_generation',
+                payload: { jobId: id },
+                user_id: userData.user?.id
+            }))
+
+            const { error: queueError } = await supabase
+                .from('job_queue')
+                .insert(queueItems)
+
+            if (queueError) throw queueError
+
             toast.success(`${idsToStart.length} jobs started`)
+            setSelectedJobIds(new Set())
             if (blogId) fetchJobs(blogId)
         } catch (error: any) {
             toast.error(error.message)
@@ -302,7 +333,7 @@ function WriteContent() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 cursor-pointer hover:bg-black/[0.01] p-2 rounded-xl" onClick={() => toast.info(`Viewing details for: ${job.title}`)}>
+                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 cursor-pointer hover:bg-black/[0.01] p-2 rounded-xl" onClick={() => router.push(`/dashboard/write/${job.id}`)}>
                                     <div className="flex items-center gap-6 flex-1">
                                         <input
                                             type="checkbox"
