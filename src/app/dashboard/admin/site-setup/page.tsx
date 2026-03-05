@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key } from "lucide-react"
+import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/utils/cn"
@@ -11,6 +11,7 @@ const PROVIDERS = [
     { id: "openrouter", name: "OpenRouter", icon: Globe, description: "Access OpenAI, Anthropic, Google and deepseek via a single API." },
     { id: "openai", name: "OpenAI", icon: Zap, description: "Direct access to GPT-4o, GPT-3.5-Turbo and more." },
     { id: "claude", name: "Claude (Anthropic)", icon: Cpu, description: "High-performance AI with advanced reasoning." },
+    { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
 ]
 
 const OPENROUTER_MODELS = [
@@ -219,7 +220,7 @@ export default function SiteSetupPage() {
                                 </div>
                             )}
 
-                            {selectedProvider !== 'openrouter' && (
+                            {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && (
                                 <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
                                     <AlertCircle className="h-5 w-5 shrink-0" />
                                     <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> for immediate multi-model functionality.</p>
@@ -230,7 +231,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || selectedProvider !== 'openrouter'}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
