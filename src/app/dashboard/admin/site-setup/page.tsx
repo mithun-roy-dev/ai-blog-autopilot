@@ -12,6 +12,7 @@ const PROVIDERS = [
     { id: "openai", name: "OpenAI", icon: Zap, description: "Direct access to GPT-4o, GPT-3.5-Turbo and more." },
     { id: "claude", name: "Claude (Anthropic)", icon: Cpu, description: "High-performance AI with advanced reasoning." },
     { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
+    { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
     { id: "system_ops", name: "System Operations", icon: Shield, description: "Manage global application settings and operational toggles." },
 ]
 
@@ -53,6 +54,15 @@ export default function SiteSetupPage() {
         enable_error: true
     })
 
+    // Crawl Setup State
+    const [serpCrawlSettings, setSerpCrawlSettings] = useState({
+        max_h2: 30,
+        max_h3: 30,
+        max_h4: 20,
+        max_h5: 2,
+        max_h6: 2
+    })
+
     useEffect(() => {
         checkAuth()
     }, [])
@@ -89,6 +99,23 @@ export default function SiteSetupPage() {
                 setSystemSettings({
                     enable_debug: sysData.value.enable_debug ?? true,
                     enable_error: sysData.value.enable_error ?? true
+                })
+            }
+
+            // Fetch Crawl Setup Settings
+            const { data: crawlData, error: crawlError } = await supabase
+                .from("system_settings")
+                .select("value")
+                .eq("key", "serp_crawl_config")
+                .single()
+
+            if (!crawlError && crawlData) {
+                setSerpCrawlSettings({
+                    max_h2: crawlData.value.max_h2 ?? 30,
+                    max_h3: crawlData.value.max_h3 ?? 30,
+                    max_h4: crawlData.value.max_h4 ?? 20,
+                    max_h5: crawlData.value.max_h5 ?? 2,
+                    max_h6: crawlData.value.max_h6 ?? 2
                 })
             }
 
@@ -139,6 +166,17 @@ export default function SiteSetupPage() {
 
                 if (error) throw error
                 toast.success(`System settings saved!`, { id: toastId })
+            } else if (selectedProvider === 'serp_crawl_setup') {
+                const { error } = await supabase
+                    .from("system_settings")
+                    .upsert({
+                        key: "serp_crawl_config",
+                        value: serpCrawlSettings,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: "key" })
+
+                if (error) throw error
+                toast.success(`Crawl setup saved!`, { id: toastId })
             } else {
                 const { error } = await supabase
                     .from("ai_configurations")
@@ -223,7 +261,7 @@ export default function SiteSetupPage() {
                             </div>
                         </div>
 
-                        {selectedProvider !== 'system_ops' && (
+                        {selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium flex items-center gap-2">
@@ -237,6 +275,72 @@ export default function SiteSetupPage() {
                                         placeholder={`Enter ${selectedProvider} API Key`}
                                         required
                                     />
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedProvider === 'serp_crawl_setup' && (
+                            <div className="space-y-4">
+                                <div className="p-4 mb-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-blue-600 dark:text-blue-400 text-xs flex gap-3">
+                                    <AlertCircle className="h-5 w-5 shrink-0" />
+                                    <p>Set to <strong>0</strong> if you do not want to extract and save that specific heading type.</p>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">Max H2 Tags</label>
+                                        <input
+                                            type="number"
+                                            value={serpCrawlSettings.max_h2}
+                                            onChange={(e) => setSerpCrawlSettings({ ...serpCrawlSettings, max_h2: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                            min="0"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">Max H3 Tags</label>
+                                        <input
+                                            type="number"
+                                            value={serpCrawlSettings.max_h3}
+                                            onChange={(e) => setSerpCrawlSettings({ ...serpCrawlSettings, max_h3: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                            min="0"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">Max H4 Tags</label>
+                                        <input
+                                            type="number"
+                                            value={serpCrawlSettings.max_h4}
+                                            onChange={(e) => setSerpCrawlSettings({ ...serpCrawlSettings, max_h4: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                            min="0"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">Max H5 Tags</label>
+                                        <input
+                                            type="number"
+                                            value={serpCrawlSettings.max_h5}
+                                            onChange={(e) => setSerpCrawlSettings({ ...serpCrawlSettings, max_h5: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                            min="0"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">Max H6 Tags</label>
+                                        <input
+                                            type="number"
+                                            value={serpCrawlSettings.max_h6}
+                                            onChange={(e) => setSerpCrawlSettings({ ...serpCrawlSettings, max_h6: parseInt(e.target.value) || 0 })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                            min="0"
+                                            required
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -258,7 +362,7 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
-                        {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && (
+                        {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && (
                             <div className="p-4 mt-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
                                 <AlertCircle className="h-5 w-5 shrink-0" />
                                 <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> for immediate multi-model functionality.</p>
@@ -308,7 +412,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}

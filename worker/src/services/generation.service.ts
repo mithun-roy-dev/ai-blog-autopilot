@@ -207,6 +207,22 @@ export class GenerationService {
     private static async step2SerpAnalyzer(job: any, data: any) {
         console.log(`[Job ${job.id}] 🖥️ Starting SERP analysis for ${data.serp?.organic_results?.length || 0} organic links...`);
 
+        // Fetch Crawl Setup Limits
+        const supabase = SupabaseService.getClient();
+        const { data: crawlConfig } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'serp_crawl_config')
+            .single();
+
+        const limits = {
+            max_h2: crawlConfig?.value?.max_h2 ?? 30,
+            max_h3: crawlConfig?.value?.max_h3 ?? 30,
+            max_h4: crawlConfig?.value?.max_h4 ?? 20,
+            max_h5: crawlConfig?.value?.max_h5 ?? 2,
+            max_h6: crawlConfig?.value?.max_h6 ?? 2
+        };
+
         const organicLinks = data.serp?.organic_results || [];
         const analysisPages: any[] = [];
         let totalWordCount = 0;
@@ -230,34 +246,44 @@ export class GenerationService {
                 const h1 = $('h1').first().text().trim();
 
                 const h2: string[] = [];
-                $('h2').each((_, el) => {
-                    const text = $(el).text().trim();
-                    if (text && text.length > 5) h2.push(text);
-                });
+                if (limits.max_h2 > 0) {
+                    $('h2').each((_, el) => {
+                        const text = $(el).text().trim();
+                        if (text && text.length > 5) h2.push(text);
+                    });
+                }
 
                 const h3: string[] = [];
-                $('h3').each((_, el) => {
-                    const text = $(el).text().trim();
-                    if (text && text.length > 5) h3.push(text);
-                });
+                if (limits.max_h3 > 0) {
+                    $('h3').each((_, el) => {
+                        const text = $(el).text().trim();
+                        if (text && text.length > 5) h3.push(text);
+                    });
+                }
 
                 const h4: string[] = [];
-                $('h4').each((_, el) => {
-                    const text = $(el).text().trim();
-                    if (text && text.length > 5) h4.push(text);
-                });
+                if (limits.max_h4 > 0) {
+                    $('h4').each((_, el) => {
+                        const text = $(el).text().trim();
+                        if (text && text.length > 5) h4.push(text);
+                    });
+                }
 
                 const h5: string[] = [];
-                $('h5').each((_, el) => {
-                    const text = $(el).text().trim();
-                    if (text && text.length > 5) h5.push(text);
-                });
+                if (limits.max_h5 > 0) {
+                    $('h5').each((_, el) => {
+                        const text = $(el).text().trim();
+                        if (text && text.length > 5) h5.push(text);
+                    });
+                }
 
                 const h6: string[] = [];
-                $('h6').each((_, el) => {
-                    const text = $(el).text().trim();
-                    if (text && text.length > 5) h6.push(text);
-                });
+                if (limits.max_h6 > 0) {
+                    $('h6').each((_, el) => {
+                        const text = $(el).text().trim();
+                        if (text && text.length > 5) h6.push(text);
+                    });
+                }
 
                 // Calculate Word Count from Body Text
                 // Strip out scripts, styles, navigation, and footers for a more accurate content word count
@@ -272,11 +298,11 @@ export class GenerationService {
                     link: result.link,
                     meta_title: metaTitle,
                     h1,
-                    h2,
-                    h3,
-                    h4,
-                    h5,
-                    h6,
+                    h2: h2.slice(0, limits.max_h2),
+                    h3: h3.slice(0, limits.max_h3),
+                    h4: h4.slice(0, limits.max_h4),
+                    h5: h5.slice(0, limits.max_h5),
+                    h6: h6.slice(0, limits.max_h6),
                     word_count: wordCount
                 });
 
