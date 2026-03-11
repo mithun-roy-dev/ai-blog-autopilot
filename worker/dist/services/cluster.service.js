@@ -10,22 +10,24 @@ class ClusterService {
     supabase = new supabase_service_1.SupabaseService();
     async generateClusters(blogId, userId) {
         console.log(`[Clustering] Starting strategy generation for blog: ${blogId}`);
+        let config = null;
         try {
             // 1. Fetch AI Configuration (OpenRouter)
-            const { data: config, error: configError } = await supabase_service_1.SupabaseService.getClient()
+            const { data, error: configError } = await supabase_service_1.SupabaseService.getClient()
                 .from('ai_configurations')
                 .select('*')
                 .eq('provider', 'openrouter')
                 .single();
+            config = data;
             if (configError || !config) {
                 throw new Error("OpenRouter configuration not found. Please set it up in Admin settings.");
             }
-            // 2. Fetch Site Intelligence (Existing Categories and Structure)
+            // 2. Fetch Site Intelligence (All Existing Posts)
             const { data: intel, error: intelError } = await supabase_service_1.SupabaseService.getClient()
                 .from('site_intelligence')
                 .select('title, category, tags, url, h1')
                 .eq('blog_id', blogId)
-                .limit(100);
+                .order('created_at', { ascending: false }); // Fetch all, or a very large number
             if (intelError)
                 throw intelError;
             // 3. Fetch Blog Info (Fallback Context)
@@ -38,14 +40,18 @@ class ClusterService {
                 throw blogError;
             // 4. Prepare Context for AI
             const existingCategories = Array.from(new Set(intel?.map(i => i.category).filter(Boolean) || []));
-            const existingTopics = intel?.slice(0, 20).map(i => i.title).join(', ');
+            const existingPosts = intel?.map(i => ({
+                title: i.title,
+                slug: this.extractSlug(i.url),
+                category: i.category
+            })) || [];
             const siteContext = {
                 name: blog.name,
                 url: blog.url,
                 description: blog.metadata?.description || '',
                 target_country: blog.metadata?.target_country || 'Global',
                 existing_categories: existingCategories,
-                sample_posts: existingTopics
+                existing_posts: existingPosts
             };
             console.log(`[Clustering] Context gathered. Requesting AI clusters...`);
             // 5. Call OpenRouter
@@ -58,8 +64,7 @@ class ClusterService {
                         content: 'You are an expert SEO Content Strategist. Your goal is to create high-authority content clusters (Pillar-and-Spoke model).'
                     },
                     { role: 'user', content: prompt }
-                ],
-                response_format: { type: 'json_object' }
+                ]
             }, {
                 headers: {
                     'Authorization': `Bearer ${config.api_key}`,
@@ -67,7 +72,8 @@ class ClusterService {
                     'X-Title': 'AI Blog Autopilot'
                 }
             });
-            const aiResult = JSON.parse(response.data.choices[0].message.content);
+            const content = response.data.choices[0].message.content;
+            const aiResult = this.extractJson(content);
             const clusters = aiResult.clusters || [];
             console.log(`[Clustering] AI generated ${clusters.length} clusters. Saving to DB...`);
             // 6. Save Clusters and Pages
@@ -97,7 +103,7 @@ class ClusterService {
                         slug: clusterData.pillar_content.slug,
                         type: 'pillar',
                         word_count_target: clusterData.pillar_content.word_count_target || 3000,
-                        status: 'not_generated'
+                        status: this.isExistingPost(clusterData.pillar_content.slug, existingPosts) ? 'published' : 'not_generated'
                     },
                     ...clusterData.supporting_articles.map((art) => ({
                         cluster_id: cluster.id,
@@ -105,7 +111,7 @@ class ClusterService {
                         slug: art.slug,
                         type: 'supporting',
                         word_count_target: art.word_count_target || 1200,
-                        status: 'not_generated'
+                        status: this.isExistingPost(art.slug, existingPosts) ? 'published' : 'not_generated'
                     }))
                 ];
                 const { error: pError } = await supabase_service_1.SupabaseService.getClient()
@@ -117,13 +123,21 @@ class ClusterService {
             console.log(`[Clustering] Successfully generated strategy for ${blog.name}`);
         }
         catch (err) {
-            console.error(`[Clustering] Error:`, err.message);
+            if (err.isAxiosError) {
+                console.error(`[Clustering] API Error (${err.response?.status}):`, err.response?.data || err.message);
+                if (err.response?.status === 404) {
+                    console.error("[Clustering] ⚠️ 404 Error: Please check if the OpenRouter endpoint or model name is correct.");
+                }
+            }
+            else {
+                console.error(`[Clustering] Error:`, err.message);
+            }
             throw err;
         }
     }
     getClusteringPrompt(context) {
         return `
-            Analyze the following website context and create 3 high-authority SEO Content Clusters.
+            Analyze the following website context and architect a comprehensive Content Strategy with AT LEAST 5 clusters.
             
             SITE CONTEXT:
             - Name: ${context.name}
@@ -131,16 +145,18 @@ class ClusterService {
             - Description: ${context.description}
             - Target Country: ${context.target_country}
             - Existing Categories: ${context.existing_categories.join(', ')}
-            - Existing Content Topics: ${context.sample_posts}
+            - Existing Articles: ${JSON.stringify(context.existing_posts.slice(0, 50))} (Truncated if > 50)
 
             DIRECTIONS:
-            1. Respect existing categories if they make sense, otherwise suggest superior ones.
-            2. Each cluster must have 1 Pillar Content and 4-5 Supporting Articles.
-            3. Pillar content should be "Ultimate Guide" style (2500-3000 words).
-            4. Supporting articles should cover sub-intents and link back to the pillar.
-            5. Ensure specific keyword targeting and logical slugs.
+            1. Create AT LEAST 5 high-authority Content Clusters.
+            2. For each cluster, use "Existing Categories" as the foundation where relevant.
+            3. MANDATORY: Incorporate ALL "Existing Articles" provided above into their respective clusters. 
+            4. If an existing article belongs to a cluster, use its exact Title and Slug.
+            5. For content gaps, suggest NEW "Write" ideas (Pillars or Support articles) to build topical authority.
+            6. Each cluster must have 1 Pillar Content and 4-5 Supporting Articles (mix of existing and new).
+            7. Pillars should be broad "Ultimate Guides" (2500-3000 words).
             
-            OUTPUT FORMAT (JSON ONLY):
+            OUTPUT FORMAT (JSON ONLY, NO MARKDOWN BACKTICKS):
             {
               "clusters": [
                 {
@@ -148,18 +164,53 @@ class ClusterService {
                   "intent": "Informational/Commercial/etc",
                   "strategy_summary": "1 sentence explanation",
                   "pillar_content": {
-                    "title": "The Ultimate Guide to...",
-                    "slug": "/guide-slug",
+                    "title": "Title",
+                    "slug": "/slug",
                     "word_count_target": 3000
                   },
                   "supporting_articles": [
-                    { "title": "Subtopic Title", "slug": "/subtopic-slug", "word_count_target": 1200 },
+                    { "title": "Title", "slug": "/slug", "word_count_target": 1200 },
                     ... 4 more
                   ]
                 }
               ]
             }
         `;
+    }
+    extractSlug(url) {
+        try {
+            const path = new URL(url).pathname;
+            return path === '/' ? '/' : path.replace(/\/$/, '');
+        }
+        catch (e) {
+            return url;
+        }
+    }
+    isExistingPost(slug, existingPosts) {
+        const normalizedSlug = slug.replace(/\/$/, '').toLowerCase();
+        return existingPosts.some(p => {
+            const pSlug = p.slug.replace(/\/$/, '').toLowerCase();
+            return pSlug === normalizedSlug || normalizedSlug.includes(pSlug) || pSlug.includes(normalizedSlug);
+        });
+    }
+    extractJson(text) {
+        try {
+            // Try direct parse first
+            return JSON.parse(text);
+        }
+        catch (e) {
+            // Try to extract from markdown backticks
+            const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            if (match && match[1]) {
+                try {
+                    return JSON.parse(match[1]);
+                }
+                catch (e2) {
+                    throw new Error("Found JSON block but failed to parse it: " + e2.message);
+                }
+            }
+            throw new Error("Failed to parse AI response as JSON. Response length: " + text.length);
+        }
     }
 }
 exports.ClusterService = ClusterService;

@@ -241,6 +241,24 @@ export class GenerationService {
                     if (text && text.length > 5) h3.push(text);
                 });
 
+                const h4: string[] = [];
+                $('h4').each((_, el) => {
+                    const text = $(el).text().trim();
+                    if (text && text.length > 5) h4.push(text);
+                });
+
+                const h5: string[] = [];
+                $('h5').each((_, el) => {
+                    const text = $(el).text().trim();
+                    if (text && text.length > 5) h5.push(text);
+                });
+
+                const h6: string[] = [];
+                $('h6').each((_, el) => {
+                    const text = $(el).text().trim();
+                    if (text && text.length > 5) h6.push(text);
+                });
+
                 // Calculate Word Count from Body Text
                 // Strip out scripts, styles, navigation, and footers for a more accurate content word count
                 $('script, style, nav, footer, header, noscript, svg, button').remove();
@@ -256,6 +274,9 @@ export class GenerationService {
                     h1,
                     h2,
                     h3,
+                    h4,
+                    h5,
+                    h6,
                     word_count: wordCount
                 });
 
@@ -271,6 +292,9 @@ export class GenerationService {
                     h1: "",
                     h2: [],
                     h3: [],
+                    h4: [],
+                    h5: [],
+                    h6: [],
                     word_count: 0,
                     error: true
                 });

@@ -39,6 +39,7 @@ const wordpress_service_1 = require("./services/wordpress.service");
 const supabase_service_1 = require("./services/supabase.service");
 const intelligence_service_1 = require("./services/intelligence.service");
 const cluster_service_1 = require("./services/cluster.service");
+const generation_service_1 = require("./services/generation.service");
 // Load environment variables
 dotenv.config();
 const envSchema = zod_1.z.object({
@@ -149,6 +150,21 @@ async function processClusterJob(job) {
         await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'failed', error.message);
     }
 }
+async function processArticleGenerationJob(job) {
+    const { jobId } = job.payload;
+    console.log(`[Job ${job.id}] ✍️ Starting article generation for job: ${jobId}`);
+    try {
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'processing');
+        // Hand off to GenerationService for the 6-step pipeline
+        await generation_service_1.GenerationService.processGeneration(jobId);
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'completed');
+        console.log(`[Job ${job.id}] ✅ Article generation job completed successfully!`);
+    }
+    catch (error) {
+        console.error(`[Job ${job.id}] ❌ Article generation failed:`, error.message);
+        await supabase_service_1.SupabaseService.updateJobStatus(job.id, 'failed', error.message);
+    }
+}
 async function pollJobs() {
     const supabase = supabase_service_1.SupabaseService.getClient();
     // Find the next queued job
@@ -171,6 +187,9 @@ async function pollJobs() {
     }
     else if (job.type === 'cluster_generation') {
         await processClusterJob(job);
+    }
+    else if (job.type === 'article_generation') {
+        await processArticleGenerationJob(job);
     }
     else {
         console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`);

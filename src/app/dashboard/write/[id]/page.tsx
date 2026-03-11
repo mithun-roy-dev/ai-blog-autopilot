@@ -43,7 +43,7 @@ export default function JobDetailPage() {
     const [job, setJob] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [selectedViewStep, setSelectedViewStep] = useState<string | null>(null)
-    const [expandedHeadings, setExpandedHeadings] = useState<{ [pageIndex: number]: 'h1' | 'h2' | 'h3' | null }>({})
+    const [expandedHeadings, setExpandedHeadings] = useState<{ [pageIndex: number]: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | null }>({})
     const detailsRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -146,7 +146,7 @@ export default function JobDetailPage() {
         }, 100)
     }
 
-    const toggleHeadingExpansion = (pageIndex: number, type: 'h1' | 'h2' | 'h3') => {
+    const toggleHeadingExpansion = (pageIndex: number, type: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') => {
         setExpandedHeadings(prev => ({
             ...prev,
             [pageIndex]: prev[pageIndex] === type ? null : type
@@ -474,6 +474,45 @@ export default function JobDetailPage() {
                                                             <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h3' && "rotate-180 text-primary")} />
                                                         </button>
                                                     )}
+                                                    {page.h4?.length > 0 && (
+                                                        <button
+                                                            onClick={() => toggleHeadingExpansion(i, 'h4')}
+                                                            className={cn(
+                                                                "flex items-center text-[11px] p-2 rounded-xl border transition-all hover:bg-accent/50",
+                                                                expandedHeadings[i] === 'h4' ? "bg-accent/50 border-primary/30" : "bg-accent/20 border-border/30"
+                                                            )}
+                                                        >
+                                                            <span className="font-black text-muted-foreground mr-1.5">H4</span>
+                                                            <span className="font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/10">{page.h4.length} items</span>
+                                                            <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h4' && "rotate-180 text-primary")} />
+                                                        </button>
+                                                    )}
+                                                    {page.h5?.length > 0 && (
+                                                        <button
+                                                            onClick={() => toggleHeadingExpansion(i, 'h5')}
+                                                            className={cn(
+                                                                "flex items-center text-[11px] p-2 rounded-xl border transition-all hover:bg-accent/50",
+                                                                expandedHeadings[i] === 'h5' ? "bg-accent/50 border-primary/30" : "bg-accent/20 border-border/30"
+                                                            )}
+                                                        >
+                                                            <span className="font-black text-muted-foreground mr-1.5">H5</span>
+                                                            <span className="font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/10">{page.h5.length} items</span>
+                                                            <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h5' && "rotate-180 text-primary")} />
+                                                        </button>
+                                                    )}
+                                                    {page.h6?.length > 0 && (
+                                                        <button
+                                                            onClick={() => toggleHeadingExpansion(i, 'h6')}
+                                                            className={cn(
+                                                                "flex items-center text-[11px] p-2 rounded-xl border transition-all hover:bg-accent/50",
+                                                                expandedHeadings[i] === 'h6' ? "bg-accent/50 border-primary/30" : "bg-accent/20 border-border/30"
+                                                            )}
+                                                        >
+                                                            <span className="font-black text-muted-foreground mr-1.5">H6</span>
+                                                            <span className="font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/10">{page.h6.length} items</span>
+                                                            <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h6' && "rotate-180 text-primary")} />
+                                                        </button>
+                                                    )}
                                                 </div>
 
                                                 {/* Expanded Details View */}
@@ -496,6 +535,24 @@ export default function JobDetailPage() {
                                                                 </div>
                                                             ))}
                                                             {expandedHeadings[i] === 'h3' && page.h3?.map((text: string, hIndex: number) => (
+                                                                <div key={hIndex} className="text-sm font-medium text-foreground bg-background p-3 rounded-xl border border-border/50 flex gap-3">
+                                                                    <span className="text-[10px] font-black text-muted-foreground pt-0.5 shrink-0">{hIndex + 1}.</span>
+                                                                    <span>{text}</span>
+                                                                </div>
+                                                            ))}
+                                                            {expandedHeadings[i] === 'h4' && page.h4?.map((text: string, hIndex: number) => (
+                                                                <div key={hIndex} className="text-sm font-medium text-foreground bg-background p-3 rounded-xl border border-border/50 flex gap-3">
+                                                                    <span className="text-[10px] font-black text-muted-foreground pt-0.5 shrink-0">{hIndex + 1}.</span>
+                                                                    <span>{text}</span>
+                                                                </div>
+                                                            ))}
+                                                            {expandedHeadings[i] === 'h5' && page.h5?.map((text: string, hIndex: number) => (
+                                                                <div key={hIndex} className="text-sm font-medium text-foreground bg-background p-3 rounded-xl border border-border/50 flex gap-3">
+                                                                    <span className="text-[10px] font-black text-muted-foreground pt-0.5 shrink-0">{hIndex + 1}.</span>
+                                                                    <span>{text}</span>
+                                                                </div>
+                                                            ))}
+                                                            {expandedHeadings[i] === 'h6' && page.h6?.map((text: string, hIndex: number) => (
                                                                 <div key={hIndex} className="text-sm font-medium text-foreground bg-background p-3 rounded-xl border border-border/50 flex gap-3">
                                                                     <span className="text-[10px] font-black text-muted-foreground pt-0.5 shrink-0">{hIndex + 1}.</span>
                                                                     <span>{text}</span>
