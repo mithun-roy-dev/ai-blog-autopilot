@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# dynamically generated logs
+/logs/
+
+# compiled worker build output
+/worker/dist/

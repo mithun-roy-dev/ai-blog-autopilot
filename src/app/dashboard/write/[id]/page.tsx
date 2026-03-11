@@ -24,6 +24,7 @@ import {
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
+import { logUI } from "@/utils/logger"
 
 const STEPS = [
     { id: 'serp_calling', name: 'SERP API Calling', icon: Search, description: 'Fetching Google search results' },
@@ -61,6 +62,7 @@ export default function JobDetailPage() {
                     filter: `id=eq.${id}`
                 },
                 (payload) => {
+                    logUI('DEBUG', 'UI:JobDetails', 'Real-time job update received', { jobId: id, status: payload.new.status, generation_status: payload.new.generation_status })
                     setJob(payload.new)
                 }
             )
@@ -86,7 +88,9 @@ export default function JobDetailPage() {
             if (!selectedViewStep && data?.generation_status) {
                 setSelectedViewStep(data.generation_status)
             }
+            logUI('INFO', 'UI:JobDetails', 'Fetched job details successfully', { jobId: id, status: data?.status })
         } catch (err: any) {
+            logUI('ERROR', 'UI:JobDetails', 'Failed to fetch job details', { error: err.message, jobId: id })
             toast.error(err.message)
             router.push('/dashboard/write')
         } finally {
@@ -120,19 +124,23 @@ export default function JobDetailPage() {
                         user_id: (await supabase.auth.getUser()).data.user?.id
                     })
                 if (queueError) throw queueError
+                logUI('INFO', 'UI:JobDetails', 'Job status updated to processing (Started)', { jobId: id })
                 toast.success("Generation started!")
             } else {
+                logUI('INFO', 'UI:JobDetails', `Job status updated to ${status}`, { jobId: id, status })
                 toast.success(`Job status updated to ${status}`)
             }
 
             fetchJob()
         } catch (error: any) {
+            logUI('ERROR', 'UI:JobDetails', 'Failed to update job status', { error: error.message, jobId: id, status })
             toast.error(error.message)
         }
     }
 
     const handleStepClick = (stepId: string) => {
         setSelectedViewStep(stepId)
+        logUI('DEBUG', 'UI:JobDetails', 'User changed step view', { jobId: id, stepId })
         setTimeout(() => {
             detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 100)

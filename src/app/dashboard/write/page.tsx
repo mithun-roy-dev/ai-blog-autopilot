@@ -6,6 +6,7 @@ import { Globe, FileText, CheckCircle2, Clock, AlertCircle, Trash2, Save, Chevro
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
+import { logUI } from "@/utils/logger"
 
 function WriteContent() {
     const searchParams = useSearchParams()
@@ -43,7 +44,12 @@ function WriteContent() {
             .select("*")
             .order("created_at", { ascending: false })
 
-        if (!error) setSites(data || [])
+        if (!error) {
+            setSites(data || [])
+            logUI('INFO', 'UI:WriteMenu', 'Fetched sites successfully', { siteCount: data?.length })
+        } else {
+            logUI('ERROR', 'UI:WriteMenu', 'Failed to fetch sites', { error })
+        }
         setIsLoading(false)
     }
 
@@ -80,9 +86,11 @@ function WriteContent() {
 
             if (error) throw error
             toast.success("Job updated")
+            logUI('INFO', 'UI:WriteMenu', 'Job updated manually', { jobId, newTitle: jobForm.title })
             setEditingJobId(null)
             if (blogId) fetchJobs(blogId)
         } catch (error: any) {
+            logUI('ERROR', 'UI:WriteMenu', 'Failed to update job', { error: error.message, jobId })
             toast.error(error.message)
         }
     }
@@ -93,8 +101,10 @@ function WriteContent() {
             const { error } = await supabase.from('writing_jobs').delete().eq('id', jobId)
             if (error) throw error
             toast.success("Job removed")
+            logUI('INFO', 'UI:WriteMenu', 'Job deleted manually', { jobId })
             if (blogId) fetchJobs(blogId)
         } catch (error: any) {
+            logUI('ERROR', 'UI:WriteMenu', 'Failed to delete job', { error: error.message, jobId })
             toast.error(error.message)
         }
     }
@@ -128,6 +138,7 @@ function WriteContent() {
 
             // If starting the job, add to job_queue
             if (status === 'processing') {
+                logUI('INFO', 'UI:WriteMenu', 'Job status updated to processing (Started)', { jobId })
                 const { error: queueError } = await supabase
                     .from('job_queue')
                     .insert({
@@ -136,10 +147,13 @@ function WriteContent() {
                         user_id: (await supabase.auth.getUser()).data.user?.id
                     })
                 if (queueError) throw queueError
+            } else if (status === 'awaiting_start') {
+                logUI('INFO', 'UI:WriteMenu', 'Job status updated to awaiting_start (Stopped)', { jobId })
             }
 
             if (blogId) fetchJobs(blogId)
         } catch (error: any) {
+            logUI('ERROR', 'UI:WriteMenu', 'Failed to update job status', { error: error.message, jobId, status })
             toast.error(error.message)
         }
     }
@@ -179,9 +193,11 @@ function WriteContent() {
             if (queueError) throw queueError
 
             toast.success(`${idsToStart.length} jobs started`)
+            logUI('INFO', 'UI:WriteMenu', 'Multiple jobs started securely', { count: idsToStart.length, jobIds: idsToStart })
             setSelectedJobIds(new Set())
             if (blogId) fetchJobs(blogId)
         } catch (error: any) {
+            logUI('ERROR', 'UI:WriteMenu', 'Failed to bulk start selected jobs', { error: error.message })
             toast.error(error.message)
         }
     }

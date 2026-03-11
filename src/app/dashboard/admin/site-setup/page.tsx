@@ -12,6 +12,7 @@ const PROVIDERS = [
     { id: "openai", name: "OpenAI", icon: Zap, description: "Direct access to GPT-4o, GPT-3.5-Turbo and more." },
     { id: "claude", name: "Claude (Anthropic)", icon: Cpu, description: "High-performance AI with advanced reasoning." },
     { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
+    { id: "system_ops", name: "System Operations", icon: Shield, description: "Manage global application settings and operational toggles." },
 ]
 
 const OPENROUTER_MODELS = [
@@ -46,6 +47,12 @@ export default function SiteSetupPage() {
         default_model: "openai/gpt-oss-120b:free"
     })
 
+    // System Settings State
+    const [systemSettings, setSystemSettings] = useState({
+        enable_debug: true,
+        enable_error: true
+    })
+
     useEffect(() => {
         checkAuth()
     }, [])
@@ -63,15 +70,30 @@ export default function SiteSetupPage() {
 
     const fetchConfigs = async () => {
         try {
-            const { data, error } = await supabase
+            // Fetch AI Configs
+            const { data: aiData, error: aiError } = await supabase
                 .from("ai_configurations")
                 .select("*")
 
-            if (error) throw error
-            setConfigs(data || [])
+            if (aiError) throw aiError
+            setConfigs(aiData || [])
+
+            // Fetch System Settings
+            const { data: sysData, error: sysError } = await supabase
+                .from("system_settings")
+                .select("value")
+                .eq("key", "logging_config")
+                .single()
+
+            if (!sysError && sysData) {
+                setSystemSettings({
+                    enable_debug: sysData.value.enable_debug ?? true,
+                    enable_error: sysData.value.enable_error ?? true
+                })
+            }
 
             // Auto-populate form if config exists for selected provider
-            const current = data?.find(c => c.provider === selectedProvider)
+            const current = aiData?.find(c => c.provider === selectedProvider)
             if (current) {
                 setFormData({
                     api_key: current.api_key || "",
@@ -106,18 +128,31 @@ export default function SiteSetupPage() {
         const toastId = toast.loading("Saving configuration...")
 
         try {
-            const { error } = await supabase
-                .from("ai_configurations")
-                .upsert({
-                    provider: selectedProvider,
-                    api_key: formData.api_key,
-                    default_model: formData.default_model,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: "provider" })
+            if (selectedProvider === 'system_ops') {
+                const { error } = await supabase
+                    .from("system_settings")
+                    .upsert({
+                        key: "logging_config",
+                        value: systemSettings,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: "key" })
 
-            if (error) throw error
+                if (error) throw error
+                toast.success(`System settings saved!`, { id: toastId })
+            } else {
+                const { error } = await supabase
+                    .from("ai_configurations")
+                    .upsert({
+                        provider: selectedProvider,
+                        api_key: formData.api_key,
+                        default_model: formData.default_model,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: "provider" })
 
-            toast.success(`${selectedProvider.toUpperCase()} configuration saved!`, { id: toastId })
+                if (error) throw error
+                toast.success(`${selectedProvider.toUpperCase()} configuration saved!`, { id: toastId })
+            }
+            
             fetchConfigs()
         } catch (err: any) {
             toast.error(err.message, { id: toastId })
@@ -188,50 +223,92 @@ export default function SiteSetupPage() {
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium flex items-center gap-2">
-                                    <Key className="h-4 w-4 text-primary" /> API Key
-                                </label>
-                                <input
-                                    type="password"
-                                    value={formData.api_key}
-                                    onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
-                                    className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
-                                    placeholder={`Enter ${selectedProvider} API Key`}
-                                    required
-                                />
-                            </div>
-
-                            {selectedProvider === 'openrouter' && (
+                        {selectedProvider !== 'system_ops' && (
+                            <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium flex items-center gap-2">
-                                        <Cpu className="h-4 w-4 text-primary" /> Default AI Model
+                                        <Key className="h-4 w-4 text-primary" /> API Key
                                     </label>
-                                    <select
-                                        value={formData.default_model}
-                                        onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
-                                        className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                    >
-                                        {OPENROUTER_MODELS.map((model) => (
-                                            <option key={model.id} value={model.id}>{model.name}</option>
-                                        ))}
-                                    </select>
+                                    <input
+                                        type="password"
+                                        value={formData.api_key}
+                                        onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
+                                        className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                        placeholder={`Enter ${selectedProvider} API Key`}
+                                        required
+                                    />
                                 </div>
-                            )}
+                            </div>
+                        )}
 
-                            {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && (
-                                <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
-                                    <AlertCircle className="h-5 w-5 shrink-0" />
-                                    <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> for immediate multi-model functionality.</p>
+                        {selectedProvider === 'openrouter' && (
+                            <div className="space-y-2 mt-4">
+                                <label className="text-sm font-medium flex items-center gap-2">
+                                    <Cpu className="h-4 w-4 text-primary" /> Default AI Model
+                                </label>
+                                <select
+                                    value={formData.default_model}
+                                    onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
+                                    className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                >
+                                    {OPENROUTER_MODELS.map((model) => (
+                                        <option key={model.id} value={model.id}>{model.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && (
+                            <div className="p-4 mt-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
+                                <AlertCircle className="h-5 w-5 shrink-0" />
+                                <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> for immediate multi-model functionality.</p>
+                            </div>
+                        )}
+
+                        {selectedProvider === 'system_ops' && (
+                            <div className="space-y-6 mt-4">
+                                <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-primary/50 transition-colors">
+                                    <div className="space-y-0.5">
+                                        <h4 className="text-sm font-bold flex items-center gap-2">
+                                            Enable Debug Logging
+                                        </h4>
+                                        <p className="text-[11px] text-muted-foreground">Log ALL application lifecycle events and info payload to server (debug_log.txt).</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer" 
+                                            checked={systemSettings.enable_debug}
+                                            onChange={(e) => setSystemSettings(s => ({ ...s, enable_debug: e.target.checked }))}
+                                        />
+                                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                    </label>
                                 </div>
-                            )}
-                        </div>
+
+                                <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-red-500/50 transition-colors">
+                                    <div className="space-y-0.5">
+                                        <h4 className="text-sm font-bold flex items-center gap-2">
+                                            Enable Error Logging
+                                        </h4>
+                                        <p className="text-[11px] text-muted-foreground">Capture critical UI crashes and API failures strictly to server (error_log.txt).</p>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer" 
+                                            checked={systemSettings.enable_error}
+                                            onChange={(e) => setSystemSettings(s => ({ ...s, enable_error: e.target.checked }))}
+                                        />
+                                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
