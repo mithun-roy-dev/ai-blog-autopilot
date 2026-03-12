@@ -47,6 +47,8 @@ export default function JobDetailPage() {
     const [expandedHeadings, setExpandedHeadings] = useState<{ [pageIndex: number]: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | null }>({})
     const detailsRef = useRef<HTMLDivElement>(null)
 
+    const prevGenerationStatus = useRef<string | null>(null)
+
     useEffect(() => {
         if (!id) return
         fetchJob()
@@ -62,9 +64,10 @@ export default function JobDetailPage() {
                     table: 'writing_jobs',
                     filter: `id=eq.${id}`
                 },
-                (payload) => {
-                    logUI('DEBUG', 'UI:JobDetails', 'Real-time job update received', { jobId: id, status: payload.new.status, generation_status: payload.new.generation_status })
-                    setJob(payload.new)
+                () => {
+                    // Always re-fetch the full row — real-time payload.new can be
+                    // truncated when generation_data is large
+                    fetchJob()
                 }
             )
             .subscribe()
@@ -99,16 +102,52 @@ export default function JobDetailPage() {
         }
     }
 
-    // Keep selected step in sync with job progress if user hasn't explicitly clicked away
+    // Polling fallback: re-fetch every 3s while the job is actively running.
+    // This guarantees UI stays fresh even when real-time events are missed.
     useEffect(() => {
-        if (job?.generation_status && STEPS.find(s => s.id === job.generation_status)) {
-            setSelectedViewStep(job.generation_status)
-        }
+        const isActive = job?.status === 'processing' || job?.status === 'awaiting_approval'
+        if (!id || !isActive) return
+        const interval = setInterval(() => fetchJob(), 3000)
+        return () => clearInterval(interval)
+    }, [id, job?.status])
+
+    // Auto-advance the viewed step ONLY when generation_status changes to a new value.
+    // Crucially: only advance FORWARD in the pipeline. If the DB returns a stale/older
+    // generation_status (e.g. after an optimistic update), ignore it to prevent regression.
+    useEffect(() => {
+        const newStatus = job?.generation_status
+        if (!newStatus) return
+        const newIdx = STEPS.findIndex(s => s.id === newStatus)
+        if (newIdx < 0) return
+        if (newStatus === prevGenerationStatus.current) return  // same step, skip
+        const currentIdx = STEPS.findIndex(s => s.id === prevGenerationStatus.current)
+        if (currentIdx >= 0 && newIdx < currentIdx) return  // DB returned older step — ignore regression
+        prevGenerationStatus.current = newStatus
+        setSelectedViewStep(newStatus)
     }, [job?.generation_status])
+
+    // Maps each step to the next step in the pipeline
+    const NEXT_STEP: Record<string, string> = {
+        serp_calling: 'serp_analyzing',
+        serp_analyzing: 'briefing',
+        briefing: 'writing',
+        writing: 'editing',
+        editing: 'humanizing',
+    }
 
     const handleProceed = async () => {
         try {
             const userId = (await supabase.auth.getUser()).data.user?.id
+
+            // Optimistic update: immediately advance the UI to the next step
+            // so the card animation jumps forward INSTANTLY on click,
+            // without waiting 2-3s for the worker to poll and advance generation_status
+            const nextStep = job?.generation_status ? NEXT_STEP[job.generation_status] : null
+            if (nextStep) {
+                prevGenerationStatus.current = nextStep  // prevent auto-advance double-fire
+                setSelectedViewStep(nextStep)
+                setJob(prev => prev ? { ...prev, status: 'processing', generation_status: nextStep } : prev)
+            }
 
             // 1. Set writing_job status back to processing
             const { error: updateError } = await supabase
@@ -129,7 +168,9 @@ export default function JobDetailPage() {
 
             logUI('INFO', 'UI:JobDetails', 'Job re-queued to proceed to next step', { jobId: id })
             toast.success("Proceeding to next step...")
-            fetchJob()
+            // Note: no fetchJob() here intentionally — calling it immediately would return
+            // stale DB data (generation_status still = old step) and overwrite the optimistic
+            // update, causing the animation to snap back. The 3s polling handles data refresh.
         } catch (error: any) {
             logUI('ERROR', 'UI:JobDetails', 'Failed to proceed to next step', { error: error.message, jobId: id })
             toast.error(error.message)
