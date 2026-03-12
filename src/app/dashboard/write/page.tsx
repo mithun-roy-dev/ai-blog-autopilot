@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Globe, FileText, CheckCircle2, Clock, AlertCircle, Trash2, Save, ChevronLeft, LayoutGrid, Search, Edit3, Loader2, Zap, X, Star, Square, Play } from "lucide-react"
+import { Globe, FileText, CheckCircle2, Clock, AlertCircle, Trash2, Save, ChevronLeft, LayoutGrid, Search, Edit3, Loader2, Zap, X, Star, Square, Play, Settings, Info } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
@@ -158,6 +158,23 @@ function WriteContent() {
         }
     }
 
+    const handleUpdateWritingMode = async (id: string, mode: 'Auto' | 'Manual') => {
+        try {
+            const { error } = await supabase
+                .from('blogs')
+                .update({ writing_mode: mode })
+                .eq('id', id)
+
+            if (error) throw error
+            toast.success(`Writing mode set to ${mode}`)
+            logUI('INFO', 'UI:WriteMenu', 'Writing mode updated', { siteId: id, mode })
+            fetchSites()
+        } catch (error: any) {
+            logUI('ERROR', 'UI:WriteMenu', 'Failed to update writing mode', { error: error.message, siteId: id })
+            toast.error(error.message)
+        }
+    }
+
     const handleStartSelected = async () => {
         try {
             const idsToStart = Array.from(selectedJobIds).filter(id => {
@@ -242,6 +259,53 @@ function WriteContent() {
                             <div className="flex items-center justify-between text-sm font-medium border-t pt-4">
                                 <span className="text-muted-foreground">Status</span>
                                 <span className="text-emerald-500 font-bold bg-emerald-500/10 px-3 py-1 rounded-full text-[10px] uppercase">Online</span>
+                            </div>
+
+                            <div className="mt-6 pt-6 border-t border-dashed border-border/50">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Settings className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Write Setup</span>
+                                    </div>
+                                    <div className="group/info relative">
+                                        <Info className="h-3.5 w-3.5 text-muted-foreground/50 cursor-help" />
+                                        <div className="absolute bottom-full right-0 mb-2 w-48 p-3 bg-card border rounded-2xl shadow-xl opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 text-[10px] font-medium leading-relaxed">
+                                            {site.writing_mode === 'Manual' 
+                                                ? "Pause after each step for your review and approval before proceeding."
+                                                : "AI completes all steps automatically from research to final draft."}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 p-1 bg-accent/30 rounded-2xl border border-border/50">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUpdateWritingMode(site.id, 'Auto');
+                                        }}
+                                        className={cn(
+                                            "py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                            site.writing_mode === 'Auto' || !site.writing_mode
+                                                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                                : "text-muted-foreground hover:bg-accent/50"
+                                        )}
+                                    >
+                                        Auto
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleUpdateWritingMode(site.id, 'Manual');
+                                        }}
+                                        className={cn(
+                                            "py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                            site.writing_mode === 'Manual'
+                                                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                                : "text-muted-foreground hover:bg-accent/50"
+                                        )}
+                                    >
+                                        Manual
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

@@ -21,26 +21,108 @@ export class GenerationService {
 
             if (jobError || !job) throw new Error(`Job not found: ${jobId}`);
 
-            // Step 1: SERP API Calling
+            // Fetch Site Writing Mode
+            const { data: blog, error: blogError } = await supabase
+                .from('blogs')
+                .select('writing_mode')
+                .eq('id', job.blog_id)
+                .single();
+            
+            const writingMode = blog?.writing_mode || 'Auto';
+            console.log(`[Job ${jobId}] 🛠️ Writing Mode: ${writingMode}`);
+
+            const progress = await this.getProgress(jobId);
+
+        // Step 1: SERP API Calling
+        if (progress['serp_calling']?.status !== 'completed') {
             await this.executeStep(jobId, 'serp_calling', async () => {
                 return await this.step1SerpApi(job);
             });
 
-            // Step 2: SERP Analyzer
+            const currentMode = await this.getCurrentWritingMode(job.blog_id);
+            if (currentMode === 'Manual') {
+                await this.pauseForApproval(jobId, 'serp_calling');
+                return;
+            }
+        }
+
+        // Step 2: SERP Analyzer
+        if (progress['serp_analyzing']?.status !== 'completed') {
             await this.executeStep(jobId, 'serp_analyzing', async () => {
                 const updatedJobData = await this.getGenerationData(jobId);
                 return await this.step2SerpAnalyzer(job, updatedJobData);
             });
 
-            // Future steps will be implemented here...
+            const currentMode = await this.getCurrentWritingMode(job.blog_id);
+            if (currentMode === 'Manual') {
+                await this.pauseForApproval(jobId, 'serp_analyzing');
+                return;
+            }
+        }
 
-            // Move to the next step so the UI properly animates and shows Step 2 as completed
-            await supabase
-                .from('writing_jobs')
-                .update({ generation_status: 'briefing', updated_at: new Date() })
-                .eq('id', jobId);
+        // Step 3: Content Brief (stub – real AI logic to be added later)
+        if (progress['briefing']?.status !== 'completed') {
+            await this.executeStep(jobId, 'briefing', async () => {
+                console.log(`[Job ${jobId}] 📝 Content Brief step (stub – AI logic coming soon)`);
+                return { dataUpdate: {} };
+            });
 
-            console.log(`[Job ${jobId}] ⏸️ Pausing before Content Brief generation (Step 3 not yet implemented)`);
+            const currentMode = await this.getCurrentWritingMode(job.blog_id);
+            if (currentMode === 'Manual') {
+                await this.pauseForApproval(jobId, 'briefing');
+                return;
+            }
+        }
+
+        // Step 4: Writer Agent (stub)
+        if (progress['writing']?.status !== 'completed') {
+            await this.executeStep(jobId, 'writing', async () => {
+                console.log(`[Job ${jobId}] ✍️ Writer Agent step (stub – AI logic coming soon)`);
+                return { dataUpdate: {} };
+            });
+
+            const currentMode = await this.getCurrentWritingMode(job.blog_id);
+            if (currentMode === 'Manual') {
+                await this.pauseForApproval(jobId, 'writing');
+                return;
+            }
+        }
+
+        // Step 5: Editor Agent (stub)
+        if (progress['editing']?.status !== 'completed') {
+            await this.executeStep(jobId, 'editing', async () => {
+                console.log(`[Job ${jobId}] ✏️ Editor Agent step (stub – AI logic coming soon)`);
+                return { dataUpdate: {} };
+            });
+
+            const currentMode = await this.getCurrentWritingMode(job.blog_id);
+            if (currentMode === 'Manual') {
+                await this.pauseForApproval(jobId, 'editing');
+                return;
+            }
+        }
+
+        // Step 6: Humanizer Agent (stub)
+        if (progress['humanizing']?.status !== 'completed') {
+            await this.executeStep(jobId, 'humanizing', async () => {
+                console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent step (stub – AI logic coming soon)`);
+                return { dataUpdate: {} };
+            });
+
+            // No pause after the last step — mark job as completed in all modes
+        }
+
+        // All steps done — mark the writing_job as completed
+        await supabase
+            .from('writing_jobs')
+            .update({
+                status: 'completed',
+                generation_status: 'humanizing',
+                updated_at: new Date()
+            })
+            .eq('id', jobId);
+
+        console.log(`[Job ${jobId}] 🎉 All steps completed successfully!`);
 
         } catch (error: any) {
             console.error(`[Job ${jobId}] ❌ Generation failed:`, error.message);
@@ -113,10 +195,33 @@ export class GenerationService {
         }
     }
 
+    private static async pauseForApproval(jobId: string, currentStep: string) {
+        const supabase = SupabaseService.getClient();
+        console.log(`[Job ${jobId}] ⏸️ Pausing after ${currentStep} for manual review.`);
+        
+        await supabase
+            .from('writing_jobs')
+            .update({
+                status: 'awaiting_approval',
+                updated_at: new Date()
+            })
+            .eq('id', jobId);
+    }
+
     private static async getProgress(jobId: string) {
         const supabase = SupabaseService.getClient();
         const { data } = await supabase.from('writing_jobs').select('generation_progress').eq('id', jobId).single();
         return data?.generation_progress || {};
+    }
+
+    private static async getCurrentWritingMode(blogId: string): Promise<string> {
+        const supabase = SupabaseService.getClient();
+        const { data } = await supabase
+            .from('blogs')
+            .select('writing_mode')
+            .eq('id', blogId)
+            .single();
+        return data?.writing_mode || 'Auto';
     }
 
     private static async getGenerationData(jobId: string) {

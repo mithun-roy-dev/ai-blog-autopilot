@@ -19,7 +19,8 @@ import {
     ExternalLink,
     Square,
     Star,
-    ChevronDown
+    ChevronDown,
+    ArrowRight
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
@@ -105,6 +106,36 @@ export default function JobDetailPage() {
         }
     }, [job?.generation_status])
 
+    const handleProceed = async () => {
+        try {
+            const userId = (await supabase.auth.getUser()).data.user?.id
+
+            // 1. Set writing_job status back to processing
+            const { error: updateError } = await supabase
+                .from('writing_jobs')
+                .update({ status: 'processing' })
+                .eq('id', id)
+            if (updateError) throw updateError
+
+            // 2. Re-queue the job so the worker picks up from the next uncompleted step
+            const { error: queueError } = await supabase
+                .from('job_queue')
+                .insert({
+                    type: 'article_generation',
+                    payload: { jobId: id },
+                    user_id: userId
+                })
+            if (queueError) throw queueError
+
+            logUI('INFO', 'UI:JobDetails', 'Job re-queued to proceed to next step', { jobId: id })
+            toast.success("Proceeding to next step...")
+            fetchJob()
+        } catch (error: any) {
+            logUI('ERROR', 'UI:JobDetails', 'Failed to proceed to next step', { error: error.message, jobId: id })
+            toast.error(error.message)
+        }
+    }
+
     const handleUpdateStatus = async (status: string) => {
         try {
             const { error: updateError } = await supabase
@@ -186,9 +217,10 @@ export default function JobDetailPage() {
                                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shrink-0",
                                     isFailed ? "bg-red-500/10 text-red-600 border-red-500/20" :
                                         isCompleted ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
-                                            "bg-primary/10 text-primary border-primary/20"
+                                            job?.status === 'awaiting_approval' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                                                "bg-primary/10 text-primary border-primary/20"
                                 )}>
-                                    {job?.status.replace('_', ' ')}
+                                    {job?.status === 'awaiting_approval' ? 'PAUSED' : job?.status.replace('_', ' ').toUpperCase()}
                                 </span>
                             </div>
                             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground font-medium">
@@ -236,6 +268,20 @@ export default function JobDetailPage() {
                                 <Square className="h-4 w-4 fill-white" /> Stop Job
                             </button>
                         )}
+                        {job?.status === 'awaiting_approval' && (
+                            <button
+                                onClick={handleProceed}
+                                className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-amber-500 text-white font-black rounded-xl shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-tighter text-xs"
+                            >
+                                <ArrowRight className="h-4 w-4" />
+                                {job?.generation_status === 'serp_calling' ? 'Proceed to SERP Analysis' :
+                                 job?.generation_status === 'serp_analyzing' ? 'Proceed to Content Brief' :
+                                 job?.generation_status === 'briefing' ? 'Proceed to Writing' :
+                                 job?.generation_status === 'writing' ? 'Proceed to Editing' :
+                                 job?.generation_status === 'editing' ? 'Proceed to Humanizing' :
+                                 'Proceed to Next Step'}
+                            </button>
+                        )}
                         {isFailed && (
                             <button
                                 onClick={() => handleUpdateStatus('awaiting_start')}
@@ -256,9 +302,11 @@ export default function JobDetailPage() {
             {/* Progress Stepper */}
             <div ref={detailsRef} className="grid grid-cols-1 md:grid-cols-6 gap-4 scroll-mt-12">
                 {STEPS.map((step, index) => {
-                    const isDone = currentStepIndex > index || isCompleted
-                    const isCurrent = currentStepIndex === index && !isCompleted && !isFailed
-                    const isPending = currentStepIndex < index && !isCompleted
+                    const stepProgress = job?.generation_progress?.[step.id]
+                    const isDone = stepProgress?.status === 'completed' || isCompleted
+                    const isPaused = job?.status === 'awaiting_approval' && job?.generation_status === step.id
+                    const isCurrent = (job?.generation_status === step.id && job?.status === 'processing') || isPaused
+                    const isPending = !isDone && !isCurrent
                     const isSelected = selectedViewStep === step.id
                     const canView = isDone || isCurrent
 
@@ -272,18 +320,22 @@ export default function JobDetailPage() {
                                 canView ? "cursor-pointer hover:border-primary/40" : "cursor-not-allowed opacity-60",
                                 isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/10" : "",
                                 isDone ? "bg-emerald-500/5 border-emerald-500/20" :
-                                    isCurrent ? "bg-primary/5 border-primary/30 shadow-lg shadow-primary/5 scale-[1.02]" :
-                                        "bg-card/50 border-border/50"
+                                    isPaused ? "bg-amber-500/5 border-amber-500/20 shadow-lg shadow-amber-500/5" :
+                                        isCurrent ? "bg-primary/5 border-primary/30 shadow-lg shadow-primary/5 scale-[1.02]" :
+                                            "bg-card/50 border-border/50"
                             )}
                         >
                             <div className="flex flex-col items-center text-center space-y-3 relative z-10">
                                 <div className={cn(
                                     "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500",
                                     isDone ? "bg-emerald-500 text-white" :
-                                        isCurrent ? "bg-primary text-white shadow-[0_0_15px_rgba(var(--primary),0.5)]" :
-                                            "bg-accent text-muted-foreground"
+                                        isPaused ? "bg-amber-500 text-white" :
+                                            isCurrent ? "bg-primary text-white shadow-[0_0_15px_rgba(var(--primary),0.5)]" :
+                                                "bg-accent text-muted-foreground"
                                 )}>
-                                    {isDone ? <CheckCircle2 className="h-6 w-6" /> : <step.icon className={cn("h-6 w-6", isCurrent ? "animate-pulse" : "")} />}
+                                    {isDone ? <CheckCircle2 className="h-6 w-6" /> : 
+                                     isPaused ? <Clock className="h-6 w-6" /> :
+                                     <step.icon className={cn("h-6 w-6", isCurrent ? "animate-pulse" : "")} />}
                                 </div>
                                 <div>
                                     <h3 className="font-black text-sm uppercase tracking-tight">{step.name}</h3>
@@ -292,7 +344,7 @@ export default function JobDetailPage() {
                             </div>
 
                             {/* Processing Animation Line */}
-                            {isCurrent && (
+                            {isCurrent && !isPaused && (
                                 <div className="absolute bottom-0 left-0 h-1 bg-primary animate-shimmer" style={{ width: '100%' }} />
                             )}
                         </button>
@@ -373,6 +425,18 @@ export default function JobDetailPage() {
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* In-view Proceed Button */}
+                            {job?.status === 'awaiting_approval' && job?.generation_status === 'serp_calling' && (
+                                <div className="mt-8 pt-8 border-t border-border/50 flex justify-center">
+                                    <button
+                                        onClick={handleProceed}
+                                        className="flex items-center gap-3 px-10 py-4 bg-amber-500 text-white font-black rounded-2xl shadow-xl shadow-amber-500/20 hover:scale-[1.05] active:scale-95 transition-all uppercase tracking-tighter"
+                                    >
+                                        <ArrowRight className="h-5 w-5" /> Proceed to SERP Analysis
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -566,6 +630,18 @@ export default function JobDetailPage() {
                                     </div>
                                 ))}
                             </div>
+                            
+                            {/* In-view Proceed Button */}
+                            {job?.status === 'awaiting_approval' && job?.generation_status === 'serp_analyzing' && (
+                                <div className="mt-8 pt-8 border-t border-border/50 flex justify-center">
+                                    <button
+                                        onClick={handleProceed}
+                                        className="flex items-center gap-3 px-10 py-4 bg-amber-500 text-white font-black rounded-2xl shadow-xl shadow-amber-500/20 hover:scale-[1.05] active:scale-95 transition-all uppercase tracking-tighter"
+                                    >
+                                        <ArrowRight className="h-5 w-5" /> Proceed to Content Brief
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -578,16 +654,68 @@ export default function JobDetailPage() {
                     </div>
                 )}
 
-                {/* Placeholder for steps > 2 since they aren't implemented in UI yet */}
-                {selectedViewStep && selectedViewStep !== 'serp_calling' && selectedViewStep !== 'serp_analyzing' && (
-                    <div className="h-64 rounded-[2.5rem] bg-card/50 border border-border flex flex-col items-center justify-center text-muted-foreground space-y-4 shadow-inner">
-                        <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center mb-2">
-                            <PieChart className="h-8 w-8 text-muted-foreground opacity-50" />
+                {/* Steps 3-6: Panels with inline Proceed buttons in Manual mode */}
+                {(['briefing', 'writing', 'editing', 'humanizing'] as const).map((stepId) => {
+                    const stepMeta = STEPS.find(s => s.id === stepId)!
+                    const nextStepLabel =
+                        stepId === 'briefing' ? 'Proceed to Writing' :
+                        stepId === 'writing' ? 'Proceed to Editing' :
+                        stepId === 'editing' ? 'Proceed to Humanizing' :
+                        'Finish'
+                    const isStepPaused = job?.status === 'awaiting_approval' && job?.generation_status === stepId
+                    const isStepActive = job?.generation_status === stepId && job?.status === 'processing'
+
+                    if (selectedViewStep !== stepId) return null
+
+                    return (
+                        <div key={stepId} className="bg-card rounded-[2.5rem] border border-border/50 overflow-hidden shadow-xl animate-in zoom-in-95 duration-500">
+                            <div className="p-8 border-b border-border/50 flex items-center gap-4 bg-card/60">
+                                <div className={cn(
+                                    "p-3 rounded-2xl border",
+                                    isStepPaused ? "bg-amber-500/10 border-amber-500/20" : "bg-primary/10 border-primary/20"
+                                )}>
+                                    <stepMeta.icon className={cn("h-6 w-6", isStepPaused ? "text-amber-500" : "text-primary")} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black italic uppercase tracking-tight">{stepMeta.name}</h3>
+                                    <p className="text-sm text-muted-foreground font-medium mt-1">{stepMeta.description}</p>
+                                </div>
+                                {isStepPaused && (
+                                    <span className="ml-auto px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                        Awaiting Approval
+                                    </span>
+                                )}
+                            </div>
+                            <div className="p-8">
+                                {isStepActive && (
+                                    <div className="flex flex-col items-center justify-center gap-4 py-8 text-muted-foreground">
+                                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                        <p className="font-bold text-sm uppercase tracking-widest animate-pulse">Running {stepMeta.name}...</p>
+                                    </div>
+                                )}
+                                {!isStepActive && (
+                                    <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
+                                        <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center">
+                                            <stepMeta.icon className="h-8 w-8 opacity-40" />
+                                        </div>
+                                        <p className="font-bold text-sm uppercase tracking-widest">Step Completed</p>
+                                        <p className="text-xs font-medium max-w-sm text-center opacity-70">AI-generated content for this step will appear here once the full pipeline is implemented.</p>
+                                    </div>
+                                )}
+                                {isStepPaused && (
+                                    <div className="mt-6 pt-6 border-t border-border/50 flex justify-center">
+                                        <button
+                                            onClick={handleProceed}
+                                            className="flex items-center gap-3 px-10 py-4 bg-amber-500 text-white font-black rounded-2xl shadow-xl shadow-amber-500/20 hover:scale-[1.05] active:scale-95 transition-all uppercase tracking-tighter"
+                                        >
+                                            <ArrowRight className="h-5 w-5" /> {nextStepLabel}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <h3 className="font-black text-lg uppercase tracking-widest text-foreground">Details Not Available</h3>
-                        <p className="font-medium text-sm max-w-sm text-center">Data for the '{STEPS.find(s => s.id === selectedViewStep)?.name}' phase will appear here once implemented.</p>
-                    </div>
-                )}
+                    )
+                })}
 
                 {!selectedViewStep && !isFailed && (
                     <div className="h-32 rounded-[2.5rem] border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm font-bold uppercase tracking-widest">
