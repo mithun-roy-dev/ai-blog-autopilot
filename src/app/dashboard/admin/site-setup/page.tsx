@@ -27,6 +27,12 @@ const OPENROUTER_MODELS = [
     { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet" },
     { id: "deepseek/deepseek-chat", name: "DeepSeek Chat" },
     { id: "openai/gpt-4o", name: "GPT-4o" },
+    { id: "anthropic/claude-opus-4.6", name: "Claude Opus 4.6" },
+    { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5" },
+    { id: "google/gemini-3-pro-image-preview", name: "Gemini 3 Nano Banana Pro" },
+    { id: "google/gemini-3.1-flash-image-preview", name: "Gemini 3.1 Flash Na Banana 2" },
+    { id: "openai/gpt-5-image-mini", name: "GPT 5 Image Mini" },
+    { id: "minimax/minimax-m2.5", name: "Minimax M2-2.5" },
     { id: "meta-llama/llama-3.1-70b-instruct", name: "Llama 3.1 70B" },
 ]
 
@@ -45,7 +51,15 @@ export default function SiteSetupPage() {
     // Form State
     const [formData, setFormData] = useState({
         api_key: "",
-        default_model: "openai/gpt-oss-120b:free"
+        default_model: "openai/gpt-oss-120b:free",
+        thinking_model_1: "openai/gpt-oss-120b:free",
+        thinking_model_2: "openai/gpt-oss-120b:free",
+        fast_model_1: "openai/gpt-oss-120b:free",
+        fast_model_2: "openai/gpt-oss-120b:free",
+        image_model_1: "openai/gpt-oss-120b:free",
+        image_model_2: "openai/gpt-oss-120b:free",
+        free_model_1: "openai/gpt-oss-120b:free",
+        free_model_2: "openai/gpt-oss-120b:free"
     })
 
     // System Settings State
@@ -124,7 +138,15 @@ export default function SiteSetupPage() {
             if (current) {
                 setFormData({
                     api_key: current.api_key || "",
-                    default_model: current.default_model || "openai/gpt-oss-120b:free"
+                    default_model: current.default_model || "openai/gpt-oss-120b:free",
+                    thinking_model_1: current.thinking_model_1 || "openai/gpt-oss-120b:free",
+                    thinking_model_2: current.thinking_model_2 || "openai/gpt-oss-120b:free",
+                    fast_model_1: current.fast_model_1 || "openai/gpt-oss-120b:free",
+                    fast_model_2: current.fast_model_2 || "openai/gpt-oss-120b:free",
+                    image_model_1: current.image_model_1 || "openai/gpt-oss-120b:free",
+                    image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
+                    free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
+                    free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free"
                 })
             }
         } catch (err: any) {
@@ -139,12 +161,28 @@ export default function SiteSetupPage() {
         if (current) {
             setFormData({
                 api_key: current.api_key || "",
-                default_model: current.default_model || "openai/gpt-oss-120b:free"
+                default_model: current.default_model || "openai/gpt-oss-120b:free",
+                thinking_model_1: current.thinking_model_1 || "openai/gpt-oss-120b:free",
+                thinking_model_2: current.thinking_model_2 || "openai/gpt-oss-120b:free",
+                fast_model_1: current.fast_model_1 || "openai/gpt-oss-120b:free",
+                fast_model_2: current.fast_model_2 || "openai/gpt-oss-120b:free",
+                image_model_1: current.image_model_1 || "openai/gpt-oss-120b:free",
+                image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
+                free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
+                free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free"
             })
         } else {
             setFormData({
                 api_key: "",
-                default_model: "openai/gpt-oss-120b:free"
+                default_model: "openai/gpt-oss-120b:free",
+                thinking_model_1: "openai/gpt-oss-120b:free",
+                thinking_model_2: "openai/gpt-oss-120b:free",
+                fast_model_1: "openai/gpt-oss-120b:free",
+                fast_model_2: "openai/gpt-oss-120b:free",
+                image_model_1: "openai/gpt-oss-120b:free",
+                image_model_2: "openai/gpt-oss-120b:free",
+                free_model_1: "openai/gpt-oss-120b:free",
+                free_model_2: "openai/gpt-oss-120b:free"
             })
         }
     }, [selectedProvider, configs])
@@ -184,13 +222,21 @@ export default function SiteSetupPage() {
                         provider: selectedProvider,
                         api_key: formData.api_key,
                         default_model: formData.default_model,
+                        thinking_model_1: formData.thinking_model_1,
+                        thinking_model_2: formData.thinking_model_2,
+                        fast_model_1: formData.fast_model_1,
+                        fast_model_2: formData.fast_model_2,
+                        image_model_1: formData.image_model_1,
+                        image_model_2: formData.image_model_2,
+                        free_model_1: formData.free_model_1,
+                        free_model_2: formData.free_model_2,
                         updated_at: new Date().toISOString()
                     }, { onConflict: "provider" })
 
                 if (error) throw error
                 toast.success(`${selectedProvider.toUpperCase()} configuration saved!`, { id: toastId })
             }
-            
+
             fetchConfigs()
         } catch (err: any) {
             toast.error(err.message, { id: toastId })
@@ -346,19 +392,135 @@ export default function SiteSetupPage() {
                         )}
 
                         {selectedProvider === 'openrouter' && (
-                            <div className="space-y-2 mt-4">
-                                <label className="text-sm font-medium flex items-center gap-2">
-                                    <Cpu className="h-4 w-4 text-primary" /> Default AI Model
-                                </label>
-                                <select
-                                    value={formData.default_model}
-                                    onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
-                                    className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                >
-                                    {OPENROUTER_MODELS.map((model) => (
-                                        <option key={model.id} value={model.id}>{model.name}</option>
-                                    ))}
-                                </select>
+                            <div className="space-y-6 mt-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Default AI Model
+                                        </label>
+                                        <select
+                                            value={formData.default_model}
+                                            onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Thinking Model 1
+                                        </label>
+                                        <select
+                                            value={formData.thinking_model_1}
+                                            onChange={(e) => setFormData({ ...formData, thinking_model_1: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Thinking Model 2
+                                        </label>
+                                        <select
+                                            value={formData.thinking_model_2}
+                                            onChange={(e) => setFormData({ ...formData, thinking_model_2: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Fast Model 1
+                                        </label>
+                                        <select
+                                            value={formData.fast_model_1}
+                                            onChange={(e) => setFormData({ ...formData, fast_model_1: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Fast Model 2
+                                        </label>
+                                        <select
+                                            value={formData.fast_model_2}
+                                            onChange={(e) => setFormData({ ...formData, fast_model_2: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Image Model 1
+                                        </label>
+                                        <select
+                                            value={formData.image_model_1}
+                                            onChange={(e) => setFormData({ ...formData, image_model_1: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Image Model 2
+                                        </label>
+                                        <select
+                                            value={formData.image_model_2}
+                                            onChange={(e) => setFormData({ ...formData, image_model_2: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Free Model 1
+                                        </label>
+                                        <select
+                                            value={formData.free_model_1}
+                                            onChange={(e) => setFormData({ ...formData, free_model_1: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Free Model 2
+                                        </label>
+                                        <select
+                                            value={formData.free_model_2}
+                                            onChange={(e) => setFormData({ ...formData, free_model_2: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -379,9 +541,9 @@ export default function SiteSetupPage() {
                                         <p className="text-[11px] text-muted-foreground">Log ALL application lifecycle events and info payload to server (debug_log.txt).</p>
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
-                                        <input 
-                                            type="checkbox" 
-                                            className="sr-only peer" 
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
                                             checked={systemSettings.enable_debug}
                                             onChange={(e) => setSystemSettings(s => ({ ...s, enable_debug: e.target.checked }))}
                                         />
@@ -397,9 +559,9 @@ export default function SiteSetupPage() {
                                         <p className="text-[11px] text-muted-foreground">Capture critical UI crashes and API failures strictly to server (error_log.txt).</p>
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
-                                        <input 
-                                            type="checkbox" 
-                                            className="sr-only peer" 
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
                                             checked={systemSettings.enable_error}
                                             onChange={(e) => setSystemSettings(s => ({ ...s, enable_error: e.target.checked }))}
                                         />
