@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { SupabaseService } from './supabase.service';
 import * as cheerio from 'cheerio';
+import { PromptService } from './prompt.service';
+import { LLMService } from './llm.service';
 
 export class GenerationService {
     /**
@@ -24,12 +26,13 @@ export class GenerationService {
             // Fetch Site Writing Mode
             const { data: blog, error: blogError } = await supabase
                 .from('blogs')
-                .select('writing_mode')
+                .select('writing_mode, niche, custom_niche')
                 .eq('id', job.blog_id)
                 .single();
             
             const writingMode = blog?.writing_mode || 'Auto';
-            console.log(`[Job ${jobId}] 🛠️ Writing Mode: ${writingMode}`);
+            const niche = blog?.niche === 'Others' ? blog.custom_niche : blog?.niche || 'General';
+            console.log(`[Job ${jobId}] 🛠️ Mode: ${writingMode} | Niche: ${niche}`);
 
             const progress = await this.getProgress(jobId);
 
@@ -60,11 +63,32 @@ export class GenerationService {
             }
         }
 
-        // Step 3: Content Brief (stub – real AI logic to be added later)
+        // Step 3: Content Brief
         if (progress['briefing']?.status !== 'completed') {
             await this.executeStep(jobId, 'briefing', async () => {
-                console.log(`[Job ${jobId}] 📝 Content Brief step (stub – AI logic coming soon)`);
-                return { dataUpdate: {} };
+                console.log(`[Job ${jobId}] 📝 Generating Content Brief...`);
+                
+                const generationData = await this.getGenerationData(jobId);
+                const promptConfig = await PromptService.getPrompt('content-brief');
+                
+                if (!promptConfig) throw new Error("Prompt 'content-brief' not found.");
+
+                const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
+                const userPrompt = PromptService.injectVariables(promptConfig.user_prompt_template, {
+                    keyword: job.primary_keyword,
+                    niche: niche,
+                    intent: generationData.serp?.intent || 'Informational',
+                    serp_data: JSON.stringify(generationData.serp || {}, null, 2)
+                });
+
+                const aiResponse = await LLMService.completion({
+                    system: systemPrompt,
+                    user: userPrompt,
+                    json: true
+                });
+
+                const brief = LLMService.extractJson(aiResponse);
+                return { dataUpdate: { brief } };
             });
 
             const currentMode = await this.getCurrentWritingMode(job.blog_id);
@@ -74,16 +98,33 @@ export class GenerationService {
             }
         }
 
-        // Step 4: Writer Agent (stub - now saves sample content)
+        // Step 4: Writer Agent
         if (progress['writing']?.status !== 'completed') {
             await this.executeStep(jobId, 'writing', async () => {
-                console.log(`[Job ${jobId}] ✍️ Writer Agent step executing...`);
-                const sampleContent = `<h1>${job.title}</h1><p>This is a generated test article for <strong>${job.primary_keyword}</strong>.</p><p>It covers multiple aspects of the topic to provide comprehensive intelligence.</p>`;
+                console.log(`[Job ${jobId}] ✍️ Writing Full Article...`);
+                
+                const generationData = await this.getGenerationData(jobId);
+                const promptConfig = await PromptService.getPrompt('writer-agent');
+                
+                if (!promptConfig) throw new Error("Prompt 'writer-agent' not found.");
+
+                const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
+                const userPrompt = PromptService.injectVariables(promptConfig.user_prompt_template, {
+                    content_brief: JSON.stringify(generationData.brief || {}, null, 2),
+                    keyword: job.primary_keyword,
+                    intent: generationData.serp?.intent || 'Informational',
+                    niche: niche
+                });
+
+                const articleContent = await LLMService.completion({
+                    system: systemPrompt,
+                    user: userPrompt
+                });
                 
                 // Update the job with the generated content
                 await supabase
                     .from('writing_jobs')
-                    .update({ content: sampleContent, updated_at: new Date() })
+                    .update({ content: articleContent, updated_at: new Date() })
                     .eq('id', jobId);
 
                 return { dataUpdate: {} };

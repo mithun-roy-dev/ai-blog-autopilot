@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search } from "lucide-react"
+import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/utils/cn"
@@ -13,6 +13,7 @@ const PROVIDERS = [
     { id: "claude", name: "Claude (Anthropic)", icon: Cpu, description: "High-performance AI with advanced reasoning." },
     { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
     { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
+    { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
     { id: "system_ops", name: "System Operations", icon: Shield, description: "Manage global application settings and operational toggles." },
 ]
 
@@ -76,6 +77,18 @@ export default function SiteSetupPage() {
         max_h5: 2,
         max_h6: 2
     })
+    
+    // Prompt State
+    const [prompts, setPrompts] = useState<any[]>([])
+    const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
+    const [promptFormData, setPromptFormData] = useState({
+        name: "",
+        slug: "",
+        system_prompt: "",
+        user_prompt_template: "",
+        variables: "[]",
+        is_published: true
+    })
 
     useEffect(() => {
         checkAuth()
@@ -90,6 +103,7 @@ export default function SiteSetupPage() {
         }
         setUserEmail(user.email)
         fetchConfigs()
+        fetchPrompts()
     }
 
     const fetchConfigs = async () => {
@@ -156,6 +170,40 @@ export default function SiteSetupPage() {
         }
     }
 
+    const fetchPrompts = async () => {
+        try {
+            const { data, error } = await supabase
+                .from("ai_prompts")
+                .select("*")
+                .order("name", { ascending: true })
+
+            if (error) {
+                console.error("Error fetching prompts:", error.message)
+                return
+            }
+            setPrompts(data || [])
+            
+            // Auto-select first prompt if none selected
+            if (data && data.length > 0 && !selectedPromptId) {
+                handleSelectPrompt(data[0])
+            }
+        } catch (err) {
+            console.error("Failed to fetch prompts:", err)
+        }
+    }
+
+    const handleSelectPrompt = (prompt: any) => {
+        setSelectedPromptId(prompt.id)
+        setPromptFormData({
+            name: prompt.name || "",
+            slug: prompt.slug || "",
+            system_prompt: prompt.system_prompt || "",
+            user_prompt_template: prompt.user_prompt_template || "",
+            variables: JSON.stringify(prompt.variables, null, 2) || "[]",
+            is_published: prompt.is_published ?? true
+        })
+    }
+
     useEffect(() => {
         const current = configs.find(c => c.provider === selectedProvider)
         if (current) {
@@ -204,17 +252,25 @@ export default function SiteSetupPage() {
 
                 if (error) throw error
                 toast.success(`System settings saved!`, { id: toastId })
-            } else if (selectedProvider === 'serp_crawl_setup') {
-                const { error } = await supabase
-                    .from("system_settings")
-                    .upsert({
-                        key: "serp_crawl_config",
-                        value: serpCrawlSettings,
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: "key" })
-
                 if (error) throw error
                 toast.success(`Crawl setup saved!`, { id: toastId })
+            } else if (selectedProvider === 'prompt_setup') {
+                const { error } = await supabase
+                    .from("ai_prompts")
+                    .upsert({
+                        id: selectedPromptId || undefined,
+                        name: promptFormData.name,
+                        slug: promptFormData.slug,
+                        system_prompt: promptFormData.system_prompt,
+                        user_prompt_template: promptFormData.user_prompt_template,
+                        variables: JSON.parse(promptFormData.variables || "[]"),
+                        is_published: promptFormData.is_published,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: "slug" })
+
+                if (error) throw error
+                toast.success(`Prompt "${promptFormData.name}" saved!`, { id: toastId })
+                fetchPrompts()
             } else {
                 const { error } = await supabase
                     .from("ai_configurations")
@@ -307,7 +363,7 @@ export default function SiteSetupPage() {
                             </div>
                         </div>
 
-                        {selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && (
+                        {selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium flex items-center gap-2">
@@ -524,7 +580,120 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
-                        {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && (
+                        {selectedProvider === 'prompt_setup' && (
+                            <div className="space-y-6">
+                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                                    {prompts.map((p) => (
+                                        <button
+                                            key={p.id}
+                                            type="button"
+                                            onClick={() => handleSelectPrompt(p)}
+                                            className={cn(
+                                                "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all",
+                                                selectedPromptId === p.id 
+                                                    ? "bg-primary text-primary-foreground border-primary" 
+                                                    : "bg-card text-muted-foreground border-border hover:bg-accent"
+                                            )}
+                                        >
+                                            {p.name}
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedPromptId(null);
+                                            setPromptFormData({
+                                                name: "New Prompt",
+                                                slug: "new-prompt",
+                                                system_prompt: "",
+                                                user_prompt_template: "",
+                                                variables: "[]",
+                                                is_published: true
+                                            });
+                                        }}
+                                        className="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-all"
+                                    >
+                                        + Add New
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-6 pt-4 border-t border-border/50">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Prompt Name</label>
+                                            <input
+                                                type="text"
+                                                value={promptFormData.name}
+                                                onChange={(e) => setPromptFormData({ ...promptFormData, name: e.target.value })}
+                                                className="w-full bg-background border rounded-xl px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-primary outline-none"
+                                                placeholder="e.g. Content Brief Generator"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Slug (Identifier)</label>
+                                            <input
+                                                type="text"
+                                                value={promptFormData.slug}
+                                                onChange={(e) => setPromptFormData({ ...promptFormData, slug: e.target.value.toLowerCase().replace(/ /g, '-') })}
+                                                className="w-full bg-background border rounded-xl px-4 py-2 text-sm font-mono focus:ring-2 focus:ring-primary outline-none"
+                                                placeholder="content-brief"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">System Prompt</label>
+                                        <textarea
+                                            value={promptFormData.system_prompt}
+                                            onChange={(e) => setPromptFormData({ ...promptFormData, system_prompt: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 text-xs font-medium min-h-[150px] focus:ring-2 focus:ring-primary outline-none leading-relaxed"
+                                            placeholder="Expert content strategist instructions..."
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">User Prompt Template</label>
+                                        <textarea
+                                            value={promptFormData.user_prompt_template}
+                                            onChange={(e) => setPromptFormData({ ...promptFormData, user_prompt_template: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 text-xs font-medium min-h-[150px] focus:ring-2 focus:ring-primary outline-none leading-relaxed"
+                                            placeholder="Generate a brief for: {{keyword}}..."
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-primary/50 transition-colors">
+                                        <div className="space-y-0.5">
+                                            <h4 className="text-sm font-bold">Published</h4>
+                                            <p className="text-[11px] text-muted-foreground">Make this prompt available for the article generator.</p>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={promptFormData.is_published}
+                                                onChange={(e) => setPromptFormData({ ...promptFormData, is_published: e.target.checked })}
+                                            />
+                                            <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                        </label>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Variables (JSON Schema)</label>
+                                            <span className="text-[8px] font-bold text-primary/60 italic">Used for documentation</span>
+                                        </div>
+                                        <textarea
+                                            value={promptFormData.variables}
+                                            onChange={(e) => setPromptFormData({ ...promptFormData, variables: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-2 text-[10px] font-mono min-h-[60px] focus:ring-2 focus:ring-primary outline-none"
+                                            placeholder='["keyword", "intent"]'
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && (
                             <div className="p-4 mt-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
                                 <AlertCircle className="h-5 w-5 shrink-0" />
                                 <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> for immediate multi-model functionality.</p>
@@ -574,7 +743,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
