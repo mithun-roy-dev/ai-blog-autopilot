@@ -143,6 +143,10 @@ ${promptConfig.user_prompt_template}`;
                 });
 
                 const brief = LLMService.extractJson(aiResponse);
+                
+                // Log final response for verification
+                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_RESPONSE:\n${JSON.stringify(brief, null, 2)}`);
+
                 return { dataUpdate: { brief } };
             });
 

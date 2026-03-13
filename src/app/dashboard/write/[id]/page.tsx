@@ -734,10 +734,82 @@ export default function JobDetailPage() {
                                         <p className="font-bold text-sm uppercase tracking-widest animate-pulse">Running {stepMeta.name}...</p>
                                     </div>
                                 )}
-                                {!isStepActive && (
+                                {!isStepActive && stepId === 'briefing' && job?.generation_data?.brief && (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="p-4 rounded-2xl bg-accent/20 border border-border/40">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Target Title</h4>
+                                                <p className="text-sm font-bold text-foreground italic">"{job.generation_data.brief.title}"</p>
+                                            </div>
+                                            <div className="p-4 rounded-2xl bg-accent/20 border border-border/40">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Target Word Count</h4>
+                                                <p className="text-sm font-bold text-foreground">{job.generation_data.brief.target_word_count || 1200} words</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="p-4 rounded-2xl bg-accent/20 border border-border/40 text-left">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Meta Description</h4>
+                                            <p className="text-sm text-foreground leading-relaxed">{job.generation_data.brief.meta_description}</p>
+                                        </div>
+
+                                        <div className="p-6 rounded-2xl bg-accent/20 border border-border/40 text-left">
+                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                                                Article Outline
+                                                <span className="h-px bg-border flex-1"></span>
+                                            </h4>
+                                            <div className="space-y-4">
+                                                {job.generation_data.brief.content_outline?.map((section: any, idx: number) => (
+                                                    <div key={idx} className="space-y-2">
+                                                        <div className="flex gap-3">
+                                                            <span className="text-[10px] font-black text-primary pt-0.5">H2</span>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-bold text-foreground">{section.heading}</p>
+                                                                <p className="text-[11px] text-muted-foreground mt-0.5 mt-1">{section.description}</p>
+                                                            </div>
+                                                        </div>
+                                                        {section.subsections?.length > 0 && (
+                                                            <div className="ml-8 space-y-2 border-l-2 border-border/30 pl-4 py-1">
+                                                                {section.subsections.map((sub: any, sIdx: number) => (
+                                                                    <div key={sIdx} className="flex gap-2">
+                                                                         <span className="text-[10px] font-black text-muted-foreground pt-0.5">H3</span>
+                                                                         <p className="text-[13px] font-medium text-foreground/80">{sub.heading || sub}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                            <div className="p-4 rounded-2xl bg-accent/20 border border-border/40">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Internal Links to Include</h4>
+                                                <div className="space-y-2">
+                                                    {job.generation_data.brief.internal_links?.map((link: string, lIdx: number) => (
+                                                        <div key={lIdx} className="text-[11px] font-mono text-primary truncate bg-primary/5 p-2 rounded-lg border border-primary/10">
+                                                            {link}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="p-4 rounded-2xl bg-accent/20 border border-border/40">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Keywords to Optimize</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {job.generation_data.brief.entities_to_include?.map((entity: string, eIdx: number) => (
+                                                        <span key={eIdx} className="px-2 py-1 rounded-md bg-background border border-border/50 text-[10px] font-bold text-foreground">
+                                                            {entity}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                {!isStepActive && (!job?.generation_data?.brief || stepId !== 'briefing') && (
                                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
                                         <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center">
-                                            <stepMeta.icon className="h-8 w-8 opacity-40" />
+                                            {stepId === 'serp_calling' || stepId === 'serp_analyzing' ? null : <stepMeta.icon className="h-8 w-8 opacity-40" />}
                                         </div>
                                         <p className="font-bold text-sm uppercase tracking-widest">Step Completed</p>
                                         <p className="text-xs font-medium max-w-sm text-center opacity-70">AI-generated content for this step will appear here once the full pipeline is implemented.</p>
