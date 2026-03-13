@@ -3,6 +3,7 @@ import { SupabaseService } from './supabase.service';
 import * as cheerio from 'cheerio';
 import { PromptService } from './prompt.service';
 import { LLMService } from './llm.service';
+import { Logger } from '../utils/logger';
 
 export class GenerationService {
     /**
@@ -26,7 +27,7 @@ export class GenerationService {
             // Fetch Site Writing Mode
             const { data: blog, error: blogError } = await supabase
                 .from('blogs')
-                .select('writing_mode, niche, custom_niche')
+                .select('writing_mode, niche, custom_niche, metadata')
                 .eq('id', job.blog_id)
                 .single();
             
@@ -66,24 +67,78 @@ export class GenerationService {
         // Step 3: Content Brief
         if (progress['briefing']?.status !== 'completed') {
             await this.executeStep(jobId, 'briefing', async () => {
-                console.log(`[Job ${jobId}] 📝 Generating Content Brief...`);
+                console.log(`[Job ${jobId}] 📝 Generating Dynamic Content Brief...`);
                 
                 const generationData = await this.getGenerationData(jobId);
                 const promptConfig = await PromptService.getPrompt('content-brief');
-                
                 if (!promptConfig) throw new Error("Prompt 'content-brief' not found.");
 
-                const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
-                const userPrompt = PromptService.injectVariables(promptConfig.user_prompt_template, {
-                    keyword: job.primary_keyword,
-                    niche: niche,
-                    intent: generationData.serp?.intent || 'Informational',
-                    serp_data: JSON.stringify(generationData.serp || {}, null, 2)
-                });
+                // 1. Fetch Cluster & Pillar Logic
+                const { data: cluster } = await supabase.from('content_clusters').select('*').eq('id', job.cluster_id).single();
+                const { data: clusterPages } = await supabase.from('cluster_pages').select('title, slug, type, word_count_target').eq('cluster_id', job.cluster_id);
+                const currentPage = clusterPages?.find(p => p.slug === job.slug);
+                const pillarPage = clusterPages?.find(p => p.type === 'pillar');
 
+                // 2. Internal Linking Logic
+                const { data: intel } = await supabase.from('site_intelligence').select('url').eq('blog_id', job.blog_id).limit(100);
+                const { data: pubArticles } = await supabase.from('articles').select('url').eq('blog_id', job.blog_id).eq('status', 'published').limit(100);
+                
+                const allLinks = Array.from(new Set([
+                    ...(intel?.map(i => i.url) || []),
+                    ...(pubArticles?.map(a => a.url) || [])
+                ])).filter(Boolean).slice(0, 30);
+
+                let linksMust = "";
+                if (currentPage?.type === 'supporting' && pillarPage) {
+                    linksMust = pillarPage.slug;
+                } else if (allLinks.length > 0) {
+                    linksMust = allLinks[0];
+                }
+
+                // 3. Construct XML Blocks
+                const siteContextXml = `
+<site_context>
+  <site_description_short>${blog?.metadata?.description || 'General niche blog'}</site_description_short>
+  <site_niche>${niche}</site_niche>
+</site_context>`;
+
+                const articleTargetXml = `
+<article_target>
+  <title>${job.title}</title>
+  <keyword>${job.primary_keyword}</keyword>
+  <category>${cluster?.topic || 'General'}</category>
+  <intent>${cluster?.intent || 'Informational'}</intent>
+  <words>${currentPage?.word_count_target || 1200}</words>
+  <images>2</images>
+  <links_must>${linksMust}</links_must>
+  <links_choice>
+    ${allLinks.map(url => `<url>${url}</url>`).join('\n    ')}
+  </links_choice>
+</article_target>`;
+
+                const serpDataXml = `
+<serp_data>
+${JSON.stringify(this.compressSerp(generationData), null, 2)}
+</serp_data>`;
+
+                // 4. Final Prompt Construction
+                const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
+                const userPromptMessage = `
+${siteContextXml}
+${articleTargetXml}
+${serpDataXml}
+
+${promptConfig.user_prompt_template}`;
+
+                // 4.5 Log Prompts for verification as requested by user
+                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_SYSTEM_PROMPT:\n${systemPrompt}`);
+                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_USER_PROMPT:\n${userPromptMessage}`);
+
+                // 5. LLM Call with Thinking Model 2
                 const aiResponse = await LLMService.completion({
                     system: systemPrompt,
-                    user: userPrompt,
+                    user: userPromptMessage,
+                    modelRef: 'thinking_model_2',
                     json: true
                 });
 
@@ -498,6 +553,26 @@ export class GenerationService {
                     average_word_count: averageWordCount
                 }
             }
+        };
+    }
+
+    private static compressSerp(generationData: any): any {
+        const raw = generationData.serp || {};
+        const analysis = generationData.analysis || {};
+        
+        return {
+            avg_words: analysis.average_word_count || 0,
+            organic: (raw.organic_results || []).slice(0, 8).map((r: any) => ({
+                t: r.title,
+                s: (r.snippet || "").substring(0, 100)
+            })),
+            searches: (raw.related_searches || []).map((r: any) => r.query),
+            questions: (raw.related_questions || []).map((r: any) => r.question),
+            pages: (analysis.pages || []).slice(0, 20).map((p: any) => ({
+                h1: p.h1 || "",
+                h2: p.h2 || [],
+                h3: p.h3 || []
+            }))
         };
     }
 }

@@ -6,6 +6,7 @@ export class LLMService {
         system: string;
         user: string;
         model?: string;
+        modelRef?: string; // e.g. 'thinking_model_1', 'fast_model_2'
         json?: boolean;
     }) {
         const supabase = SupabaseService.getClient();
@@ -21,9 +22,19 @@ export class LLMService {
             throw new Error("OpenRouter configuration not found in Admin settings.");
         }
 
-        const model = options.model || config.default_model || 'google/gemini-2.0-flash-001';
+        // 1. Priority: Explicitly passed model name
+        // 2. Secondary: Model name from config reference (e.g. thinking_model_2)
+        // 3. Fallback: Default model from config
+        // 4. Final: Hardcoded fallback
+        let model = options.model;
+        if (!model && options.modelRef) {
+            model = (config as any)[options.modelRef];
+        }
+        if (!model) {
+            model = config.default_model || 'google/gemini-2.0-flash-001';
+        }
         
-        console.log(`[LLMService] 🤖 Calling AI model: ${model}...`);
+        console.log(`[LLMService] 🤖 Calling AI model: ${model} (Ref: ${options.modelRef || 'none'})...`);
 
         const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
             model: model,

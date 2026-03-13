@@ -1,0 +1,228 @@
+﻿PROMPT_START
+<site_context>
+  <site_description_short>Rabbit care and tips blog</site_description_short>
+  <site_niche>Pet Blog</site_niche>
+</site_context>
+
+<article_target>
+  <title>Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide</title>
+  <keyword>can rabbits eat strawberries</keyword>
+  <category>Rabbit Diet & Nutrition</category>
+  <intent>Informational</intent>
+  <words>1200</words>
+  <images>2</images>
+  <links_must>
+    <url>https://rabbitip.com/ultimate-rabbit-diet-nutrition-guide</url>
+  </links_must>
+  <links_choice>
+    <url>https://rabbitip.com//why-is-my-rabbit-biting</url>
+    <url>https://rabbitip.com/caring-for-mini-lop-bunnies/</url>
+    <url>https://rabbitip.com/what-do-baby-rabbits-eat/</url>
+    <url>https://rabbitip.com/about-us/</url>
+    <url>https://rabbitip.com//indoor-rabbit-cage-setup</url>
+    <url>https://rabbitip.com/</url>
+    <url>https://rabbitip.com/care-for-newborn-bunnies/</url>
+    <url>https://rabbitip.com/disclaimer/</url>
+    <url>https://rabbitip.com/what-is-the-best-food-for-rabbits/</url>
+    <url>https://rabbitip.com/best-hay-for-rabbits/</url>
+    <url>https://rabbitip.com/dmca-policy/</url>
+    <url>https://rabbitip.com//can-rabbits-eat-strawberries</url>
+    <url>https://rabbitip.com/lionhead-rabbit-care/</url>
+    <url>https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/</url>
+    <url>https://rabbitip.com/clicker-training-for-rabbits/</url>
+    <url>https://rabbitip.com/newsletter/</url>
+    <url>https://rabbitip.com/can-rabbits-eat-bell-peppers/</url>
+    <url>https://rabbitip.com/pets-rabbit-breeds/</url>
+    <url>https://rabbitip.com/bunny-chew-toys/</url>
+    <url>https://rabbitip.com/why-do-bunnies-thump/</url>
+    <url>https://rabbitip.com/rabbit-litter-training/</url>
+    <url>https://rabbitip.com/common-rabbit-diseases/</url>
+    <url>https://rabbitip.com/what-is-the-3-3-3-rule-for-rabbits/</url>
+    <url>https://rabbitip.com/rabbit-diarrhoea-treatment/</url>
+    <url>https://rabbitip.com/rabbits-eat-cucumbers/</url>
+    <url>https://rabbitip.com/bunny-gi-stasis/</url>
+    <url>https://rabbitip.com/rabbit-vet-near/</url>
+    <url>https://rabbitip.com/newsletter-subscribe/</url>
+    <url>https://rabbitip.com/blog/</url>
+    <url>https://rabbitip.com/test-article-ai-persistence</url>
+  </links_choice>
+</article_target>
+
+<serp_data>
+{
+  "avg_words": 611,
+  "organic": [
+    {
+      "t": "Can Rabbits Eat Strawberries? A Vet Explains - DodoWell",
+      "s": "Strawberries are a safe snack for your rabbit to eat, but there are some things to keep in mind when"
+    },
+    {
+      "t": "Can Rabbits Eat Strawberries? Read Before You Feed",
+      "s": "Yes, rabbits can eat strawberries, but not a lot of them. These sweet fruits are safe to eat as a tr"
+    },
+    {
+      "t": "Bunny ate too many strawberries??? : r/Rabbits",
+      "s": "Yes, strawberries ad all fruit is only to be fed as treats in small amounts! The proper diet for an "
+    },
+    {
+      "t": "Can rabbits eat strawberries and blueberries?",
+      "s": "Yes, in moderation. Meaning, 1 jumbo blueberry or 2 regular small ones every other day or few days, "
+    },
+    {
+      "t": "Fruit Is a Tasty Treat",
+      "s": "Fruits like apples, bananas, and berries are a treat because of their high sugar content. Bunny may "
+    },
+    {
+      "t": "Are strawberry tops fine for rabbits?",
+      "s": "Are strawberry tops safe for rabbits? Flopsy won't eat the berry but she steals the tops just the gr"
+    },
+    {
+      "t": "House Rabbit Diet",
+      "s": "They cannot eat any fruits or vegetables that are going bad, wilting, or getting moldy. If you would"
+    },
+    {
+      "t": "Can rabbits eat strawberries, and what are the side effects ...",
+      "s": "Yes, but do not give them more than 1 small strawberry very occasionally! Fruit is full of sugar and"
+    }
+  ],
+  "searches": [
+    "Can rabbits eat strawberry tops",
+    "Can rabbits eat blueberries",
+    "Can rabbits eat strawberry tops everyday",
+    "Can rabbits eat strawberries raw",
+    "Can rabbits eat strawberries seeds",
+    "What age can rabbits eat strawberries",
+    "Do wild rabbits eat strawberries",
+    "Can rabbits eat strawberries and blueberries"
+  ],
+  "questions": [
+    "How many strawberries can a rabbit eat?",
+    "What is a bunny's favorite fruit?",
+    "Which fruits can rabbits not eat?",
+    "How do bunnies apologize?"
+  ],
+  "pages": [
+    {
+      "h1": "Can Rabbits Eat Strawberries?",
+      "h2": [
+        "And what about the leaves? Γëí╞Æ├¼├┤",
+        "Are strawberries good for rabbits?",
+        "Can rabbits eat strawberry leaves?",
+        "Risks of feeding strawberries to rabbits",
+        "Can rabbits eat strawberries often?",
+        "How can you safely feed strawberries to rabbits?",
+        "Fun Rabbit Toys To Spoil Your BFFs",
+        "Fun Rabbit Toys To Spoil Your BFFs",
+        "Best overall rabbit toy: Kaytee Perfect Chews Hanging Wood Chew",
+        "Best rabbit toy for foraging and hopping: Oxbow Hide & Chew Roll",
+        "Best runner-up rabbit toy: Kaytee Apple Orchard Sticks",
+        "Best rabbit toy for chewing: Kaytee Premium Timothy Chew-A-Bowl",
+        "Best rabbit toy for hiding: eCotrition Snak Shack Activity Log",
+        "Best ball rabbit toy: Andwe Small Animals Play & Activity Balls",
+        "Best variety pack of rabbit toys: Lacrima Rabbit Chew Toy 12-Piece Set",
+        "Best for climbing and stretching: Andwe Seagrass Protector Mat",
+        "More from DodoWell",
+        "The Best Toys For Cats That Will Keep Them Entertained And Happy",
+        "8 Dog Brushes That Are Perfect For Short-Haired Pups",
+        "The Best Low-Fat Dog Foods To Help With Weight Management And Other Health Issues",
+        "5 Best Large Breed Puppy Foods, According To Veterinarians",
+        "The Best Cat Harnesses For Adventurous Cats, According To The Experts",
+        "Here Are Some Of The Best Dog Treadmills Right Now",
+        "6 Healthy Cat Food Options That Meet AAFCO Requirements",
+        "The Best Wet Dog Food, According To Vets",
+        "The 5 Best Puppy Shampoos, According To Experts",
+        "Your Kids Will Love These Animal-Themed Toys",
+        "4 Calming Treats For Dogs That Actually Work",
+        "10 Dog Shampoos That Smell So Good You╬ô├ç├ûll Want To Use Them Yourself"
+      ],
+      "h3": [
+        "Navigation",
+        "Playtime with your cat just got a lot more fun.",
+        "Yes, short-haired dogs still need to be brushed Γëí╞Æ├ëΓòó",
+        "Because low-fat food isn't just for weight loss.",
+        "Here's what to look for in puppy food for big dogs.",
+        "Vets, behaviorists and cat parents weigh in.",
+        "Give your pup╬ô├ç├ûs exercise routine a boost Γëí╞Æ├à├ó╬ô├ç├¼╬ô├û├çΓê⌐Γòò├àΓëí╞Æ├à├ó",
+        "Here╬ô├ç├ûs the secret to finding healthy cat food Γëí╞Æ├û├ç",
+        "What to look for in wet dog food Γëí╞Æ├ë├▓",
+        "Here's what to look for (and avoid) in a puppy shampoo.",
+        "For aspiring pet parents.",
+        "Chill out Γëí╞Æ├┐├ä",
+        "Do you want your dog to smell like pina colada ╬ô├ç├╢ or grapefruit and lemongrass? Γëí╞Æ├¼├¼Γëí╞Æ├æ├æ"
+      ]
+    },
+    {
+      "h1": "Can Rabbits Eat Strawberries? Vet-Approved Guide",
+      "h2": [
+        "Can Rabbits Eat Strawberries?",
+        "Can Rabbits Eat Strawberries Raw?",
+        "What Is A Bunny's Favorite Fruit?",
+        "What Is The Healthiest Thing To Feed A Rabbit?",
+        "What Does Fully Healthy Offer?",
+        "Final Thoughts",
+        "Leave a comment",
+        "Find Your Faves",
+        "Location",
+        "Follow us",
+        "Country",
+        "Added to your cart:"
+      ],
+      "h3": [
+        "Are Strawberries Safe For Rabbits To Eat?",
+        "What Are The Risks Of Feeding Too Many Strawberries?",
+        "Should Strawberries Be Cooked Or Raw For Rabbits?",
+        "Are Dried Or Frozen Strawberries Okay For Rabbits?",
+        "What Fruits Do Rabbits Commonly Enjoy?",
+        "Can Rabbits Have Their Favorite Fruits Often?",
+        "What Should Make Up The Bulk Of A Rabbit╬ô├ç├ûs Diet?",
+        "What Supplements Or Additions Support Rabbit Health?",
+        "What Is Fully healthy And Who Is It For?",
+        "What Kind Of Products Are Sold On Fully healthy?",
+        "What fruits can rabbits not eat?",
+        "What is the 3-3-3 rule for bunnies?",
+        "How many strawberries can you give a bunny?",
+        "What do rabbits cannot eat?",
+        "Are bananas safe for rabbits?"
+      ]
+    },
+    {
+      "h1": "Bunny ate too many strawberries???",
+      "h2": [
+        "Top Posts"
+      ],
+      "h3": []
+    },
+    {
+      "h1": "",
+      "h2": [],
+      "h3": []
+    },
+    {
+      "h1": "Fruit Is a Tasty Treat",
+      "h2": [
+        "Daily Fresh Leafy Greens",
+        "Getting to Know Your Rabbit"
+      ],
+      "h3": []
+    },
+    {
+      "h1": "",
+      "h2": [],
+      "h3": []
+    },
+    {
+      "h1": "",
+      "h2": [],
+      "h3": []
+    },
+    {
+      "h1": "",
+      "h2": [],
+      "h3": []
+    }
+  ]
+}
+</serp_data>
+
+generate now.
+PROMPT_END

@@ -1,0 +1,3195 @@
+﻿Using URL: https://rodehkxzrhmhdgpsvgjq.supabase.co
+Found Blog: rabbitip ID: 441679a0-7849-4011-bee9-41f3223c8523
+Found Job ID: ad350495-d838-4893-81a1-7a31e5e5c56f
+DATA_START
+{
+  "blog": {
+    "id": "441679a0-7849-4011-bee9-41f3223c8523",
+    "user_id": "59d92ec3-0bee-419a-b488-a930d6d18f7a",
+    "name": "rabbitip",
+    "url": "https://rabbitip.com",
+    "wp_api_key": "zNog 5iRs iXC6 WwLI neVl Z57h",
+    "platform": "wordpress",
+    "created_at": "2026-03-03T17:56:26.096519+00:00",
+    "updated_at": "2026-03-04T16:05:40.629+00:00",
+    "metadata": {
+      "last_sync": "2026-03-04T16:05:40.629Z",
+      "page_count": 10,
+      "post_count": 39,
+      "intelligence": {
+        "total": 49,
+        "status": "completed",
+        "progress": 49,
+        "current_url": "",
+        "last_updated": "2026-03-04T16:08:57.102Z"
+      },
+      "sitemap_links": 0,
+      "total_content": 49,
+      "discovery_method": "WordPress REST API"
+    },
+    "wp_username": "BlogSeoAI",
+    "site_type": "wordpress",
+    "writing_mode": "Auto",
+    "site_niche": "Pet Blog",
+    "site_description": "Rabbit care and tips blog"
+  },
+  "job": {
+    "id": "ad350495-d838-4893-81a1-7a31e5e5c56f",
+    "user_id": "59d92ec3-0bee-419a-b488-a930d6d18f7a",
+    "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+    "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+    "page_id": "1180cded-eb58-4e58-8e0f-68ee69c38c3a",
+    "title": "Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide",
+    "slug": "/can-rabbits-eat-strawberries",
+    "primary_keyword": "can rabbits eat strawberries",
+    "content": "<h1>Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide</h1><p>This is a generated test article for <strong>can rabbits eat strawberries</strong>.</p><p>It covers multiple aspects of the topic to provide comprehensive intelligence.</p>",
+    "status": "completed",
+    "created_at": "2026-03-13T08:59:12.661971+00:00",
+    "updated_at": "2026-03-13T08:59:56.91931+00:00",
+    "generation_status": "completed",
+    "generation_progress": {
+      "editing": {
+        "status": "completed",
+        "started_at": "2026-03-13T08:59:37.088Z",
+        "finished_at": "2026-03-13T08:59:37.709Z"
+      },
+      "writing": {
+        "status": "completed",
+        "started_at": "2026-03-13T08:59:34.898Z",
+        "finished_at": "2026-03-13T08:59:35.824Z"
+      },
+      "briefing": {
+        "status": "completed",
+        "started_at": "2026-03-13T08:59:33.056Z",
+        "finished_at": "2026-03-13T08:59:33.667Z"
+      },
+      "humanizing": {
+        "status": "completed",
+        "started_at": "2026-03-13T08:59:38.934Z",
+        "finished_at": "2026-03-13T08:59:39.626Z"
+      },
+      "serp_calling": {
+        "status": "completed",
+        "started_at": "2026-03-13T08:59:13.544Z",
+        "finished_at": "2026-03-13T08:59:22.346Z"
+      },
+      "serp_analyzing": {
+        "status": "completed",
+        "started_at": "2026-03-13T08:59:23.633Z",
+        "finished_at": "2026-03-13T08:59:31.805Z"
+      }
+    },
+    "generation_data": {
+      "serp": {
+        "intent": "Informational",
+        "organic_results": [
+          {
+            "link": "https://www.thedodo.com/dodowell/can-rabbits-eat-strawberries",
+            "title": "Can Rabbits Eat Strawberries? A Vet Explains - DodoWell",
+            "snippet": "Strawberries are a safe snack for your rabbit to eat, but there are some things to keep in mind when you're feeding them to your BFF.",
+            "position": 1
+          },
+          {
+            "link": "https://fullyhealthy.com/blogs/news/can-rabbits-eat-strawberries?srsltid=AfmBOoq-PbjPEp2_I5yDi4cUoalBZaAZ62asCBco3hescivDAC8afU_A",
+            "title": "Can Rabbits Eat Strawberries? Read Before You Feed",
+            "snippet": "Yes, rabbits can eat strawberries, but not a lot of them. These sweet fruits are safe to eat as a treat and are good for you.",
+            "position": 2
+          },
+          {
+            "link": "https://www.reddit.com/r/Rabbits/comments/c7zyw0/bunny_ate_too_many_strawberries/",
+            "title": "Bunny ate too many strawberries??? : r/Rabbits",
+            "snippet": "Yes, strawberries ad all fruit is only to be fed as treats in small amounts! The proper diet for an adult bunny is - UNLIMITED hay, 1/4 cup MAX ...",
+            "position": 3
+          },
+          {
+            "link": "https://www.facebook.com/groups/houserabbit/posts/10161410750703809/",
+            "title": "Can rabbits eat strawberries and blueberries?",
+            "snippet": "Yes, in moderation. Meaning, 1 jumbo blueberry or 2 regular small ones every other day or few days, or one strawberry top every other day.",
+            "position": 4
+          },
+          {
+            "link": "https://sandiegorabbits.org/education/fruit",
+            "title": "Fruit Is a Tasty Treat",
+            "snippet": "Fruits like apples, bananas, and berries are a treat because of their high sugar content. Bunny may ask for fruit often, but limit this type of food to once or ...",
+            "position": 5
+          },
+          {
+            "link": "https://binkybunny.com/forums/topic/are-strawberry-tops-fine-for-rabbitsae/",
+            "title": "Are strawberry tops fine for rabbits?",
+            "snippet": "Are strawberry tops safe for rabbits? Flopsy won't eat the berry but she steals the tops just the green leafy parts with the stem. Are they okay for her to ...",
+            "position": 6
+          },
+          {
+            "link": "https://home.adelphi.edu/~tw17718/Diet.html",
+            "title": "House Rabbit Diet",
+            "snippet": "They cannot eat any fruits or vegetables that are going bad, wilting, or getting moldy. If you wouldn't eat it, then don't give it to your rabbit. Please note ...",
+            "position": 7
+          },
+          {
+            "link": "https://www.quora.com/Can-rabbits-eat-strawberries-and-what-are-the-side-effects-if-they-cant",
+            "title": "Can rabbits eat strawberries, and what are the side effects ...",
+            "snippet": "Yes, but do not give them more than 1 small strawberry very occasionally! Fruit is full of sugar and can harm them if given too much. Upvote ...",
+            "position": 8
+          }
+        ],
+        "related_searches": [
+          {
+            "query": "Can rabbits eat strawberry tops"
+          },
+          {
+            "query": "Can rabbits eat blueberries"
+          },
+          {
+            "query": "Can rabbits eat strawberry tops everyday"
+          },
+          {
+            "query": "Can rabbits eat strawberries raw"
+          },
+          {
+            "query": "Can rabbits eat strawberries seeds"
+          },
+          {
+            "query": "What age can rabbits eat strawberries"
+          },
+          {
+            "query": "Do wild rabbits eat strawberries"
+          },
+          {
+            "query": "Can rabbits eat strawberries and blueberries"
+          }
+        ],
+        "related_questions": [
+          {
+            "type": "featured_snippet",
+            "title": "Yes, Rabbits Can Eat Strawberries! But Follow These Tips",
+            "snippet": "Rabbits can enjoy a little bit of strawberry a couple of days a week, but they shouldn't eat them every day. The amount to give depends on the rabbit's size, weight, and breed. One to three strawberries is the maximum any rabbit should get at a time.",
+            "question": "How many strawberries can a rabbit eat?"
+          },
+          {
+            "type": "ai_overview",
+            "question": "What is a bunny's favorite fruit?"
+          },
+          {
+            "type": "ai_overview",
+            "question": "Which fruits can rabbits not eat?"
+          },
+          {
+            "type": "ai_overview",
+            "question": "How do bunnies apologize?"
+          }
+        ]
+      },
+      "brief": null,
+      "content": null,
+      "analysis": {
+        "pages": [
+          {
+            "h1": "Can Rabbits Eat Strawberries?",
+            "h2": [
+              "And what about the leaves? ≡ƒìô",
+              "Are strawberries good for rabbits?",
+              "Can rabbits eat strawberry leaves?",
+              "Risks of feeding strawberries to rabbits",
+              "Can rabbits eat strawberries often?",
+              "How can you safely feed strawberries to rabbits?",
+              "Fun Rabbit Toys To Spoil Your BFFs",
+              "Fun Rabbit Toys To Spoil Your BFFs",
+              "Best overall rabbit toy: Kaytee Perfect Chews Hanging Wood Chew",
+              "Best rabbit toy for foraging and hopping: Oxbow Hide & Chew Roll",
+              "Best runner-up rabbit toy: Kaytee Apple Orchard Sticks",
+              "Best rabbit toy for chewing: Kaytee Premium Timothy Chew-A-Bowl",
+              "Best rabbit toy for hiding: eCotrition Snak Shack Activity Log",
+              "Best ball rabbit toy: Andwe Small Animals Play & Activity Balls",
+              "Best variety pack of rabbit toys: Lacrima Rabbit Chew Toy 12-Piece Set",
+              "Best for climbing and stretching: Andwe Seagrass Protector Mat",
+              "More from DodoWell",
+              "The Best Toys For Cats That Will Keep Them Entertained And Happy",
+              "8 Dog Brushes That Are Perfect For Short-Haired Pups",
+              "The Best Low-Fat Dog Foods To Help With Weight Management And Other Health Issues",
+              "5 Best Large Breed Puppy Foods, According To Veterinarians",
+              "The Best Cat Harnesses For Adventurous Cats, According To The Experts",
+              "Here Are Some Of The Best Dog Treadmills Right Now",
+              "6 Healthy Cat Food Options That Meet AAFCO Requirements",
+              "The Best Wet Dog Food, According To Vets",
+              "The 5 Best Puppy Shampoos, According To Experts",
+              "Your Kids Will Love These Animal-Themed Toys",
+              "4 Calming Treats For Dogs That Actually Work",
+              "10 Dog Shampoos That Smell So Good YouΓÇÖll Want To Use Them Yourself"
+            ],
+            "h3": [
+              "Navigation",
+              "Playtime with your cat just got a lot more fun.",
+              "Yes, short-haired dogs still need to be brushed ≡ƒÉ╢",
+              "Because low-fat food isn't just for weight loss.",
+              "Here's what to look for in puppy food for big dogs.",
+              "Vets, behaviorists and cat parents weigh in.",
+              "Give your pupΓÇÖs exercise routine a boost ≡ƒÅâΓÇìΓÖÇ∩╕Å≡ƒÅâ",
+              "HereΓÇÖs the secret to finding healthy cat food ≡ƒÖÇ",
+              "What to look for in wet dog food ≡ƒÉò",
+              "Here's what to look for (and avoid) in a puppy shampoo.",
+              "For aspiring pet parents.",
+              "Chill out ≡ƒÿÄ",
+              "Do you want your dog to smell like pina colada ΓÇö or grapefruit and lemongrass? ≡ƒìì≡ƒÑÑ"
+            ],
+            "h4": [],
+            "h5": [],
+            "h6": [],
+            "link": "https://www.thedodo.com/dodowell/can-rabbits-eat-strawberries",
+            "meta_title": "Can Rabbits Eat Strawberries? A Vet Explains - DodoWell - The Dodo",
+            "word_count": 893
+          },
+          {
+            "h1": "Can Rabbits Eat Strawberries? Vet-Approved Guide",
+            "h2": [
+              "Can Rabbits Eat Strawberries?",
+              "Can Rabbits Eat Strawberries Raw?",
+              "What Is A Bunny's Favorite Fruit?",
+              "What Is The Healthiest Thing To Feed A Rabbit?",
+              "What Does Fully Healthy Offer?",
+              "Final Thoughts",
+              "Leave a comment",
+              "Find Your Faves",
+              "Location",
+              "Follow us",
+              "Country",
+              "Added to your cart:"
+            ],
+            "h3": [
+              "Are Strawberries Safe For Rabbits To Eat?",
+              "What Are The Risks Of Feeding Too Many Strawberries?",
+              "Should Strawberries Be Cooked Or Raw For Rabbits?",
+              "Are Dried Or Frozen Strawberries Okay For Rabbits?",
+              "What Fruits Do Rabbits Commonly Enjoy?",
+              "Can Rabbits Have Their Favorite Fruits Often?",
+              "What Should Make Up The Bulk Of A RabbitΓÇÖs Diet?",
+              "What Supplements Or Additions Support Rabbit Health?",
+              "What Is Fully healthy And Who Is It For?",
+              "What Kind Of Products Are Sold On Fully healthy?",
+              "What fruits can rabbits not eat?",
+              "What is the 3-3-3 rule for bunnies?",
+              "How many strawberries can you give a bunny?",
+              "What do rabbits cannot eat?",
+              "Are bananas safe for rabbits?"
+            ],
+            "h4": [],
+            "h5": [],
+            "h6": [],
+            "link": "https://fullyhealthy.com/blogs/news/can-rabbits-eat-strawberries?srsltid=AfmBOoq-PbjPEp2_I5yDi4cUoalBZaAZ62asCBco3hescivDAC8afU_A",
+            "meta_title": "Can Rabbits Eat Strawberries? Read Before You Feed",
+            "word_count": 1865
+          },
+          {
+            "h1": "Bunny ate too many strawberries???",
+            "h2": [
+              "Top Posts"
+            ],
+            "h3": [],
+            "h4": [],
+            "h5": [],
+            "h6": [],
+            "link": "https://www.reddit.com/r/Rabbits/comments/c7zyw0/bunny_ate_too_many_strawberries/",
+            "meta_title": "Reddit - The heart of the internet",
+            "word_count": 190
+          },
+          {
+            "h1": "",
+            "h2": [],
+            "h3": [],
+            "h4": [],
+            "h5": [],
+            "h6": [],
+            "link": "https://www.facebook.com/groups/houserabbit/posts/10161410750703809/",
+            "meta_title": "House Rabbit Society | Can I give my boys strawberries and blueberries IΓÇÖm getting mixed answers on google",
+            "word_count": 0
+          },
+          {
+            "h1": "Fruit Is a Tasty Treat",
+            "h2": [
+              "Daily Fresh Leafy Greens",
+              "Getting to Know Your Rabbit"
+            ],
+            "h3": [],
+            "h4": [
+              "Rabbit-Safe Fruits (in small portions):",
+              "Dangerous/Poisonous foods for your rabbit"
+            ],
+            "h5": [],
+            "h6": [],
+            "link": "https://sandiegorabbits.org/education/fruit",
+            "meta_title": "Fruit Is a Tasty Treat ΓÇö San Diego House Rabbit Society",
+            "word_count": 316
+          },
+          {
+            "h1": "",
+            "h2": [],
+            "h3": [],
+            "h4": [],
+            "h5": [],
+            "h6": [],
+            "link": "https://binkybunny.com/forums/topic/are-strawberry-tops-fine-for-rabbitsae/",
+            "meta_title": "Are strawberry tops fine for rabbits? | BinkyBunny",
+            "word_count": 369
+          },
+          {
+            "h1": "",
+            "h2": [],
+            "h3": [],
+            "h4": [],
+            "h5": [],
+            "h6": [],
+            "link": "https://home.adelphi.edu/~tw17718/Diet.html",
+            "meta_title": "House Rabbit Diet",
+            "word_count": 646
+          },
+          {
+            "h1": "",
+            "h2": [],
+            "h3": [],
+            "h4": [],
+            "h5": [],
+            "h6": [],
+            "link": "https://www.quora.com/Can-rabbits-eat-strawberries-and-what-are-the-side-effects-if-they-cant",
+            "error": true,
+            "meta_title": "Can rabbits eat strawberries, and what are the side effects ...",
+            "word_count": 0
+          }
+        ],
+        "average_word_count": 611
+      }
+    },
+    "content_clusters": {
+      "id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "topic": "Rabbit Diet & Nutrition",
+      "intent": "Informational",
+      "status": "completed",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "user_id": "59d92ec3-0bee-419a-b488-a930d6d18f7a",
+      "created_at": "2026-03-04T17:19:12.955453+00:00",
+      "updated_at": "2026-03-04T17:19:12.955453+00:00",
+      "strategy_summary": "Establish rabbitip.com as the go-to authority on rabbit nutrition by covering every aspect of what rabbits can and cannot eat, from staple hay to safe fruits, vegetables, and human foods."
+    }
+  },
+  "page": {
+    "id": "1180cded-eb58-4e58-8e0f-68ee69c38c3a",
+    "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+    "title": "Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide",
+    "slug": "/can-rabbits-eat-strawberries",
+    "type": "supporting",
+    "status": "published",
+    "word_count_target": 1200,
+    "article_id": null,
+    "created_at": "2026-03-04T17:19:13.294391+00:00",
+    "updated_at": "2026-03-04T17:19:13.294391+00:00"
+  },
+  "clusterPages": [
+    {
+      "id": "2c8638e5-0228-4b62-9460-d6f3d3d232e5",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "The Ultimate Rabbit Diet & Nutrition Guide: What to Feed Your Bunny",
+      "slug": "/ultimate-rabbit-diet-nutrition-guide",
+      "type": "pillar",
+      "status": "published",
+      "word_count_target": 3000,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "498bb526-8123-4e3f-9f92-c79af1d0a67b",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "What Human Food Can Bunnies Eat? 15 Healthy Options & Complete Care Guide",
+      "slug": "/human-food-bunnies-eat",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "c4d069cf-f848-43dc-951f-46b8e1f08dad",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Best Hay for Rabbits to Eat-A Pet Owner's Guide",
+      "slug": "/best-hay-for-rabbits",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "1180cded-eb58-4e58-8e0f-68ee69c38c3a",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide",
+      "slug": "/can-rabbits-eat-strawberries",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "a5851847-741e-454f-9ba2-4d1351baf056",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Can Rabbits Eat Broccoli? Expert Tips for a Healthy Bunny Diet",
+      "slug": "/can-rabbits-eat-broccoli",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "9336dadf-29bd-48a7-9bf7-e03a76f6aa8d",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Can rabbits have cucumbers? Safety & Nutrition Guide 2025",
+      "slug": "/rabbits-eat-cucumbers",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "644fa454-b734-4145-87b4-33e76464c78e",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Can Rabbits Eat Bell Peppers? Essential Guide for a Healthy Bunny",
+      "slug": "/can-rabbits-eat-bell-peppers",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "fa1d982a-ee0c-470d-a52e-c0952bf38f75",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Can rabbits eat spinach? Safe Feeding Guide 2025",
+      "slug": "/rabbits-eat-spinach",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "fde47ba5-6570-4979-a7f2-ae5c3e8db628",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "What is the best food for rabbits?",
+      "slug": "/what-is-the-best-food-for-rabbits",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "944e3a11-a919-4f05-8b70-e6a44e8a83c2",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "What Do Baby Rabbits Eat? A Complete Feeding Guide",
+      "slug": "/what-do-baby-rabbits-eat",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "a1e3f8aa-2ec7-4262-9df3-c7f31d9f1ec1",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Can Rabbits Eat Carrots? The Truth Behind a Popular Myth",
+      "slug": "/can-rabbits-eat-carrots",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "b2804f15-9060-498e-9ae9-2403e21c238e",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Can Rabbits Eat Bananas? Safe Fruit Feeding Tips for Bunnies",
+      "slug": "/can-rabbits-eat-bananas",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "f83e5986-d988-40c6-882f-1df6e370dcb8",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Rabbit Pellets Guide: How Much and How Often to Feed Your Bunny",
+      "slug": "/rabbit-pellets-guide",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1200,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    },
+    {
+      "id": "422024e2-bdd0-4b7b-8f00-e6f0a3ba723f",
+      "cluster_id": "7aefa70d-30c2-4c1d-b706-7665bdd07f5f",
+      "title": "Toxic Foods for Rabbits: Complete List of What Bunnies Should Never Eat",
+      "slug": "/toxic-foods-for-rabbits",
+      "type": "supporting",
+      "status": "published",
+      "word_count_target": 1500,
+      "article_id": null,
+      "created_at": "2026-03-04T17:19:13.294391+00:00",
+      "updated_at": "2026-03-04T17:19:13.294391+00:00"
+    }
+  ],
+  "prompt": {
+    "id": "3dfe2d0d-7ae3-4393-9de1-9c6a14c70e83",
+    "slug": "content-brief",
+    "name": "Content Brief Generator Prompt",
+    "system_prompt": "## ROLE\n\nElite SEO strategist + topical authority architect + Google Search Quality Evaluator + editorial director. Produce complete Article Briefs that help create top-ranking articles. Adapt everything to the site niche. Be specific. Never generic.\n\n---\n\n## RULES\n\n- ALWAYS produce all 16 sections ΓÇö never skip\n- NEVER invent data not present in input\n- NEVER use filler (\"this is important\" / \"as mentioned\")\n- ALWAYS match tone/depth/persona to `site_niche`\n- ALWAYS run self-check before outputting\n- OUTPUT: Begin with S1 immediately. No preamble. No sign-off.\n\n---\n\n## NICHE PROFILES\n\nApply matching row to every section. If niche not listed, infer from `site_description_short`.\n\n| site_niche | Tone | Depth | Authority |\n|---|---|---|---|\n| Pet Blog | Warm, caring, educational | Accessible + practical | Vet citations, real examples |\n| Technology / AI News | Analytical, precise | Technical but clear | Research papers, industry data |\n| Finance / Investing | Authoritative, cautious | Deep + evidence-based | Regulatory sources, statistics |\n| Health / Medical | Empathetic, evidence-based | Clinical + plain language | Peer-reviewed, NHS/CDC |\n| Food / Recipe | Friendly, sensory | Practical + step-driven | Chef authority, technique |\n| Travel | Inspiring, vivid | Immersive + logistical | Local knowledge, first-hand |\n| News / Editorial | Objective, concise | Tight + source-driven | Primary sources, named quotes |\n| SaaS / B2B | Results-focused | ROI-oriented + specific | Case studies, benchmarks |\n| Legal | Precise, neutral | High accuracy + caveated | Statute refs, bar associations |\n| Parenting | Supportive, warm | Practical + non-judgmental | Pediatric sources, lived exp. |\n\n---\n\n## OUTPUT CONTRACT\n\nProduce all 16 sections in order. Format per column 2 ΓÇö no deviations.\n\n| # | Section | Format |\n|---|---|---|\n| S1 | Site Context Analysis | Bullets: audience ┬╖ knowledge level ┬╖ content style ┬╖ authority expectations |\n| S2 | SERP Intelligence Analysis | 3ΓÇô5 sentence prose summary + bullet list of patterns (max 6 items, max 12 words each) |\n| S3 | Semantic Entity Extraction | Grouped bullet lists ΓÇö min 4 categories |\n| S4 | Topical Coverage Map | Bullets: topic + one \"why it matters\" note each |\n| S5 | Content Gap Detection | Exactly 2ΓÇô4 gaps ΓÇö what competitors miss + why it matters |\n| S6 | Target Reader Persona | Card: name ┬╖ knowledge ┬╖ emotion ┬╖ problem ┬╖ success definition |\n| S7 | Search Intent Analysis | Primary intent ┬╖ secondary intents ┬╖ hidden intent signals |\n| S8 | SEO Title + Meta | 2 title options with char counts ┬╖ 1 meta description with char count |\n| S9 | Keyword Cluster | Table: Type / Keyword / Notes ΓÇö min 7 rows |\n| S10 | Master Content Outline | H2/H3 structure ΓÇö word count target [Nw] after every heading |\n| S11 | Data Tables | 1ΓÇô2 table structures: column headers + one-line purpose |\n| S12 | Visual Content Plan | 6-field spec per image ΓÇö see format below ΓÇö NO generation prompts |\n| S13 | Authority Sources | 5ΓÇô7 sources: domain ┬╖ topic ┬╖ cite placement |\n| S14 | Internal Linking Plan | Each URL: anchor text + section placement |\n| S15 | Writing Style Guidelines | Table: Tone ┬╖ Grade ┬╖ Flesch ┬╖ Sentence length ┬╖ Contractions ┬╖ Word count |\n| S16 | Conclusion Strategy | Bullets: core message ┬╖ transition ┬╖ CTA ┬╖ related articles |\n\n---\n\n## S12 IMAGE SPEC FORMAT\n\nUse exactly this structure per image. No extra fields. No generation prompts.\n\n```\nIMG[N] type: featured|in-body\n1. purpose   : [one sentence ΓÇö why this image exists]\n2. subject   : [specific subject ΓÇö not vague]\n3. tone      : [emotional register: warm / clinical / alarming / inspiring]\n4. placement : [H2 section name + before/after which paragraph]\n5. alt       : [SEO alt text ΓÇö under 125 chars]\n6. hook      : [one sentence connecting image to surrounding text]\n```\n\n**Brief produces:** purpose ┬╖ subject ┬╖ tone ┬╖ placement ┬╖ alt ┬╖ hook\n**Brief does NOT produce:** camera style ┬╖ lighting ┬╖ style modifiers ┬╖ generation prompts ┬╖ dimensions\n\n---\n\n## S15 READABILITY TARGETS BY NICHE\n\nInclude this table in S15 output. Apply correct row to writing style recommendations.\n\n| Niche | Flesch Ease | FK Grade | Avg Sentence | Contractions |\n|---|---|---|---|---|\n| Pet Blog | 65ΓÇô75 | 6ΓÇô7 | 14ΓÇô18 words | Freely |\n| Food / Recipe | 70ΓÇô80 | 5ΓÇô6 | 12ΓÇô16 words | Freely |\n| Travel | 60ΓÇô70 | 7ΓÇô8 | 15ΓÇô20 words | Freely |\n| Parenting | 65ΓÇô75 | 6ΓÇô7 | 14ΓÇô18 words | Freely |\n| Health / Medical | 50ΓÇô60 | 8ΓÇô9 | 18ΓÇô22 words | Sparingly |\n| Technology / AI News | 45ΓÇô55 | 9ΓÇô10 | 18ΓÇô22 words | Sparingly |\n| News / Editorial | 55ΓÇô65 | 8ΓÇô9 | 16ΓÇô20 words | Sparingly |\n| SaaS / B2B | 45ΓÇô55 | 9ΓÇô10 | 18ΓÇô22 words | Avoid |\n| Finance / Investing | 40ΓÇô50 | 10ΓÇô11 | 20ΓÇô25 words | Avoid |\n| Legal | 35ΓÇô45 | 11ΓÇô12 | 20ΓÇô25 words | Avoid |\n\n---\n\n## SELF-CHECK\n\nVerify all before outputting. Fix any failures before output.\n\n- [ ] All 16 sections present and non-empty\n- [ ] S10 word count targets sum to ┬▒10% of `target_word_length`\n- [ ] S8 has 2 title options with character counts\n- [ ] S9 has minimum 7 keyword rows\n- [ ] S5 has exactly 2ΓÇô4 gaps\n- [ ] S14 includes every URL from `internal_links_must`\n- [ ] S12 every image has all 6 fields ΓÇö zero generation prompt language\n- [ ] S15 includes correct niche readability row\n- [ ] All recommendations niche-specific ΓÇö no generic advice",
+    "user_prompt_template": "generate now.",
+    "variables": [],
+    "version": 1,
+    "is_published": true,
+    "created_at": "2026-03-13T11:32:10.665864+00:00",
+    "updated_at": "2026-03-13T13:20:49.133+00:00"
+  },
+  "intelligence": [
+    {
+      "id": "227f5aac-69d1-4480-b911-04788ddd3509",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "4cd7a37b-a530-4cc0-872b-da2d3546a25f",
+      "title": "Why Is My Rabbit Biting? Causes & How to Stop Aggressive Behavior",
+      "meta_description": null,
+      "h1": null,
+      "h2": [],
+      "h3": [],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": null,
+      "category": null,
+      "tags": [],
+      "internal_links": [],
+      "schema_type": null,
+      "canonical": null,
+      "status": "completed",
+      "last_crawled_at": null,
+      "created_at": "2026-03-13T08:26:12.914584+00:00",
+      "updated_at": "2026-03-13T08:25:56.566+00:00",
+      "url": "//why-is-my-rabbit-biting",
+      "intent": "Informational",
+      "primary_keyword": "why is my rabbit biting",
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Why Is My Rabbit Biting? Causes & How to Stop Aggressive Behavior",
+        "source_url": "internal:///why-is-my-rabbit-biting"
+      }
+    },
+    {
+      "id": "98942769-7d04-4ac2-9131-0a2a80ef73d5",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "313bf612-da69-487e-b5b4-02c88fb19af7",
+      "title": "Caring for Mini Lop Bunnies: Essential Guide - Rabbitip.com",
+      "meta_description": "Caring for Mini Lop Bunnies made simple! Discover essential tips on housing, diet, and health for these adorable floppy-eared Mini Lop Bunnies.",
+      "h1": "Caring for Mini Lop Bunnies: Essential Guide",
+      "h2": [
+        "Mini Lop Quick Facts Table",
+        "Key Points",
+        "What Is a Mini Lop Rabbit?",
+        "Is a Mini Lop Right for You?",
+        "Bringing Your Mini Lop Home",
+        "Housing Your Mini Lop",
+        "Feeding Your Mini Lop",
+        "Grooming Your Mini Lop",
+        "Exercise and Play",
+        "Health Care",
+        "Training Your Mini Lop",
+        "Are Mini Lops Indoor or Outdoor Pets?",
+        "Tips for New Mini Lop Owners",
+        "Final Thoughts about Mini Lop Bunnies Care",
+        "FAQ ΓÇô Caring for Mini Lop Bunnies"
+      ],
+      "h3": [
+        "Size and Looks",
+        "How Long They Live",
+        "Mini Lop Behavior",
+        "Good Points and Bad Points",
+        "With Kids and Other Pets",
+        "Where to Get a Mini Lop Rabbit",
+        "What YouΓÇÖll Need",
+        "Setting Up a Safe Home",
+        "Indoor Housing",
+        "Outdoor Housing",
+        "Bedding and Cleaning",
+        "Hay Is Most Important",
+        "Fresh Veggies and Fruits",
+        "Pellets",
+        "Foods to Avoid",
+        "Water",
+        "Brushing",
+        "Nail Trimming and Ear Care",
+        "Shedding Seasons",
+        "Daily Activity",
+        "Toys for Fun",
+        "Making Your Home Safe for Play",
+        "Common Health Issues",
+        "Shots and Fixing",
+        "Regular Vet Visits",
+        "Signs of Illness",
+        "Making Friends",
+        "Litter Training",
+        "How to Hold Your Mini Lop",
+        "Teaching Tricks",
+        "Risks Outside",
+        "Indoor/Outdoor Mix",
+        "Tips for Hot and Cold Days",
+        "Keep a Schedule",
+        "Be Patient",
+        "Where to Get Help",
+        "How Long Do Mini Lops Live?",
+        "Are Mini Lops Hard to Care For?",
+        "Mini Lops vs. Holland Lops?",
+        "How Often Should I Clean Their Cage?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 2688,
+      "category": "Rabbit Care",
+      "tags": [
+        "Bunny care essentials",
+        "Mini Lop care",
+        "Pet rabbit guide",
+        "rabbit care tips"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "Mini Lops"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "Mini Lop"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "Mini Lop"
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Timothy hay"
+        },
+        {
+          "href": "https://rabbitip.com/caring-for-mini-lop-bunnies/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Hay is the most important food"
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Timothy hay is best for adult Mini Lops"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-bell-peppers/",
+          "text": "Bell peppers"
+        },
+        {
+          "href": "https://rabbitip.com/rabbits-eat-cucumbers/",
+          "text": "Cucumber"
+        },
+        {
+          "href": "https://rabbitip.com/human-food-bunnies-eat/",
+          "text": "safe human foods"
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "timothy hay."
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": "Rabbit Hemorrhagic Disease Virus (RHDV2)."
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "Mini Lops"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "Mini Lops do best as indoor pets"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/caring-for-mini-lop-bunnies/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:19.401+00:00",
+      "created_at": "2026-03-03T20:38:28.805856+00:00",
+      "updated_at": "2026-03-04T16:08:19.401+00:00",
+      "url": "https://rabbitip.com/caring-for-mini-lop-bunnies/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Caring for Mini Lop Bunnies: Essential Guide",
+        "source_url": "https://rabbitip.com/caring-for-mini-lop-bunnies/"
+      }
+    },
+    {
+      "id": "c8ae9e94-f0c0-443d-a1aa-347f4b8fa6a2",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "f8c3868e-2637-4f53-aac7-3bdeb9fcd199",
+      "title": "What Do Baby Rabbits Eat? A Complete Feeding Guide - Rabbitip.com",
+      "meta_description": "What do baby rabbits eat? Discover a complete feeding guide by ageΓÇöfrom milk to hay, pellets, and veggiesΓÇöfor healthy bunny growth.",
+      "h1": "What Do Baby Rabbits Eat? A Complete Feeding Guide",
+      "h2": [
+        "Key Takeaways",
+        "Table of Contents",
+        "What Are Baby Rabbits Called?",
+        "What Do Newborn Baby Rabbits Eat?",
+        "Feeding Schedule for Baby Rabbits",
+        "What Do Baby Rabbits Eat When They Start Solid Foods?",
+        "What Do Baby Bunnies Eat Without Mom?",
+        "What Do Wild Baby Rabbits Eat?",
+        "How to Feed a Baby Rabbit",
+        "Safe Foods for Baby Rabbits",
+        "Baby Rabbit Feeding Problems",
+        "Can 3 Week Old Bunnies Survive On Their Own?",
+        "How To Keep A Wild Baby Bunny Alive",
+        "What To Do With Newborn Rabbits",
+        "Diet for Baby Rabbits at Different Ages",
+        "Summary: What Do Baby Rabbits Eat?",
+        "Frequently Asked Questions"
+      ],
+      "h3": [
+        "Can You Feed Baby Rabbits CowΓÇÖs Milk?",
+        "Age: 0-3 Weeks",
+        "Age: 3-4 Weeks",
+        "Age: 4-7 Weeks",
+        "Age: 7+ Weeks",
+        "Alfalfa Hay",
+        "Rabbit Pellets",
+        "Fresh Water",
+        "Homemade Baby Rabbit Formula",
+        "Wild Baby Rabbit Diet by Age:",
+        "For Babies Under 3 Weeks (Milk Feeding)",
+        "For Babies 3+ Weeks (Starting Solid Foods)",
+        "Safe First Vegetables:",
+        "Foods to Avoid:",
+        "For Wild Rabbit Nests:",
+        "For Pet Rabbit Babies:",
+        "What do baby rabbits eat?",
+        "What do newborn bunnies eat?",
+        "What do you feed a wild baby rabbit?",
+        "What do baby bunnies eat without mom?",
+        "How to keep a wild baby bunny alive?",
+        "What to do with newborn rabbits?",
+        "What do baby bunnies eat?",
+        "What is a baby rabbit called?",
+        "What to feed a baby rabbit?",
+        "Can 3-week-old bunnies survive on their own?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 2288,
+      "category": "Rabbit Diet & Nutrition",
+      "tags": [
+        "baby bunny food guide",
+        "baby bunny weaning guide",
+        "baby rabbit",
+        "baby rabbit care tips",
+        "baby rabbit feeding schedule",
+        "baby rabbit food newborn rabbit diet",
+        "baby rabbit milk replacement",
+        "baby rabbit nutrition",
+        "baby rabbits eat",
+        "diet for baby rabbits at different ages",
+        "feeding baby rabbits solid food",
+        "homemade baby rabbit formula",
+        "how to feed baby rabbits",
+        "orphaned baby rabbit food",
+        "Rabbitip.com",
+        "safe foods for baby rabbits",
+        "what do baby bunnies eat",
+        "what do baby rabbits eat",
+        "what to feed baby rabbits"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Alfalfa hay"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet rabbits"
+        },
+        {
+          "href": "https://rabbitip.com/what-do-baby-rabbits-eat/",
+          "text": ""
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/what-do-baby-rabbits-eat/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:21.912+00:00",
+      "created_at": "2026-03-03T20:37:40.82587+00:00",
+      "updated_at": "2026-03-04T16:08:21.912+00:00",
+      "url": "https://rabbitip.com/what-do-baby-rabbits-eat/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "What Do Baby Rabbits Eat? A Complete Feeding Guide",
+        "source_url": "https://rabbitip.com/what-do-baby-rabbits-eat/"
+      }
+    },
+    {
+      "id": "857a7a5b-dc9f-496b-bd85-a38761a4684c",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "f53ee7c1-62d2-4a06-a361-1fc8f02b4e5e",
+      "title": "About Us of Rabbitip.com - Rabbitip.com",
+      "meta_description": "At┬áRabbitip.com, weΓÇÖre here to simplify rabbit care for owners worldwide. Our team? A passionate mix of rabbit expert writer and lifelong bunny parents.",
+      "h1": "About Us of Rabbitip.com",
+      "h2": [
+        "Trusted Rabbit Care Experts"
+      ],
+      "h3": [
+        "Why Trust Us?",
+        "Our Mission",
+        "Join Our Rabbit-Friendly Mission",
+        "Contact With Us"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 197,
+      "category": "",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/",
+          "text": "Rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/about-us/",
+          "text": "About Us Rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/cdn-cgi/l/email-protection#7a13141c153a081b1818130e130a54191517",
+          "text": "[email┬áprotected]"
+        },
+        {
+          "href": "https://rabbitip.com/",
+          "text": "https://rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/contact-us/",
+          "text": "https://rabbitip.com/contact-us"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/about-us/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:45.82+00:00",
+      "created_at": "2026-03-03T20:39:00.953951+00:00",
+      "updated_at": "2026-03-04T16:07:45.82+00:00",
+      "url": "https://rabbitip.com/about-us/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "About Us of Rabbitip.com",
+        "source_url": "https://rabbitip.com/about-us/"
+      }
+    },
+    {
+      "id": "2a905957-5fa1-4c34-bb47-52d8e025e01d",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "4fbd7a62-de3f-4682-b651-1ad129ef757d",
+      "title": "Indoor Rabbit Cage Setup: Pro Tips That Save Money & Time",
+      "meta_description": "Stop making these cage setup mistakes! Get our expert checklist & create the perfect indoor rabbit cage setup in 30 minutes.",
+      "h1": "Perfect Indoor Rabbit Cage Setup: Expert Tips & Mistakes",
+      "h2": [
+        "Quick Setup Checklist",
+        "Choosing the Right Indoor Rabbit Cage",
+        "Maintaining an Indoor Rabbit Cage"
+      ],
+      "h3": [
+        "Size and Space Considerations for Rabbit Cages",
+        "Material and Safety Considerations",
+        "Accessories for Indoor Rabbit Cages",
+        "Rabbit Play Area Tips"
+      ],
+      "h4": [
+        "Daily Spot Clean",
+        "Weekly Deep Clean",
+        "Creating a Sense of Security",
+        "Interactive Enrichment: Toys and Chewable Items"
+      ],
+      "h5": [
+        "Frequently Asked Questions"
+      ],
+      "h6": [
+        "What is the 3-hop rule for rabbits?",
+        "Do rabbits smell if kept indoors?",
+        "Do rabbits need blankets at night?",
+        "What is the best cage setup for a rabbit?",
+        "Why do rabbits need multi-level cages?"
+      ],
+      "word_count": 2091,
+      "category": "Housing & Setup",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/wooden-rabbit-hutch/",
+          "text": "Wooden rabbit hutches"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-cage-for-flemish-giant/",
+          "text": "rabbit cage for Flemish Giants"
+        },
+        {
+          "href": "https://rabbitip.com/indoor-rabbit-cage-setup/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "Download our comprehensive bunny care sheet"
+        },
+        {
+          "href": "https://rabbitip.com/adorable-bunny-names/",
+          "text": "Discover perfect bunny names"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "Complete Bunny Care Sheet"
+        },
+        {
+          "href": "https://rabbitip.com/wooden-rabbit-hutch/",
+          "text": "Wooden Rabbit Hutch Guide"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/indoor-rabbit-cage-setup/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:28.836+00:00",
+      "created_at": "2026-03-03T20:38:02.558502+00:00",
+      "updated_at": "2026-03-13T08:29:59.768+00:00",
+      "url": "//indoor-rabbit-cage-setup",
+      "intent": "Informational",
+      "primary_keyword": "indoor rabbit cage setup",
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Indoor Rabbit Cage Setup: Pro Tips That Save Money & Time",
+        "source_url": "internal:///indoor-rabbit-cage-setup"
+      }
+    },
+    {
+      "id": "b8a99167-3b6d-46e4-b9ed-a958debcbeea",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "8387bf0d-689c-480b-b119-eacc4a6ea874",
+      "title": "Welcome to RabbiTip.com - Rabbitip.com",
+      "meta_description": "Find expert rabbit care tips, health advice, and nutrition guides on Rabbitip.com. Get trusted resources to keep your bunny happy and healthy!",
+      "h1": "Welcome to RabbiTip.com",
+      "h2": [
+        "Essential Bunny Resources"
+      ],
+      "h3": [],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 304,
+      "category": "",
+      "tags": [],
+      "internal_links": [],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:54.017+00:00",
+      "created_at": "2026-03-03T20:38:55.956456+00:00",
+      "updated_at": "2026-03-04T16:08:54.017+00:00",
+      "url": "https://rabbitip.com/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Welcome to RabbiTip.com",
+        "source_url": "https://rabbitip.com/"
+      }
+    },
+    {
+      "id": "b4729b42-257b-4238-9f59-f85eeec1230f",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "8e2f0b51-608e-4d94-a36f-c1a3c311b095",
+      "title": "Care for Newborn Bunnies",
+      "meta_description": "Learn how to care for newborn bunnies with expert tips on feeding, housing, health checks, and safety for a healthy start.",
+      "h1": "How to take care for Newborn Bunnies",
+      "h2": [
+        "What to do right after birth of Bunnies",
+        "Care tips for each Baby Bunny development stage"
+      ],
+      "h3": [
+        "Feeding and Nutrition for Newborn Bunnies",
+        "Creating a safe and comfortable home",
+        "Monitoring health and growth for Newborn Bunnies"
+      ],
+      "h4": [
+        "Preparing for the arrival of Newborn Rabbits",
+        "Daily health checks",
+        "Socialization and Bonding",
+        "Safety from predators or pets"
+      ],
+      "h5": [
+        "Litter box training",
+        "Feeding frequency & schedule"
+      ],
+      "h6": [
+        "When to call a Vet",
+        "FAQ",
+        "How to care for newborn rabbits without a mother?",
+        "What do you feed a newborn baby rabbit?",
+        "How to care for baby bunnies found in the yard?",
+        "Can you touch baby bunnies after they are born?",
+        "Final Tip:Whether orphaned or under their motherΓÇÖs care, newborn bunnies need patience, protection, and proper nutrition. With the right guidance, youΓÇÖll help them grow into happy, healthy adult rabbits."
+      ],
+      "word_count": 1214,
+      "category": "Rabbit Care",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "alfalfa hay"
+        },
+        {
+          "href": "https://rabbitip.com/care-for-newborn-bunnies/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/what-do-baby-rabbits-eat/",
+          "text": "what do baby bunnies eat"
+        },
+        {
+          "href": "https://rabbitip.com/what-eats-rabbits/",
+          "text": "predators"
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": "common rabbit diseases"
+        },
+        {
+          "href": "https://rabbitip.com/what-do-baby-rabbits-eat/",
+          "text": "feed"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/care-for-newborn-bunnies/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:14.161+00:00",
+      "created_at": "2026-03-03T20:38:25.388241+00:00",
+      "updated_at": "2026-03-04T16:08:14.161+00:00",
+      "url": "https://rabbitip.com/care-for-newborn-bunnies/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Care for Newborn Bunnies",
+        "source_url": "https://rabbitip.com/care-for-newborn-bunnies/"
+      }
+    },
+    {
+      "id": "db8cb1a6-bf04-4981-89b4-6cbf210e7b78",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "72948b00-3926-4fe1-bce1-2c6938b48602",
+      "title": "Disclaimer for Rabbitip.com - Rabbitip.com",
+      "meta_description": "Read Rabbitip.comΓÇÖs disclaimer to understand our policies on content accuracy, external links, professional advice, affiliate disclosures, and liability limitations.",
+      "h1": "Disclaimer for Rabbitip.com",
+      "h2": [
+        "General Information",
+        "External Links Disclaimer"
+      ],
+      "h3": [
+        "Professional Advice Disclaimer",
+        "User-Generated Content",
+        "Affiliate and Advertising Disclosure",
+        "Limitation of Liability",
+        "Cookies and Tracking Technologies",
+        "Intellectual Property Rights",
+        "Changes to This Disclaimer",
+        "Contact Us"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 439,
+      "category": "",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/privacy-policy/",
+          "text": "Privacy Policy"
+        },
+        {
+          "href": "https://rabbitip.com/cdn-cgi/l/email-protection#2940474f46695b484b4b405d4059074a4644",
+          "text": "[email┬áprotected]"
+        },
+        {
+          "href": "https://rabbitip.com/",
+          "text": "https://rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/contact-us/",
+          "text": "https://rabbitip.com/contact-us"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/disclaimer/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:04.278+00:00",
+      "created_at": "2026-03-03T20:37:47.408975+00:00",
+      "updated_at": "2026-03-04T16:07:04.278+00:00",
+      "url": "https://rabbitip.com/disclaimer/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Disclaimer for Rabbitip.com",
+        "source_url": "https://rabbitip.com/disclaimer/"
+      }
+    },
+    {
+      "id": "be8954d9-c5c2-4f6d-8668-7d52662529bd",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "5f1ab7da-a8a0-4000-bac0-5e4c7daac59e",
+      "title": "What is the best food for rabbits?",
+      "meta_description": "The best food for rabbits is a mix of grass hay, fresh greens, a few pellets, and rare treats. This diet keeps your bunny healthy. Discover the ideal diet!",
+      "h1": "The Best Food for Rabbits Revealed!",
+      "h2": [
+        "The Core of a RabbitΓÇÖs Diet: Unlimited Grass Hay",
+        "Selecting the Right Pellets for Your Rabbit",
+        "Safe and Healthy Vegetables for Rabbits"
+      ],
+      "h3": [
+        "Rabbit Feeding Schedule by Age",
+        "Foods to Avoid: The Dangerous List",
+        "Hydration: Water Needs and Tips"
+      ],
+      "h4": [
+        "Recognizing a Healthy Rabbit Diet",
+        "Transitioning Your Rabbit to a Healthier Diet",
+        "DIY Foraging: Growing Your Own Rabbit Greens",
+        "FAQ"
+      ],
+      "h5": [],
+      "h6": [],
+      "word_count": 1295,
+      "category": "Rabbit Diet & Nutrition",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/human-food-bunnies-eat/",
+          "text": "here"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-strawberries/",
+          "text": "strawberries"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "health checks"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/what-is-the-best-food-for-rabbits/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:21.207+00:00",
+      "created_at": "2026-03-03T20:37:57.413748+00:00",
+      "updated_at": "2026-03-04T16:07:21.207+00:00",
+      "url": "https://rabbitip.com/what-is-the-best-food-for-rabbits/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "The Best Food for Rabbits Revealed!",
+        "source_url": "https://rabbitip.com/what-is-the-best-food-for-rabbits/"
+      }
+    },
+    {
+      "id": "0fdf9a14-498b-49f9-82dd-f4e7a88c7837",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "fac44419-7657-4fba-960f-f71230a4cc59",
+      "title": "Best Hay for Rabbits to Eat-A Pet OwnerΓÇÖs Guide - Rabbitip.com",
+      "meta_description": "Are you a rabbit owner? You might wonder: What is the best hay for rabbits to eat? Discover the right hay to keep your bunny healthy and happy!",
+      "h1": "Best Hay for Rabbits to Eat-A Pet OwnerΓÇÖs Guide",
+      "h2": [
+        "Why Rabbits Need Hay",
+        "Key Takeaways: Hay for Rabbits",
+        "Hay Health Benefits",
+        "Rabbit Hay Types",
+        "Feeding Help",
+        "Season Tips",
+        "Save Money",
+        "Final Thoughts",
+        "FAQ: Everything You Need to Know"
+      ],
+      "h3": [
+        "1. Helps Tummy Work",
+        "2. Good Teeth",
+        "3. Happy Bunnies",
+        "4. Need Fiber",
+        "5. Soft Fur",
+        "6. Adds Water",
+        "7. Fights Sick",
+        "8. Stay Slim",
+        "9. No Hairballs",
+        "10. Bond Time",
+        "11. Live Longer",
+        "12. Heal Faster",
+        "Timothy: Best Choice",
+        "Orchard Grass: Yummy",
+        "Alfalfa: Just for Babies",
+        "Mix Hays",
+        "Cut Types",
+        "Where Grown",
+        "Organic Picks",
+        "What ΓÇÿBestΓÇÖ Means",
+        "Color Matters",
+        "Crunch Good",
+        "Smell Check",
+        "Protein Tips",
+        "Mixing Ideas",
+        "How Much",
+        "Always Out",
+        "Mix Foods",
+        "Fat Bunnies",
+        "Track Eating",
+        "Change Slow",
+        "Old Bunnies",
+        "Fun Feeding",
+        "Picky Eaters",
+        "Save Leftovers",
+        "Baby Bunnies",
+        "Sick Care",
+        "Winter Food",
+        "Summer Keep",
+        "When to Buy",
+        "Spring Sniffles",
+        "Fall Prep",
+        "Shed Time",
+        "Rain Care",
+        "Season Sniffles",
+        "Holiday Safe",
+        "Yard Dangers",
+        "Price Changes",
+        "Season Treats",
+        "Grow Your Own",
+        "Buy from Farms",
+        "Use Stems",
+        "Check Quality",
+        "Buy Bulk",
+        "Hay vs Straw",
+        "Dry at Home",
+        "Store Right",
+        "Small Spaces",
+        "Compare Costs",
+        "Kid Projects",
+        "Swap Hay",
+        "How Much Hay Do Rabbits Need Daily?",
+        "Do Rabbits Need Alfalfa or Timothy Hay?",
+        "Is Alfalfa Bad for Rabbits?",
+        "Can Rabbits Have Hay Allergies?",
+        "WhatΓÇÖs the Best Substitute for Timothy Hay?",
+        "Are There Any Downsides to Timothy Hay?",
+        "Why ShouldnΓÇÖt Adult Rabbits Eat Alfalfa?",
+        "Signs Your Rabbit Dislikes Their Hay",
+        "Is Alfalfa Better Than Other Hays?",
+        "What is Alfalfa Toxicity?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 6177,
+      "category": "Rabbit Diet & Nutrition",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/human-food-bunnies-eat/",
+          "text": "our food"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/best-hay-for-rabbits/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:34.872+00:00",
+      "created_at": "2026-03-03T20:38:39.275785+00:00",
+      "updated_at": "2026-03-04T16:08:34.872+00:00",
+      "url": "https://rabbitip.com/best-hay-for-rabbits/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Best Hay for Rabbits to Eat-A Pet OwnerΓÇÖs Guide",
+        "source_url": "https://rabbitip.com/best-hay-for-rabbits/"
+      }
+    },
+    {
+      "id": "4987a34f-356d-4b7a-9968-c53d5f3df025",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "780d4372-0438-4728-885a-1eeeaa86a033",
+      "title": "Digital Millennium Copyright Act (DMCA)-DMCA Policy - Rabbitip.com",
+      "meta_description": "Report copyright infringement on Rabbitip.com. Learn how to submit a DMCA notice to protect your rights under the Digital Millennium Copyright Act (DMCA).",
+      "h1": "Digital Millennium Copyright Act (DMCA)-DMCA Policy",
+      "h2": [
+        "Before You File a Copyright Complaint",
+        "How to Submit a DMCA Notice to Rabbitip.com",
+        "What Happens Next?",
+        "Changes to This Policy"
+      ],
+      "h3": [],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 500,
+      "category": "",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/",
+          "text": "Rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/",
+          "text": "https://rabbitip.com/"
+        },
+        {
+          "href": "https://rabbitip.com/cdn-cgi/l/email-protection#1970777f76596b787b7b706d7069377a7674",
+          "text": "[email┬áprotected]"
+        },
+        {
+          "href": "https://rabbitip.com/contact-us/",
+          "text": "Contact Us"
+        },
+        {
+          "href": "https://rabbitip.com/",
+          "text": "Rabbitip.com"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/dmca-policy/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:47.447+00:00",
+      "created_at": "2026-03-03T20:38:50.303296+00:00",
+      "updated_at": "2026-03-04T16:08:47.447+00:00",
+      "url": "https://rabbitip.com/dmca-policy/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Digital Millennium Copyright Act (DMCA)-DMCA Policy",
+        "source_url": "https://rabbitip.com/dmca-policy/"
+      }
+    },
+    {
+      "id": "e3aa2e9a-e2bc-498f-8cd2-1096baa6c17f",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "f2e82ee2-898d-4000-8631-14bc033d8952",
+      "title": "Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide",
+      "meta_description": "Can Rabbits Eat Strawberries?Discover safe feeding tips, portion sizes, and health benefits for your bunny. Learn how to treat your pet without risks!",
+      "h1": "Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide",
+      "h2": [
+        "Key Takeaways",
+        "Table of Contents",
+        "Strawberry Safety Facts",
+        "Berry Nutrition Info",
+        "Safe Feeding Steps",
+        "Preparing Berries Right",
+        "Can Bunnies Eat Leaves?",
+        "Wild vs Pet Buns",
+        "Healthy Berry Swaps",
+        "Conclusion-Can Rabbits Eat Strawberries?",
+        "FAQs"
+      ],
+      "h3": [
+        "Good and Bad Points",
+        "Quick vs Long Problems",
+        "Do Berries Hurt Tummies?",
+        "Too Many Berries Signs",
+        "Berry Myths Fixed",
+        "Good Parts in Berries",
+        "Why Fiber Helps",
+        "Too Many Treats Danger",
+        "Berries vs Other Fruits",
+        "Summer vs Winter Feeding",
+        "Amounts by Weight",
+        "New Treats Plan",
+        "How Often to Feed",
+        "Fun Feeding Ideas",
+        "Leaf Safety",
+        "Avoid Chemicals",
+        "Grow Bunny Berries",
+        "Wild Bunny Food",
+        "Pet Buns Digest Differently",
+        "DonΓÇÖt Copy Wild Diets",
+        "Bad Foraging",
+        "Low-Sugar Fruits",
+        "Better Veggies",
+        "Herb Snacks",
+        "DIY Bunny Ice",
+        "Can rabbits eat strawberry leaves?",
+        "Do wild rabbits eat garden berries?",
+        "Can baby bunnies eat berries?",
+        "How to start feeding berries?",
+        "Are frozen berries okay?",
+        "Can buns eat fake berry treats?",
+        "What if my bun hates berries?",
+        "Are dried berries safe?",
+        "Can buns eat cooked berries?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 3040,
+      "category": "Rabbit Diet & Nutrition",
+      "tags": [
+        "Can Rabbits Eat Strawberries",
+        "Rabbit Feed",
+        "Rabbit Food",
+        "Rabbitip",
+        "Rabbitip.com"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/human-food-bunnies-eat",
+          "text": "safe human food that bunnies can have"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/can-rabbits-eat-strawberries/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:43.043+00:00",
+      "created_at": "2026-03-03T20:38:45.126237+00:00",
+      "updated_at": "2026-03-13T08:59:42.094+00:00",
+      "url": "//can-rabbits-eat-strawberries",
+      "intent": "Informational",
+      "primary_keyword": "can rabbits eat strawberries",
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Can Rabbits Eat Strawberries? Safe Feeding Tips & Guide",
+        "source_url": "internal:///can-rabbits-eat-strawberries"
+      }
+    },
+    {
+      "id": "6c5fc077-f551-4e22-842c-73257f947b97",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "e50e8cc4-da79-4141-ad62-97f4ac73ba8f",
+      "title": "Lionhead Rabbit Care: The Ultimate Guide for New Owners",
+      "meta_description": "Learn complete lionhead rabbit care with our beginner's guide. Discover feeding, grooming, housing, and health tips for happy, healthy rabbits.",
+      "h1": "Lionhead Rabbit Care: The Ultimate Guide for New Owners",
+      "h2": [
+        "Introduction",
+        "Key Takeaways",
+        "Understanding the Lionhead Rabbit",
+        "Preparing Your Home for a Lionhead Rabbit",
+        "Lionhead Rabbit Diet & Nutrition",
+        "Grooming & Hygiene",
+        "Health & Common Medical Issues",
+        "Exercise & Handling",
+        "Purchasing or Adopting a Lionhead Rabbit",
+        "Training & Behavior",
+        "Daily Care Checklist",
+        "Pros & Cons of Owning a Lionhead Rabbit",
+        "Conclusion",
+        "Lionhead Rabbit FAQs",
+        "Recommended Products for Lionhead Rabbit Care"
+      ],
+      "h3": [
+        "What Is a Lionhead Rabbit?",
+        "Lionhead Rabbit Breed Profile",
+        "Setting Up a Comfortable Habitat",
+        "Toys & Enrichment",
+        "What Do Lionhead Rabbits Eat?",
+        "Foods to Avoid",
+        "Safe Vegetables & Herbs",
+        "Should You Feed Them Fruits or Treats?",
+        "Grooming a Lionhead Rabbit",
+        "Litter Training Tips",
+        "Signs of a Healthy Lionhead Rabbit",
+        "Common Health Issues",
+        "When to See a Vet",
+        "Daily Physical Activity",
+        "Handling & Bonding",
+        "Where to Get a Lionhead Rabbit",
+        "Cost of Ownership",
+        "Training Your Lionhead Rabbit",
+        "Are Lionhead Rabbits Cuddly?",
+        "Benefits",
+        "Challenges",
+        "Are Lionhead Rabbits Good Pets for Kids?",
+        "How Long Do Lionhead Rabbits Live?",
+        "Can Lionhead Rabbits Live with Other Rabbits?",
+        "How Big Do Lionhead Rabbits Get?",
+        "Do Lionhead Rabbits Shed?",
+        "WhatΓÇÖs the Difference Between a Single and Double Mane?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 2740,
+      "category": "Rabbit Care",
+      "tags": [
+        "lionhead rabbit care",
+        "pet rabbit diet",
+        "rabbit grooming tips",
+        "rabbit health guide",
+        "Rabbitip.com",
+        "small pet care"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/rabbit-transport-cage/",
+          "text": "travel cage"
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Timothy hay"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-bell-peppers/",
+          "text": "Bell peppers"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-broccoli/",
+          "text": "Broccoli"
+        },
+        {
+          "href": "https://rabbitip.com/rabbits-eat-cucumbers/",
+          "text": "Cucumber"
+        },
+        {
+          "href": "https://rabbitip.com/lionhead-rabbit-care/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": "Disease Rabbit"
+        },
+        {
+          "href": "https://rabbitip.com/why-do-bunnies-thump/",
+          "text": "Thumps"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "Lionhead rabbits can be great pets for kids"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/lionhead-rabbit-care/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:16.809+00:00",
+      "created_at": "2026-03-03T20:38:26.846612+00:00",
+      "updated_at": "2026-03-04T16:08:16.81+00:00",
+      "url": "https://rabbitip.com/lionhead-rabbit-care/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Lionhead Rabbit Care: The Ultimate Guide for New Owners",
+        "source_url": "https://rabbitip.com/lionhead-rabbit-care/"
+      }
+    },
+    {
+      "id": "8910ed7a-590a-4d25-9156-c054b6ada3d6",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "4bcb7659-73fb-4c20-8beb-cbe77cc0c163",
+      "title": "Can a Rabbit and a Dog Live Together? Safe Coexistence Tips!",
+      "meta_description": "Yes, a rabbit and a dog can live together safely with expert training, low-prey breeds, and simple steps for stress-free bonding at home. Discover how!",
+      "h1": "Can a Rabbit and a Dog Live Together? Safe Coexistence Tips",
+      "h2": [
+        "Part 1: Understanding Rabbit and Dog Behavior",
+        "Part 2: Preparing Your Home for Success",
+        "Part 3: The Step-by-Step Introduction Process",
+        "Part 4: Signs of Stress and What to Do",
+        "Part 5: Safety Tips for Long-Term Coexistence",
+        "Part 6: Choosing a Dog Breed for a Rabbit Home"
+      ],
+      "h3": [
+        "Training Your Dog for Calm Rabbit Interaction",
+        "Rabbit Stress Signs to Monitor",
+        "Enclosure and Space Requirements"
+      ],
+      "h4": [
+        "Daily Interaction Guidelines",
+        "Supervised Playtime Rules",
+        "Emergency Separation Plan",
+        "Training Rewards and Positive Reinforcement",
+        "Frequently Asked Questions"
+      ],
+      "h5": [
+        "Can an old dog learn to live with a rabbit?",
+        "My dog chases squirrels outside. Can he live with a rabbit?",
+        "What if my rabbit is the one who is aggressive?",
+        "How long until they can be friends?"
+      ],
+      "h6": [
+        "A Final Word of Encouragement"
+      ],
+      "word_count": 2223,
+      "category": "Rabbit Safety & Environment",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/what-eats-rabbits/",
+          "text": "Predators"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-first-aid-kit/",
+          "text": "Rabbit First Aid Kit"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-behaviors-and-body-language/",
+          "text": "Rabbit Behaviors and Body Language"
+        },
+        {
+          "href": "https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/",
+          "text": ""
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:16.67+00:00",
+      "created_at": "2026-03-03T20:37:54.295431+00:00",
+      "updated_at": "2026-03-04T16:07:16.67+00:00",
+      "url": "https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Can a Rabbit and a Dog Live Together? Safe Coexistence Tips",
+        "source_url": "https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/"
+      }
+    },
+    {
+      "id": "1db6bdeb-9e71-4df6-86ef-4fe4ec027ae0",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "d9cd30d3-4e8a-4f6c-8d09-5a7f0daa0510",
+      "title": "Clicker Training for Rabbits: Step-by-Step Expert Guide",
+      "meta_description": "Master clicker training for rabbits with expert steps, treat tips, and fun tricks that build trust, enrich playtime, and improve rabbit behavior.",
+      "h1": "Clicker Training for Rabbits: Step-by-Step Pro Guide",
+      "h2": [
+        "Understanding Clicker Training Basics",
+        "Benefits of Clicker Training for Rabbits",
+        "Essential Supplies for Rabbit Clicker Training",
+        "Step-by-Step Clicker Training for Rabbits in 5 Easy Steps.",
+        "Best Treats to Use During Clicker Training",
+        "Common Mistakes and How to Avoid Them",
+        "Advanced Tricks for Experienced Rabbits",
+        "Troubleshooting Fear or Disinterest",
+        "Daily Training Schedule",
+        "Reading Your RabbitΓÇÖs Body Language",
+        "Creating a Positive Training Environment",
+        "Reward Timing and Click Precision",
+        "FAQs"
+      ],
+      "h3": [
+        "Step 1: Teach the Clicker (Days 1-3)",
+        "Step 2: Targeting (Days 4-7)",
+        "Step 3: Simple Commands (Week 2)",
+        "Step 4: Trick Training (Weeks 3-4)",
+        "Step 5: Reward Schedule (Ongoing)",
+        "Can rabbits be clicker-trained?",
+        "What are the negatives of clicker training?",
+        "What age to start clicker training?",
+        "How long does it take to clicker train a rabbit?",
+        "Can clicker training help with litter box habits?",
+        "Is clicker training safe for shy or nervous rabbits?",
+        "How often should I train my rabbit each day?",
+        "Can rabbits learn tricks like dogs or cats?",
+        "How to teach your rabbit to come when called?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 4239,
+      "category": "Rabbit Behavior & Training",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/rabbit-behaviors-and-body-language/",
+          "text": "Rabbit Behaviors and Body Language"
+        },
+        {
+          "href": "https://rabbitip.com/clicker-training-for-rabbits/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Best Hay for Rabbits"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-chew-toys/",
+          "text": "Bunny Chew Toys"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-litter-training/",
+          "text": "Rabbit Litter Training"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-behaviors-and-body-language/",
+          "text": "Rabbit Behaviors and Body Language"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/clicker-training-for-rabbits/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:11.934+00:00",
+      "created_at": "2026-03-03T20:37:50.728132+00:00",
+      "updated_at": "2026-03-04T16:07:11.934+00:00",
+      "url": "https://rabbitip.com/clicker-training-for-rabbits/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Clicker Training for Rabbits: Step-by-Step Pro Guide",
+        "source_url": "https://rabbitip.com/clicker-training-for-rabbits/"
+      }
+    },
+    {
+      "id": "42c1a1ff-6a4c-4ea9-972c-c386f341d1d2",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "6264f29e-0564-4771-9763-949c3db6b8fa",
+      "title": "Newsletter - Rabbitip.com",
+      "meta_description": "",
+      "h1": "Newsletter",
+      "h2": [
+        "Essential Bunny Resources"
+      ],
+      "h3": [
+        "200+ Adorable Bunny Names",
+        "Free Bunny Care Sheet",
+        "Find Rabbit Vet Near You Now"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 68,
+      "category": "",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/adorable-bunny-names/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/adorable-bunny-names/",
+          "text": "200+ Adorable Bunny Names\n                Discover the perfect name for your fluffy friend with our curated collection"
+        },
+        {
+          "href": "https://rabbitip.com/adorable-bunny-names/",
+          "text": "Get Free PDF"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "Free Bunny Care Sheet\n                Expert tips to keep your rabbit happy, healthy and thriving"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "Download Now"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Find Rabbit Vet Near You Now\n                Locate rabbit-savvy veterinarians in your area instantly"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Find Vets"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/newsletter/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:51.848+00:00",
+      "created_at": "2026-03-03T20:38:54.339827+00:00",
+      "updated_at": "2026-03-04T16:08:51.848+00:00",
+      "url": "https://rabbitip.com/newsletter/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Newsletter",
+        "source_url": "https://rabbitip.com/newsletter/"
+      }
+    },
+    {
+      "id": "fc76c6d7-4540-4fde-8314-149460839c15",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "7ebab673-6955-40c4-96c7-ed6c10c60d0b",
+      "title": "Can Rabbits Eat Bell Peppers? Essential Guide for a Healthy Bunny",
+      "meta_description": "Can rabbits eat bell peppers? Learn which colored bell pepper are safe to feed and a pro tip every rabbit owner must know for a healthy bunny diet.",
+      "h1": "Can Rabbits Eat Bell Peppers? Essential Guide for a Healthy Bunny",
+      "h2": [
+        "Introduction",
+        "Key Takeaways",
+        "Table of Contents",
+        "Are Bell Peppers Safe for Rabbits?",
+        "Nutritional Benefits of Bell Peppers for Rabbits",
+        "Different Colors of Bell Peppers for Rabbits",
+        "Pro Tip: A Bell Pepper Secret Most Owners DonΓÇÖt Know",
+        "How to Safely Feed Bell Peppers to Rabbits",
+        "Can Rabbits Eat Bell Pepper Seeds?",
+        "Can Rabbits Eat Bell Pepper Stems?",
+        "Can Rabbits Eat Bell Pepper Membranes?",
+        "How Often Can Rabbits Eat Bell Peppers?",
+        "Signs Your Rabbit Enjoys Bell Peppers",
+        "Signs Bell Peppers DonΓÇÖt Agree With Your Rabbit",
+        "Other Safe Veggies to Pair With Bell Peppers",
+        "Veggies to Avoid Feeding Your Rabbit",
+        "Fun Fact Time!",
+        "Balancing Bell Peppers in Your RabbitΓÇÖs Diet",
+        "Introducing Bell Peppers to Picky Rabbits",
+        "Age Matters When Feeding Bell Peppers",
+        "How to Store Bell Peppers for Rabbit Treats",
+        "Rainbow of Benefits",
+        "Bell Pepper Feeding Tips from Rabbit Owners",
+        "Conclusion",
+        "FAQ"
+      ],
+      "h3": [
+        "Nutritional Benefits of Bell Peppers for Rabbits",
+        "Green Bell Peppers",
+        "Red Bell Peppers",
+        "Yellow Bell Peppers",
+        "Orange Bell Peppers",
+        "Proper Portions",
+        "Preparation Tips",
+        "Can rabbits eat bell peppers?",
+        "What color bell pepper is best for rabbits?",
+        "Can rabbits eat bell pepper seeds?",
+        "Can rabbits eat bell pepper stems?",
+        "Can rabbits eat bell peppers every day?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 2578,
+      "category": "Rabbit Care",
+      "tags": [
+        "bell peppers for rabbits",
+        "bell peppers seeds",
+        "can rabbits eat bell peppers",
+        "feeding rabbits",
+        "green bell peppers",
+        "orange bell peppers",
+        "rabbit care tips",
+        "rabbit diet",
+        "rabbit nutrition",
+        "rabbit safe vegetables",
+        "Rabbitip",
+        "Rabbitip.com",
+        "red bell peppers",
+        "yellow bell peppers"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet rabbit"
+        },
+        {
+          "href": "https://rabbitip.com/rabbits-eat-spinach/",
+          "text": "eat Spinach"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-strawberries/",
+          "text": "strawberries"
+        },
+        {
+          "href": "https://rabbitip.com/human-food-bunnies-eat/",
+          "text": "human foods that rabbits can have."
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-bell-peppers/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Hay"
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Hay should be about 80%"
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "Timothy hay"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/can-rabbits-eat-bell-peppers/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:29.437+00:00",
+      "created_at": "2026-03-03T20:38:34.110443+00:00",
+      "updated_at": "2026-03-04T16:08:29.437+00:00",
+      "url": "https://rabbitip.com/can-rabbits-eat-bell-peppers/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Can Rabbits Eat Bell Peppers? Essential Guide for a Healthy Bunny",
+        "source_url": "https://rabbitip.com/can-rabbits-eat-bell-peppers/"
+      }
+    },
+    {
+      "id": "b23f4af0-5614-42bd-bb6e-4b985ec10ce4",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "cbd071f2-ff2a-4faa-b188-2d4aee3cdc56",
+      "title": "Top 10 Best Pet Rabbit Breeds Revealed",
+      "meta_description": "Discover the best pet rabbit breeds: friendly Holland Lop, gentle Mini Rex, and fluffy Lionhead. Find your new best bunny friend today.",
+      "h1": "10 Best Rabbit Breeds for Pets: A Guide for New Owners",
+      "h2": [
+        "Key Takeaways",
+        "1. Holland Lop ΓÇô The Friendly Companion",
+        "2. Mini Rex ΓÇô The Velvety Low-Maintenance Pet",
+        "3. Lionhead Rabbit ΓÇô The Fluffy Affectionate Buddy",
+        "4. Netherland Dwarf ΓÇô The Tiny, Energetic Explorer",
+        "5. Dutch Rabbit ΓÇô The Adaptable, Easygoing Choice",
+        "6. Mini Lop ΓÇô The Gentle Family Favorite",
+        "7. Polish Rabbit ΓÇô The Curious, Low-Maintenance Urbanite",
+        "8. Flemish Giant ΓÇô The Surprisingly Gentle Giant",
+        "9. English Spot ΓÇô The Athletic, Social Butterfly",
+        "10. Himalayan Rabbit ΓÇô The Zen Master",
+        "How to Choose the Best Rabbit Breed for You",
+        "Where to Adopt or Buy Your Rabbit",
+        "Daily Bunny Care",
+        "Getting Your Rabbit",
+        "Final Tips for Choosing Your Rabbit",
+        "Frequently Asked Questions"
+      ],
+      "h3": [
+        "Best Rabbit Breeds for New Owners",
+        "Low-Maintenance Picks",
+        "Most Affectionate Breeds",
+        "Calmest Rabbits",
+        "Healthiest Choices",
+        "Lifespan",
+        "Potty Training",
+        "Space Needs",
+        "Diet Basics",
+        "Where to Get Your Bunny",
+        "Why TheyΓÇÖre Great:",
+        "Expert Insight:",
+        "Care Checklist:",
+        "Why TheyΓÇÖre Great:",
+        "Survey Says:",
+        "Apartment-Friendly Perks:",
+        "Why TheyΓÇÖre Great:",
+        "Grooming Needs:",
+        "Diet Tip:",
+        "Why TheyΓÇÖre Great:",
+        "Health Perk:",
+        "Enrichment Ideas:",
+        "Why TheyΓÇÖre Great:",
+        "Survey Says:",
+        "Training Success:",
+        "Why TheyΓÇÖre Great:",
+        "Fun Fact:",
+        "Kid-Friendly Tips:",
+        "Why TheyΓÇÖre Great:",
+        "Survey Says:",
+        "Space-Saving Hacks:",
+        "Why TheyΓÇÖre Great:",
+        "Cost Considerations:",
+        "Pro Tip:",
+        "Why TheyΓÇÖre Great:",
+        "Owner Warning:",
+        "Exercise Must-Haves:",
+        "Why TheyΓÇÖre Great:",
+        "Temperature Tips:",
+        "1. Size & Space Requirements",
+        "2. Temperament & Friendliness",
+        "3. Grooming & Health Considerations",
+        "Shelters vs. Breeders",
+        "Healthy Rabbit Diet",
+        "Play and Exercise",
+        "Vet Visits and Shots",
+        "Breeders vs Shelters",
+        "Bunny-Proof Your Home",
+        "Which rabbit makes the best pet?",
+        "What breed of rabbit is the friendliest?",
+        "What is the easiest rabbit breed to take care of?",
+        "Which rabbit breed has the least health issues?",
+        "What is the calmest bunny breed?",
+        "Are Lionhead rabbits cuddly?",
+        "How long do pet rabbits live?",
+        "Can rabbits be litter-trained?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 1724,
+      "category": "Pet Rabbit Guides",
+      "tags": [
+        "best pet rabbit breeds",
+        "Best Rabbit Breeds for Pets",
+        "best rabbits for families",
+        "calm rabbit breeds",
+        "cuddly rabbit breeds",
+        "friendly rabbit breeds",
+        "low-maintenance rabbits",
+        "playful rabbits",
+        "rabbit breeds for beginners",
+        "rabbit personality types"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/#timothy-best-choice",
+          "text": "Timothy Hay"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "70% hay"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/pets-rabbit-breeds/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:32.074+00:00",
+      "created_at": "2026-03-03T20:38:37.544906+00:00",
+      "updated_at": "2026-03-04T16:08:32.074+00:00",
+      "url": "https://rabbitip.com/pets-rabbit-breeds/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "10 Best Rabbit Breeds for Pets: A Guide for New Owners",
+        "source_url": "https://rabbitip.com/pets-rabbit-breeds/"
+      }
+    },
+    {
+      "id": "0f7ef731-0787-4925-8587-6c4cf73ea02a",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "d8fb7f0b-5df5-4cc1-8fa2-4f7fce452e58",
+      "title": "Best Bunny Chew Toys Review: Grddaef vs SUPERPAWS",
+      "meta_description": "Discover the best bunny chew toys for healthy teeth & happy rabbits. Compare Grddaef vs SUPERPAWS to find your perfect match today!",
+      "h1": "Best Bunny Chew Toys ΓÇô Grddaef vs SUPERPAWS ΓÇô Expert Review",
+      "h2": [
+        "Why Do Bunnies Need Chew Toys?",
+        "Top 2 Bunny Chew Toys on Amazon USA ΓÇô Our Detailed Comparison",
+        "Head-to-Head Comparison Table",
+        "What Real Rabbit Owners in the USA Say",
+        "Final Verdict ΓÇô Which Bunny Chew Toy Set Should You Buy?",
+        "Where to Buy These Chew Toys",
+        "Extra Bunny Care Resources",
+        "Final Thoughts",
+        "FAQ-Bunny chew toys"
+      ],
+      "h3": [
+        "4 Key Benefits of Bunny Chew Toys",
+        "1. Grddaef 20 PCS Bunny Chew Toys",
+        "2. SUPERPAWS 21 PCS Bunny Chew Toys",
+        "Why do rabbits need chew toys?",
+        "Which chew toy set is better for baby bunnies?",
+        "How often should I replace bunny chew toys?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 1295,
+      "category": "Rabbit Products & Reviews",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/common-rabbit-myths/",
+          "text": "common rabbit myths"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Rabbit vet near your area ΓÇô Search Tool"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "Bunny Care Sheet"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "Get the PDF"
+        },
+        {
+          "href": "https://rabbitip.com/adorable-bunny-names/",
+          "text": "Adorable Bunny Names List"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/bunny-chew-toys/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:54.667+00:00",
+      "created_at": "2026-03-03T20:38:07.273836+00:00",
+      "updated_at": "2026-03-04T16:07:54.667+00:00",
+      "url": "https://rabbitip.com/bunny-chew-toys/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Best Bunny Chew Toys ΓÇô Grddaef vs SUPERPAWS &#8211; Expert Review",
+        "source_url": "https://rabbitip.com/bunny-chew-toys/"
+      }
+    },
+    {
+      "id": "02fa04d3-f814-4281-abda-f01c935aefba",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "fdf60ed0-c5b5-43ef-96ca-21619138a27a",
+      "title": "Why Do Bunnies Thump? - Rabbitip.com",
+      "meta_description": "Why do bunnies thump? Discover the reasonsΓÇöfear, anger, or attentionΓÇöand learn how to decode your bunnyΓÇÖs behavior.",
+      "h1": "Why Do Bunnies Thump?",
+      "h2": [
+        "Key Takeaways",
+        "What Is Rabbit Thumping?",
+        "Why Do Bunnies Thump in the Wild?",
+        "Why Do Pet Bunny Thump?",
+        "What Does Rabbit Pose Tell Us About Thumping?",
+        "Girl vs. Boy Rabbit Thumping",
+        "Why Do Rabbits Thump at Night?",
+        "Why Do Rabbits Thump at Each Other?",
+        "Do Rabbits Thump for Your Time?",
+        "Why Does My Rabbit Thump When I Stop Pets?",
+        "How to Calm a Thumping Rabbit",
+        "End Thoughts",
+        "Stay Informed ΓÇô Join Our Rabbit Care Community!",
+        "FAQs About Rabbit Thumping"
+      ],
+      "h3": [
+        "How Rabbits Thump",
+        "To Warn About Danger",
+        "To Confuse Hunters",
+        "Fear and Stress",
+        "Anger or Upset",
+        "Wanting Your Time",
+        "Why Do Bunnies Thump?",
+        "Alert Pose",
+        "Calm Pose",
+        "Mad Pose",
+        "What Does Rabbit Pose Tell Us About Thumping?",
+        "Girl Rabbit Thumping",
+        "Boy Rabbit Thumping",
+        "Night Alert",
+        "Things That Cause Night Thumps",
+        "WhoΓÇÖs The Boss",
+        "Space Fights",
+        "How ΓÇ£Look At MeΓÇ¥ Thumps Work",
+        "The ΓÇ£DonΓÇÖt StopΓÇ¥ Thump",
+        "Make a Safe Spot",
+        "Cut Down Noise",
+        "Set Up Firm Times",
+        "Are rabbits happy when they thump?",
+        "Why does my bunny thump his back feet?",
+        "Why does my rabbit thump when I stop petting?",
+        "Why do bunnies thump when they are scared?",
+        "Why do bunnies thump when they are mad?",
+        "Why is my rabbit stomping at night?",
+        "Why is my rabbit stomping for no reason?",
+        "What does it mean when a female rabbit thumps?",
+        "Why does my rabbit thump at me?",
+        "Do rabbits thump for attention?",
+        "Why do rabbits thump at each other?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 2693,
+      "category": "Rabbit Behavior & Training",
+      "tags": [
+        "rabbit position",
+        "rabbit thumping",
+        "Why Do Bunnies Thump",
+        "why do rabbits thump",
+        "why does rabbits thump"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "Pet rabbits"
+        },
+        {
+          "href": "https://rabbitip.com/why-do-bunnies-thump/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/what-eats-rabbits/",
+          "text": "predator that wants to eat it"
+        },
+        {
+          "href": "https://rabbitip.com/what-eats-rabbits/",
+          "text": "rabbit predators"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet bunny"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet rabbits:"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet rabbit"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet bunny"
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": "common rabbit diseases."
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet rabbits"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet bunny"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-transport-cage/",
+          "text": "bunny cage"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-transport-cage/",
+          "text": "cage"
+        },
+        {
+          "href": "https://rabbitip.com/pets-rabbit-breeds/",
+          "text": "pet bunny"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/why-do-bunnies-thump/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:24.55+00:00",
+      "created_at": "2026-03-03T20:37:43.566399+00:00",
+      "updated_at": "2026-03-04T16:08:24.55+00:00",
+      "url": "https://rabbitip.com/why-do-bunnies-thump/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Why Do Bunnies Thump?",
+        "source_url": "https://rabbitip.com/why-do-bunnies-thump/"
+      }
+    },
+    {
+      "id": "336c585d-942f-4347-b82c-34afbbeeb940",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "599b365a-f769-45e8-88e6-dfbe50d29465",
+      "title": "How to Litter Train Rabbit - Litter Training Pro Guide 2025",
+      "meta_description": "Learn how to litter train a rabbit with USDA & AVMA-approved tips. Step-by-step American guide with vet advice, supplies, FAQs & free PDF resources.",
+      "h1": "How to train a rabbit to litter box: step-by-step expert guide",
+      "h2": [
+        "What youΓÇÖll need to litter train a rabbit",
+        "How to litter train a rabbit step by step"
+      ],
+      "h3": [
+        "Choosing the best rabbit litter box",
+        "Choosing the best bedding and litter for rabbits",
+        "Common Rabbit Litter Training Problems and Solutions"
+      ],
+      "h4": [
+        "When to start litter training",
+        "Spay/Neuter impact on training",
+        "Multi-Rabbit litter solutions",
+        "Maintaining litter box hygiene",
+        "Emergency Mistake Checklist (Printable for U.S. Owners):"
+      ],
+      "h5": [
+        "FAQ for rabbitΓÇÖs litter training"
+      ],
+      "h6": [
+        "How long does it take to litter train a rabbit?",
+        "Are male or female rabbits easier to litter train?",
+        "At what age can rabbits be litter-trained?",
+        "Can you litter train an older rabbit?",
+        "Why is my rabbit suddenly ignoring the litter box?"
+      ],
+      "word_count": 1050,
+      "category": "Rabbit Behavior & Training",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/bunny-chew-toys/",
+          "text": "bunny chew toys"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-litter-training/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "find rabbit vet near you"
+        },
+        {
+          "href": "https://rabbitip.com/wp-content/uploads/2025/08/Emergency_Mistake_Checklist_For_Rabbit_Litter_Box_Training_Rabbitip.com_.pdf",
+          "text": "Emergency_Mistake_Checklist_For_Rabbit_Litter_Box_Training_Rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/wp-content/uploads/2025/08/Emergency_Mistake_Checklist_For_Rabbit_Litter_Box_Training_Rabbitip.com_.pdf",
+          "text": "Download"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "Bunny Care Sheet ΓÇô Printable PDF"
+        },
+        {
+          "href": "https://rabbitip.com/adorable-bunny-names/",
+          "text": "Adorable Bunny Names ΓÇô Free PDF Guide"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Rabbit Vet Near You Tool"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/rabbit-litter-training/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:52.442+00:00",
+      "created_at": "2026-03-03T20:38:05.662467+00:00",
+      "updated_at": "2026-03-04T16:07:52.442+00:00",
+      "url": "https://rabbitip.com/rabbit-litter-training/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "How to train a rabbit to litter box: step-by-step expert guide",
+        "source_url": "https://rabbitip.com/rabbit-litter-training/"
+      }
+    },
+    {
+      "id": "e1d171ed-73bd-4695-b29f-8c97bebd94c3",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "f260b70e-8472-40c9-bc33-a3872a75bb17",
+      "title": "15 Common Rabbit Diseases and Warning Signs - Essential Guide",
+      "meta_description": "Learn 15 common rabbit diseases, from Myxomatosis to Hemorrhagic. Know the risks, signs, treatments, and when to call the vet to keep your bunny safe.",
+      "h1": "15 Common Rabbit Diseases and Warning Signs ΓÇô Essential Guide",
+      "h2": [
+        "Introduction",
+        "Key Takeaways",
+        "Comparison Table of Common Rabbit Diseases",
+        "The 15 Rabbit Diseases Explained",
+        "Tips for Rabbit Health Monitoring",
+        "Conclusion",
+        "FAQ Section",
+        "Stay Informed ΓÇô Join Our Rabbit Health Community!"
+      ],
+      "h3": [
+        "1. Myxomatosis",
+        "2. Rabbit Hemorrhagic Disease (RHD)",
+        "3. Pasteurellosis (Snuffles)",
+        "4. Ear Mites",
+        "5. Dental Disease",
+        "6. Gastrointestinal Stasis",
+        "7. Coccidiosis",
+        "8. Flystrike (Myiasis)",
+        "9. Uterine Cancer",
+        "10. Pododermatitis (Sore Hocks)",
+        "11. Encephalitozoon Cuniculi",
+        "12. Respiratory Infections",
+        "13. Bladder Sludge/Stones",
+        "14. Obesity",
+        "15. Heat Stroke",
+        "Daily Check Routine",
+        "Diet for Disease Prevention",
+        "Vaccination Schedule",
+        "What disease is killing my rabbits?",
+        "What is the most common cause of death in rabbits?",
+        "Do bunnies get rabies?",
+        "Can rabbits get Lyme disease?",
+        "Do rabbits carry diseases to dogs?",
+        "Can rabbits pass diseases to humans?",
+        "Do bunny rabbits carry diseases?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 2719,
+      "category": "Rabbit Care",
+      "tags": [
+        "bunny health tips",
+        "common rabbit diseases",
+        "flystrike",
+        "GI stasis",
+        "myxomatosis",
+        "pet rabbit care",
+        "pet rabbit diet",
+        "rabbit dental problems",
+        "rabbit digestive problems",
+        "rabbit emergency care",
+        "rabbit first aid",
+        "rabbit health",
+        "rabbit hemorrhagic diseaseΓÇï",
+        "rabbit illness symptoms",
+        "rabbit kidney diseaseΓÇï",
+        "rabbit preventative care",
+        "rabbit skin diseases",
+        "rabbit vaccination",
+        "rabbit veterinary care",
+        "vent disease",
+        "vestibular disease"
+      ],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "chewing hay"
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-strawberries/",
+          "text": "Strawberries"
+        },
+        {
+          "href": "https://rabbitip.com/best-hay-for-rabbits/",
+          "text": "best Hay for Rabbits to Eat."
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/common-rabbit-diseases/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:27.162+00:00",
+      "created_at": "2026-03-03T20:38:30.371252+00:00",
+      "updated_at": "2026-03-04T16:08:27.162+00:00",
+      "url": "https://rabbitip.com/common-rabbit-diseases/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "15 Common Rabbit Diseases and Warning Signs &#8211; Essential Guide",
+        "source_url": "https://rabbitip.com/common-rabbit-diseases/"
+      }
+    },
+    {
+      "id": "29232eba-9427-4b91-b32e-787bde61cf0d",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "33a4185e-4ffe-43f0-b3ea-4525b9242950",
+      "title": "What is the 3 3 3 Rule for Rabbits | Unlock the 3-3-3 Rule",
+      "meta_description": "3 Days, 3 Weeks, 3 Months: Master the Rabbit Rule. The 3-3-3 rule helps you understand your new rabbit's behavior, reduce their stress, and gain their trust.",
+      "h1": "What is the 3 3 3 Rule for Rabbits? Essential Guide",
+      "h2": [
+        "The First 3 Days: Decompression and Fear",
+        "The Next 3 Weeks: Curiosity and Testing",
+        "The Following 3 Months: Bonding and Trust",
+        "Frequently Asked Questions (FAQ)"
+      ],
+      "h3": [
+        "Factors That Can Influence the 3 3 3 Timeline",
+        "Supporting Your Rabbit Through Each Stage",
+        "What to Do If Your RabbitΓÇÖs Progress Stalls"
+      ],
+      "h4": [
+        "Creating a Safe Space Sanctuary",
+        "Reading Your RabbitΓÇÖs Body Language",
+        "The Role of Routine and Patience",
+        "Table 1: The 3 3 3 Rule at a Glance"
+      ],
+      "h5": [],
+      "h6": [],
+      "word_count": 1387,
+      "category": "Rabbit Behavior & Training",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/rabbit-behaviors-and-body-language/",
+          "text": "Rabbit Behaviors and Body Language"
+        },
+        {
+          "href": "https://rabbitip.com/indoor-rabbit-cage-setup/",
+          "text": "Indoor Rabbit Cage Setup"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/what-is-the-3-3-3-rule-for-rabbits/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:18.925+00:00",
+      "created_at": "2026-03-03T20:37:55.887961+00:00",
+      "updated_at": "2026-03-04T16:07:18.925+00:00",
+      "url": "https://rabbitip.com/what-is-the-3-3-3-rule-for-rabbits/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "What is the 3 3 3 Rule for Rabbits? Essential Guide",
+        "source_url": "https://rabbitip.com/what-is-the-3-3-3-rule-for-rabbits/"
+      }
+    },
+    {
+      "id": "573eeb3a-a1e3-46bb-998a-82be169d3a76",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "292c39a6-f434-4683-8270-8e5a752005a9",
+      "title": "Rabbit Diarrhoea Treatment: Fast Action Saves Lives Guide",
+      "meta_description": "Learn expert Rabbit Diarrhoea Treatment with AVMA-approved protocols. Discover emergency care steps, home remedies & vet contact that save lives fast.",
+      "h1": "Rabbit Diarrhoea Treatment: Emergency Care & Home Remedies",
+      "h2": [
+        "Treatment and Home Remedies",
+        "Home Care for Rabbit Diarrhoea"
+      ],
+      "h3": [
+        "Providing Immediate Care",
+        "Signs Your Rabbit Has Diarrhea",
+        "Correcting Your RabbitΓÇÖs Diet",
+        "Caring for Your Rabbit During Recovery"
+      ],
+      "h4": [
+        "What Causes Diarrhea in Rabbits?",
+        "What can I give my rabbit to stop diarrhea?",
+        "Rabbit Diarrhoea Treatment Antibiotics"
+      ],
+      "h5": [
+        "Frequently Asked Questions (FAQ)"
+      ],
+      "h6": [
+        "Should I be worried if my rabbit has diarrhea?",
+        "How to clean diarrhea off a rabbit?",
+        "Can I give my rabbit Imodium for diarrhea?"
+      ],
+      "word_count": 1773,
+      "category": "Rabbit Diseases",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "rabbit vet locator tool"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Find emergency rabbit vet now"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Find vet near you"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-diarrhoea-treatment/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Find vet near you"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-diarrhoea-treatment/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "rabbit vet locator"
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": "common rabbit diseases guide"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "bunny care sheet"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "rabbit vet locator"
+        },
+        {
+          "href": "https://rabbitip.com/adorable-bunny-names/",
+          "text": "adorable bunny names"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "rabbit vet locator"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/rabbit-diarrhoea-treatment/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:36.246+00:00",
+      "created_at": "2026-03-03T20:38:13.737368+00:00",
+      "updated_at": "2026-03-04T16:07:36.246+00:00",
+      "url": "https://rabbitip.com/rabbit-diarrhoea-treatment/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Rabbit Diarrhoea Treatment: Emergency Care &amp; Home Remedies",
+        "source_url": "https://rabbitip.com/rabbit-diarrhoea-treatment/"
+      }
+    },
+    {
+      "id": "50d8bced-2526-4fdc-89c9-07c07c6b7dc8",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "c5a6a456-a57f-4a08-9d7f-fc1aa36212b8",
+      "title": "Can rabbits have cucumbers? Safety & Nutrition Guide 2025 - Rabbitip.com",
+      "meta_description": "Yes rabbit can have cucumbers in moderation! Learn the safest way to feed cucumbers to your bunny, including health benefits, and risks.",
+      "h1": "Can rabbits have cucumbers? Safety & Nutrition Guide 2025",
+      "h2": [
+        "Key Takeaways",
+        "Table of Contents",
+        "Nutritional Benefits of Cucumbers for Rabbits",
+        "Risks of Feeding Cucumbers to Rabbits",
+        "How to Safely Feed Cucumbers to Your Rabbit",
+        "Healthier Alternatives to Cucumbers",
+        "Conclusion",
+        "FAQ"
+      ],
+      "h3": [
+        "Water-Rich Snack (Vitamin C & Hydration)",
+        "Skin Fiber Helps Tummy Health",
+        "Blood-Clotting Vitamin K",
+        "Fluid-Balancing Potassium",
+        "Seed Safety Guide",
+        "Antioxidants in Flesh",
+        "Cucumbers vs Other Veggies",
+        "Joint-Friendly Silica",
+        "Immune-Boosting Vitamin C",
+        "Easy Mineral Facts",
+        "Water Needs by Age",
+        "Choking & Overfeeding Dangers",
+        "Skin Pesticides",
+        "Long-Term Diet Issues",
+        "Tooth Problems from Less Hay",
+        "Diarrhea Alerts",
+        "Organic vs Regular",
+        "Pesticide Poison Signs",
+        "Seed Rules",
+        "Diet Balance Tips",
+        "Overfeeding Clues",
+        "Portions by Weight",
+        "Washing Steps",
+        "Baby Bunny Rules",
+        "Storage Tips",
+        "After-Feeding Checks",
+        "Mixing Foods",
+        "Picky Eater Tricks",
+        "Fixing Bad Reactions",
+        "Best Times to Feed",
+        "Hay First!",
+        "Fun Serving Ideas",
+        "3-Day Test Plan",
+        "Better Veggies (Peppers, Greens)",
+        "Seasonal Picks",
+        "Safe Herbs & Flowers",
+        "Limit Fruits",
+        "Balanced Food Plan",
+        "Monthly Meal Guide",
+        "Switching Foods Safely",
+        "Color-Based Diet",
+        "Vet-Approved Finds",
+        "5-Color Rule",
+        "Can rabbits have cucumbers peels?",
+        "Do cucumber types matter?",
+        "Can rabbits drink cucumber water?",
+        "Are frozen cukes safe?",
+        "Can cukes replace water?",
+        "How often can I give cucumber?",
+        "My rabbit ate too much cucumber ΓÇô what now?",
+        "Can baby rabbits eat cucumber?"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 5109,
+      "category": "Rabbit Diet & Nutrition",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/human-food-bunnies-eat/",
+          "text": "Human Food Can Bunnies Eat"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-broccoli/",
+          "text": "Broccoli"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-broccoli/",
+          "text": "Broccoli leaves"
+        },
+        {
+          "href": "https://rabbitip.com/can-rabbits-eat-broccoli/",
+          "text": "Broccoli"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/rabbits-eat-cucumbers/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:37.709+00:00",
+      "created_at": "2026-03-03T20:38:41.320098+00:00",
+      "updated_at": "2026-03-04T16:08:37.709+00:00",
+      "url": "https://rabbitip.com/rabbits-eat-cucumbers/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Can rabbits have cucumbers? Safety &amp; Nutrition Guide 2025",
+        "source_url": "https://rabbitip.com/rabbits-eat-cucumbers/"
+      }
+    },
+    {
+      "id": "9739bdf1-9607-4f4a-99a4-2328396933d0",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "e960e4c3-f136-4f34-932b-2e9aef717800",
+      "title": "Gastrointestinal Stasis in Rabbits | Stop Bunny GI Stasis",
+      "meta_description": "Your rabbit could die in 24 hours! Learn the critical signs of Bunny GI stasis, the first-aid steps to take, and how to get your bunny's gut moving. Act Fast!",
+      "h1": "Gastrointestinal Stasis in Rabbits ΓÇô Bunny GI Stasis Causes, Symptoms & Treatment",
+      "h2": [
+        "What Is GI Stasis in Rabbits?",
+        "Symptoms of GI Stasis in Rabbits",
+        "Causes of GI Stasis in Rabbits",
+        "FAQs",
+        "Conclusion"
+      ],
+      "h3": [
+        "How Veterinarians Diagnose GI Stasis in Rabbits",
+        "Treatment of GI Stasis in Rabbits",
+        "Treating GI Stasis in Rabbits at Home",
+        "How long can a rabbit live with GI stasis?",
+        "How do you treat GI stasis in rabbits?",
+        "What causes GI stasis in rabbits?",
+        "How common is GI stasis in rabbits?",
+        "How long does GI stasis take to kill a rabbit?"
+      ],
+      "h4": [
+        "Recovery and Management of GI Stasis in Rabbits",
+        "Pain Relief: The key to keeping the bunny fighting to live",
+        "Home Care and Supportive Measures"
+      ],
+      "h5": [],
+      "h6": [],
+      "word_count": 2441,
+      "category": "Rabbit Diseases",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": "rabbit GI stasis"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "rabbit-savvy veterinarian"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-respiratory-infection-treatment/",
+          "text": "Breathing problems"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "veterinary checkups"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-diarrhoea-treatment/",
+          "text": "diarrhea"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "bunny care routine"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-eye-infection-treatment/",
+          "text": "Eye infections"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": "Find emergency rabbit vet now"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/bunny-gi-stasis/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:07:23.909+00:00",
+      "created_at": "2026-03-03T20:37:58.929204+00:00",
+      "updated_at": "2026-03-04T16:07:23.909+00:00",
+      "url": "https://rabbitip.com/bunny-gi-stasis/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Gastrointestinal Stasis in Rabbits &#8211; Bunny GI Stasis Causes, Symptoms &amp; Treatment",
+        "source_url": "https://rabbitip.com/bunny-gi-stasis/"
+      }
+    },
+    {
+      "id": "955426c1-7f46-4c8e-af5b-dd3826bbb0c2",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "5a8e7a34-cedf-43f8-92d5-d4df7a55f037",
+      "title": "Best American Rabbit Vet Near Your | Rabbit Vet Finder | Rabbitip.com",
+      "meta_description": "Find a rabbit vet near your city fast. Use our free tool to locate emergency bunny vets by state and city across the USA.",
+      "h1": "Find a Rabbit Vet Near You ΓÇô Rabbit Vet Finder",
+      "h2": [
+        "Rabbit Vet Finder"
+      ],
+      "h3": [
+        "Find the best American Rabbit vet near your",
+        "Why Rabbits Need a Special Vet",
+        "How to Use This Rabbit Vet Finder Tool",
+        "Real Emergencies Need Real Help",
+        "What Makes a Vet ΓÇ£Rabbit-SavvyΓÇ¥?",
+        "Trusted Help in Every U.S. State",
+        "Fast Bunny Vet Help When Every Second Counts",
+        "What If You CanΓÇÖt Find a Vet Nearby?",
+        "Tips for a Rabbit Emergency Visit",
+        "Keep This Tool Handy ΓÇö Save a Life",
+        "Prevent Rabbit Emergencies: What You Can Do",
+        "FAQs ΓÇô Rabbit Vet Finder Tool",
+        "Final Words: Rabbitip Is Here for You"
+      ],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 2635,
+      "category": "",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/",
+          "text": "Rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/",
+          "text": "Rabbitip.com"
+        },
+        {
+          "href": "https://rabbitip.com/privacy-policy/",
+          "text": "Privacy Policy"
+        },
+        {
+          "href": "https://rabbitip.com/common-rabbit-diseases/",
+          "text": "common rabbit diseases"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-vet-near/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/can-you-bathe-a-rabbit/",
+          "text": "bathe a rabbit"
+        },
+        {
+          "href": "https://rabbitip.com/can-you-bathe-a-rabbit/",
+          "text": "special type of bath"
+        },
+        {
+          "href": "https://rabbitip.com/how-to-trim-rabbit-nails/",
+          "text": "Trim nails"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-care-sheet/",
+          "text": "rabbit care"
+        }
+      ],
+      "schema_type": "WebPage, WebApplication, FAQPage",
+      "canonical": "https://rabbitip.com/rabbit-vet-near/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:45.295+00:00",
+      "created_at": "2026-03-03T20:38:48.85959+00:00",
+      "updated_at": "2026-03-04T16:08:45.295+00:00",
+      "url": "https://rabbitip.com/rabbit-vet-near/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Find a Rabbit Vet Near You ΓÇô Rabbit Vet Finder",
+        "source_url": "https://rabbitip.com/rabbit-vet-near/"
+      }
+    },
+    {
+      "id": "32cd5c44-e723-45d7-b74c-a9f639284f1b",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "0d070355-f30e-4cc1-bb62-260df6bb99b5",
+      "title": "Newsletter Rabbitip.com - Rabbitip.com",
+      "meta_description": "Subscribe Rabbitip newsletter for expert rabbit care tips! Monthly feeding guides, health advice & bunny care insights.",
+      "h1": "Join Our Rabbit Care Newsletter",
+      "h2": [
+        "Why Subscribe?"
+      ],
+      "h3": [],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 76,
+      "category": "",
+      "tags": [],
+      "internal_links": [],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/newsletter-subscribe/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:49.697+00:00",
+      "created_at": "2026-03-03T20:38:51.92725+00:00",
+      "updated_at": "2026-03-04T16:08:49.697+00:00",
+      "url": "https://rabbitip.com/newsletter-subscribe/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Newsletter Rabbitip.com",
+        "source_url": "https://rabbitip.com/newsletter-subscribe/"
+      }
+    },
+    {
+      "id": "e845bc29-78e8-4d3d-a9d3-9aa90bcffa35",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "4954c534-cc29-49f4-98a1-249a2418e081",
+      "title": "Blog - Rabbitip.com",
+      "meta_description": "Explore expert tips, guides, and insights on Rabbitip.comΓÇÖs blog. Stay informed with the latest articles on rabbit care, health, nutrition, and more!",
+      "h1": "Blog",
+      "h2": [
+        "Adopt a Bunny Rabbit | 5 Things You Should Know",
+        "How to Stop Bunnies from Eating Everything? Expert Behavior Fixes",
+        "Clicker Training for Rabbits: Step-by-Step Pro Guide",
+        "Can Cottontail Rabbits Be Pets? Expert Guide & Legal Insights",
+        "Can a Rabbit and a Dog Live Together? Safe Coexistence Tips",
+        "What is the 3 3 3 Rule for Rabbits? Essential Guide",
+        "The Best Food for Rabbits Revealed!",
+        "Gastrointestinal Stasis in Rabbits ΓÇô Bunny GI Stasis Causes, Symptoms & Treatment",
+        "15 Rabbit Behaviors & What Their Body Language Means",
+        "Perfect Indoor Rabbit Cage Setup: Expert Tips & Mistakes"
+      ],
+      "h3": [],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": 712,
+      "category": "",
+      "tags": [],
+      "internal_links": [
+        {
+          "href": "https://rabbitip.com/adopt-a-bunny-rabbit/",
+          "text": "Adopt a Bunny Rabbit | 5 Things You Should Know"
+        },
+        {
+          "href": "https://rabbitip.com/adopt-a-bunny-rabbit/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/adopt-a-bunny-rabbit/",
+          "text": "Read more: Adopt a Bunny Rabbit | 5 Things You Should Know"
+        },
+        {
+          "href": "https://rabbitip.com/stop-bunnies-from-eating-everything/",
+          "text": "How to Stop Bunnies from Eating Everything? Expert Behavior Fixes"
+        },
+        {
+          "href": "https://rabbitip.com/stop-bunnies-from-eating-everything/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/stop-bunnies-from-eating-everything/",
+          "text": "Read more: How to Stop Bunnies from Eating Everything? Expert Behavior Fixes"
+        },
+        {
+          "href": "https://rabbitip.com/clicker-training-for-rabbits/",
+          "text": "Clicker Training for Rabbits: Step-by-Step Pro Guide"
+        },
+        {
+          "href": "https://rabbitip.com/clicker-training-for-rabbits/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/clicker-training-for-rabbits/",
+          "text": "Read more: Clicker Training for Rabbits: Step-by-Step Pro Guide"
+        },
+        {
+          "href": "https://rabbitip.com/can-cottontail-rabbits-be-pets/",
+          "text": "Can Cottontail Rabbits Be Pets? Expert Guide & Legal Insights"
+        },
+        {
+          "href": "https://rabbitip.com/can-cottontail-rabbits-be-pets/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/can-cottontail-rabbits-be-pets/",
+          "text": "Read more: Can Cottontail Rabbits Be Pets? Expert Guide & Legal Insights"
+        },
+        {
+          "href": "https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/",
+          "text": "Can a Rabbit and a Dog Live Together? Safe Coexistence Tips"
+        },
+        {
+          "href": "https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/can-a-rabbit-and-a-dog-live-together/",
+          "text": "Read more: Can a Rabbit and a Dog Live Together? Safe Coexistence Tips"
+        },
+        {
+          "href": "https://rabbitip.com/what-is-the-3-3-3-rule-for-rabbits/",
+          "text": "What is the 3 3 3 Rule for Rabbits? Essential Guide"
+        },
+        {
+          "href": "https://rabbitip.com/what-is-the-3-3-3-rule-for-rabbits/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/what-is-the-3-3-3-rule-for-rabbits/",
+          "text": "Read more: What is the 3 3 3 Rule for Rabbits? Essential Guide"
+        },
+        {
+          "href": "https://rabbitip.com/what-is-the-best-food-for-rabbits/",
+          "text": "The Best Food for Rabbits Revealed!"
+        },
+        {
+          "href": "https://rabbitip.com/what-is-the-best-food-for-rabbits/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/what-is-the-best-food-for-rabbits/",
+          "text": "Read more: The Best Food for Rabbits Revealed!"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-gi-stasis/",
+          "text": "Gastrointestinal Stasis in Rabbits ΓÇô Bunny GI Stasis Causes, Symptoms & Treatment"
+        },
+        {
+          "href": "https://rabbitip.com/bunny-gi-stasis/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/bunny-gi-stasis/",
+          "text": "Read more: Gastrointestinal Stasis in Rabbits ΓÇô Bunny GI Stasis Causes, Symptoms & Treatment"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-behaviors-and-body-language/",
+          "text": "15 Rabbit Behaviors & What Their Body Language Means"
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-behaviors-and-body-language/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/rabbit-behaviors-and-body-language/",
+          "text": "Read more: 15 Rabbit Behaviors & What Their Body Language Means"
+        },
+        {
+          "href": "https://rabbitip.com/indoor-rabbit-cage-setup/",
+          "text": "Perfect Indoor Rabbit Cage Setup: Expert Tips & Mistakes"
+        },
+        {
+          "href": "https://rabbitip.com/indoor-rabbit-cage-setup/",
+          "text": ""
+        },
+        {
+          "href": "https://rabbitip.com/indoor-rabbit-cage-setup/",
+          "text": "Read more: Perfect Indoor Rabbit Cage Setup: Expert Tips & Mistakes"
+        }
+      ],
+      "schema_type": "",
+      "canonical": "https://rabbitip.com/blog/",
+      "status": "completed",
+      "last_crawled_at": "2026-03-04T16:08:56.441+00:00",
+      "created_at": "2026-03-03T20:38:57.704917+00:00",
+      "updated_at": "2026-03-04T16:08:56.441+00:00",
+      "url": "https://rabbitip.com/blog/",
+      "intent": null,
+      "primary_keyword": null,
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Blog",
+        "source_url": "https://rabbitip.com/blog/"
+      }
+    },
+    {
+      "id": "f0becbe9-bacb-495b-a272-ae207e3b5304",
+      "blog_id": "441679a0-7849-4011-bee9-41f3223c8523",
+      "article_id": "c9e9051c-48aa-4925-b2c1-4c0dd4233d6f",
+      "title": "Test Article on AI Persistence",
+      "meta_description": null,
+      "h1": null,
+      "h2": [],
+      "h3": [],
+      "h4": [],
+      "h5": [],
+      "h6": [],
+      "word_count": null,
+      "category": null,
+      "tags": [],
+      "internal_links": [],
+      "schema_type": null,
+      "canonical": null,
+      "status": "completed",
+      "last_crawled_at": null,
+      "created_at": "2026-03-13T08:18:13.936557+00:00",
+      "updated_at": "2026-03-13T08:17:57.608+00:00",
+      "url": "/test-article-ai-persistence",
+      "intent": "Informational",
+      "primary_keyword": "AI Persistence",
+      "secondary_keywords": [],
+      "summary": null,
+      "articles": {
+        "title": "Test Article on AI Persistence",
+        "source_url": "internal://test-article-ai-persistence"
+      }
+    }
+  ],
+  "publishedArticles": []
+}
+DATA_END
