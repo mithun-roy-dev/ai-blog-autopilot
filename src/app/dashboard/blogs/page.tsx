@@ -17,7 +17,10 @@ export default function SitesPage() {
         url: "",
         wp_api_key: "",
         wp_username: "",
-        site_type: "wordpress" as "wordpress" | "other"
+        site_type: "wordpress" as "wordpress" | "other",
+        site_niche: "",
+        custom_niche: "",
+        site_description: ""
     })
     const [error, setError] = useState<string | null>(null)
 
@@ -76,7 +79,9 @@ export default function SitesPage() {
                     url,
                     wp_api_key: newSite.site_type === 'wordpress' ? newSite.wp_api_key : null,
                     wp_username: newSite.site_type === 'wordpress' ? newSite.wp_username : null,
-                    site_type: newSite.site_type
+                    site_type: newSite.site_type,
+                    site_niche: newSite.site_niche === 'Others' ? newSite.custom_niche : newSite.site_niche,
+                    site_description: newSite.site_description
                 }])
                 .select()
 
@@ -85,7 +90,7 @@ export default function SitesPage() {
             // Trigger initial crawl job for all sites
             await triggerSync(data[0].id)
 
-            setNewSite({ name: "", url: "", wp_api_key: "", wp_username: "", site_type: "wordpress" })
+            setNewSite({ name: "", url: "", wp_api_key: "", wp_username: "", site_type: "wordpress", site_niche: "", custom_niche: "", site_description: "" })
             setIsAdding(false)
             fetchSites()
             toast.success(newSite.site_type === 'wordpress' ? "WordPress site connected!" : "Site added!")
@@ -195,6 +200,52 @@ export default function SitesPage() {
                                     </div>
                                 </>
                             )}
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Site Niche <span className="text-destructive">*</span></label>
+                                <select
+                                    required
+                                    value={newSite.site_niche}
+                                    onChange={(e) => setNewSite({ ...newSite, site_niche: e.target.value })}
+                                    className="flex h-10 w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                >
+                                    <option value="">--Select Site Niche--</option>
+                                    <option value="Technology / AI News">Technology / AI News</option>
+                                    <option value="Finance / Investing">Finance / Investing</option>
+                                    <option value="Health / Medical">Health / Medical</option>
+                                    <option value="Food / Recipe">Food / Recipe</option>
+                                    <option value="Legal / Law">Legal / Law</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="SaaS / Business">SaaS / Business</option>
+                                    <option value="News / Editorial">News / Editorial</option>
+                                    <option value="Pet Blog">Pet Blog</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+
+                            {newSite.site_niche === 'Others' && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Custom Niche Name <span className="text-destructive">*</span></label>
+                                    <input
+                                        required
+                                        placeholder="e.g. Photography, Education"
+                                        value={newSite.custom_niche}
+                                        onChange={(e) => setNewSite({ ...newSite, custom_niche: e.target.value })}
+                                        className="flex h-10 w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-sm font-medium">Short Site Description <span className="text-destructive">*</span></label>
+                                <textarea
+                                    required
+                                    placeholder="Enter a brief description of your site..."
+                                    value={newSite.site_description}
+                                    onChange={(e) => setNewSite({ ...newSite, site_description: e.target.value })}
+                                    className="flex min-h-[80px] w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                            </div>
                         </div>
 
                         <div className="flex justify-end">
@@ -245,6 +296,9 @@ export default function SitesPage() {
                                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-tighter">WP</span>
                                 )}
                             </div>
+                            <p className="text-[10px] font-bold text-primary/60 uppercase tracking-widest mt-1">
+                                {site.site_niche || "General"}
+                            </p>
                             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                                 {site.url}
                                 <ExternalLink className="h-3 w-3" />

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Globe, ArrowLeft, RefreshCw, Loader2, ExternalLink, FileText, Layout, CheckCircle2, AlertCircle, Database } from "lucide-react"
+import { Globe, ArrowLeft, RefreshCw, Loader2, ExternalLink, FileText, Layout, CheckCircle2, AlertCircle, Database, Edit, Save, X, Tag, AlignLeft } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
@@ -16,6 +16,23 @@ export default function BlogDetailPage() {
     const [articles, setArticles] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editData, setEditData] = useState({
+        site_niche: "",
+        custom_niche: "",
+        site_description: ""
+    })
+    const nicheOptions = [
+        "Technology / AI News",
+        "Finance / Investing",
+        "Health / Medical",
+        "Food / Recipe",
+        "Legal / Law",
+        "Travel",
+        "SaaS / Business",
+        "News / Editorial",
+        "Pet Blog"
+    ]
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1)
@@ -39,6 +56,11 @@ export default function BlogDetailPage() {
 
             if (blogError) throw blogError
             setBlog(blogData)
+            setEditData({
+                site_niche: nicheOptions.includes(blogData.site_niche) ? blogData.site_niche : (blogData.site_niche ? "Others" : ""),
+                custom_niche: nicheOptions.includes(blogData.site_niche) ? "" : (blogData.site_niche || ""),
+                site_description: blogData.site_description || ""
+            })
 
             // 2. Fetch Articles
             const { data: articleData, error: articleError } = await supabase
@@ -54,6 +76,28 @@ export default function BlogDetailPage() {
             toast.error("Failed to load blog details")
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleUpdateSite = async () => {
+        const toastId = toast.loading("Updating site details...")
+        try {
+            const finalNiche = editData.site_niche === "Others" ? editData.custom_niche : editData.site_niche
+            const { error } = await supabase
+                .from("blogs")
+                .update({
+                    site_niche: finalNiche,
+                    site_description: editData.site_description
+                })
+                .eq("id", params.id)
+
+            if (error) throw error
+            
+            setBlog({ ...blog, site_niche: finalNiche, site_description: editData.site_description })
+            setIsEditing(false)
+            toast.success("Site details updated!", { id: toastId })
+        } catch (err: any) {
+            toast.error(err.message, { id: toastId })
         }
     }
 
@@ -120,12 +164,23 @@ export default function BlogDetailPage() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={triggerSync}
-                        className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        <RefreshCw className="h-4 w-4" /> Force Sync Now
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsEditing(!isEditing)}
+                            className={cn(
+                                "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]",
+                                isEditing ? "bg-muted text-foreground" : "bg-secondary text-secondary-foreground"
+                            )}
+                        >
+                            {isEditing ? <><X className="h-4 w-4" /> Cancel</> : <><Edit className="h-4 w-4" /> Edit Details</>}
+                        </button>
+                        <button
+                            onClick={triggerSync}
+                            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            <RefreshCw className="h-4 w-4" /> Force Sync Now
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -170,22 +225,84 @@ export default function BlogDetailPage() {
                 </div>
             </div>
 
-            {/* Knowledge Summary Section */}
-            <div className="rounded-2xl border bg-primary/5 p-6 border-primary/10">
-                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-                    <Database className="h-5 w-5 text-primary" />
-                    Site Intelligence
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="flex justify-between p-3 rounded-lg bg-background/50 border">
-                        <span className="text-muted-foreground">Discovery Method</span>
-                        <span className="font-semibold">{blog.metadata?.discovery_method || "WordPress REST API"}</span>
-                    </div>
-                    <div className="flex justify-between p-3 rounded-lg bg-background/50 border">
-                        <span className="text-muted-foreground">Original Source</span>
-                        <span className="font-semibold text-primary underline truncate max-w-[200px]">{blog.url}</span>
-                    </div>
+            {/* Site Profile / Edit Section */}
+            <div className="rounded-2xl border bg-card/40 p-6 backdrop-blur-sm border-white/5">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                        <Database className="h-5 w-5 text-primary" />
+                        Site Profile
+                    </h3>
+                    {isEditing && (
+                        <button
+                            onClick={handleUpdateSite}
+                            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:scale-105 transition-all"
+                        >
+                            <Save className="h-3.5 w-3.5" />
+                            Save Changes
+                        </button>
+                    )}
                 </div>
+
+                {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                <Tag className="h-3 w-3" />
+                                Site Niche
+                            </label>
+                            <select
+                                value={editData.site_niche}
+                                onChange={(e) => setEditData({ ...editData, site_niche: e.target.value })}
+                                className="w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="">--Select Site Niche--</option>
+                                {nicheOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                <option value="Others">Others</option>
+                            </select>
+                            {editData.site_niche === 'Others' && (
+                                <input
+                                    placeholder="Enter custom niche..."
+                                    value={editData.custom_niche}
+                                    onChange={(e) => setEditData({ ...editData, custom_niche: e.target.value })}
+                                    className="w-full mt-2 rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                            )}
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                <AlignLeft className="h-3 w-3" />
+                                Description
+                            </label>
+                            <textarea
+                                value={editData.site_description}
+                                onChange={(e) => setEditData({ ...editData, site_description: e.target.value })}
+                                className="w-full h-[100px] rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                placeholder="Short site description..."
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-2">
+                                <Tag className="h-3 w-3 text-primary/60" />
+                                Targeted Niche
+                            </span>
+                            <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+                                {blog.site_niche || "Not specified"}
+                            </div>
+                        </div>
+                        <div>
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-2">
+                                <AlignLeft className="h-3 w-3 text-primary/60" />
+                                Site Overview
+                            </span>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                                {blog.site_description || "No description provided for this site."}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Articles List */}
