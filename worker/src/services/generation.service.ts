@@ -74,10 +74,18 @@ export class GenerationService {
             }
         }
 
-        // Step 4: Writer Agent (stub)
+        // Step 4: Writer Agent (stub - now saves sample content)
         if (progress['writing']?.status !== 'completed') {
             await this.executeStep(jobId, 'writing', async () => {
-                console.log(`[Job ${jobId}] ✍️ Writer Agent step (stub – AI logic coming soon)`);
+                console.log(`[Job ${jobId}] ✍️ Writer Agent step executing...`);
+                const sampleContent = `<h1>${job.title}</h1><p>This is a generated test article for <strong>${job.primary_keyword}</strong>.</p><p>It covers multiple aspects of the topic to provide comprehensive intelligence.</p>`;
+                
+                // Update the job with the generated content
+                await supabase
+                    .from('writing_jobs')
+                    .update({ content: sampleContent, updated_at: new Date() })
+                    .eq('id', jobId);
+
                 return { dataUpdate: {} };
             });
 
@@ -117,10 +125,14 @@ export class GenerationService {
             .from('writing_jobs')
             .update({
                 status: 'completed',
-                generation_status: 'humanizing',
+                generation_status: 'completed',
                 updated_at: new Date()
             })
             .eq('id', jobId);
+
+        // 🚀 Promote to Article and Site Intelligence
+        console.log(`[Job ${jobId}] 📦 Promoting job to public article and intelligence...`);
+        await SupabaseService.promoteJobToArticle(jobId);
 
         console.log(`[Job ${jobId}] 🎉 All steps completed successfully!`);
 
