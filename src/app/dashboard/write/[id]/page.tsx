@@ -146,7 +146,7 @@ export default function JobDetailPage() {
             if (nextStep) {
                 prevGenerationStatus.current = nextStep  // prevent auto-advance double-fire
                 setSelectedViewStep(nextStep)
-                setJob(prev => prev ? { ...prev, status: 'processing', generation_status: nextStep } : prev)
+                setJob((prev: any) => prev ? { ...prev, status: 'processing', generation_status: nextStep } : prev)
             }
 
             // 1. Set writing_job status back to processing
@@ -219,7 +219,7 @@ export default function JobDetailPage() {
     }
 
     const toggleHeadingExpansion = (pageIndex: number, type: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6') => {
-        setExpandedHeadings(prev => ({
+        setExpandedHeadings((prev: any) => ({
             ...prev,
             [pageIndex]: prev[pageIndex] === type ? null : type
         }))
