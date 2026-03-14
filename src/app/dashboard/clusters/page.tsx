@@ -292,7 +292,21 @@ export default function ClustersPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error("Unauthorized")
 
-            // 1. If status is 'published', check for existing article
+            // 1. Check if job already exists for this page_id
+            const { data: existingJob, error: checkError } = await supabase
+                .from('writing_jobs')
+                .select('id')
+                .eq('page_id', page.id)
+                .maybeSingle()
+
+            if (checkError) throw checkError
+
+            if (existingJob) {
+                toast.error("This article already in write job", { id: toastId })
+                return
+            }
+
+            // 2. If status is 'published', check for existing article
             if (page.status === 'published') {
                 const { data: matchedArticle, error: searchError } = await supabase
                     .from('articles')
@@ -331,7 +345,7 @@ export default function ClustersPage() {
                 }
             }
 
-            // 2. Create writing job
+            // 3. Create writing job
             const primaryKeyword = (page.slug || "").replace(/^\/+/, "").split('/').pop()?.replace(/-/g, ' ') || ""
 
             const { error: jobError } = await supabase
