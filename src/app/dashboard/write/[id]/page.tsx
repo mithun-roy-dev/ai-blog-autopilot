@@ -754,7 +754,7 @@ export default function JobDetailPage() {
                                 {!isStepActive && (!job?.generation_data?.brief || stepId !== 'briefing') && (
                                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
                                         <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center">
-                                            {stepId === 'serp_calling' || stepId === 'serp_analyzing' ? null : <stepMeta.icon className="h-8 w-8 opacity-40" />}
+                                            <stepMeta.icon className="h-8 w-8 opacity-40" />
                                         </div>
                                         <p className="font-bold text-sm uppercase tracking-widest">Step Completed</p>
                                         <p className="text-xs font-medium max-w-sm text-center opacity-70">AI-generated content for this step will appear here once the full pipeline is implemented.</p>
