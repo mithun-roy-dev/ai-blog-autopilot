@@ -102,13 +102,27 @@ export class GenerationService {
   <site_niche>${niche}</site_niche>
 </site_context>`;
 
+                // 3. Word Count Resolution Logic
+                const targetWords = currentPage?.word_count_target || 1200;
+                const avgWords = generationData.analysis?.average_word_count || 0;
+                const threshold = avgWords * 1.5;
+
+                Logger.debug(`Job:${jobId}`, `WORD_COUNT_LOGIC: Target: ${targetWords}, Avg: ${avgWords}, Threshold: ${threshold}`);
+
+                let resolvedWordCount = targetWords;
+                if (targetWords < threshold) {
+                    resolvedWordCount = Math.round(avgWords * 1.6);
+                    Logger.debug(`Job:${jobId}`, `WORD_COUNT_OVERRIDE: New Target: ${resolvedWordCount}`);
+                }
+
+                // 4. Construct XML Blocks
                 const articleTargetXml = `
 <article_target>
   <title>${job.title}</title>
   <keyword>${job.primary_keyword}</keyword>
   <category>${cluster?.topic || 'General'}</category>
   <intent>${cluster?.intent || 'Informational'}</intent>
-  <words>${currentPage?.word_count_target || 1200}</words>
+  <words>${resolvedWordCount}</words>
   <images>2</images>
   <links_must>${linksMust}</links_must>
   <links_choice>
@@ -129,6 +143,9 @@ ${articleTargetXml}
 ${serpDataXml}
 
 ${promptConfig.user_prompt_template}`;
+
+                // Log the full user message as requested
+                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_PROMPT_USER:\n${userPromptMessage}`);
 
                 // 5. LLM Call with Thinking Model 2
                 const brief = await LLMService.completion({

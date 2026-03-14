@@ -30,6 +30,8 @@ const OPENROUTER_MODELS = [
     { id: "openai/gpt-4o", name: "GPT-4o" },
     { id: "anthropic/claude-opus-4.6", name: "Claude Opus 4.6" },
     { id: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5" },
+    { id: "anthropic/claude-haiku-4.5", name: "Claude Haiku 4.5" },
+    { id: "stepfun/step-3.5-flash:free", name: "Stepfun-3.5 flash:free" },
     { id: "google/gemini-3-pro-image-preview", name: "Gemini 3 Nano Banana Pro" },
     { id: "google/gemini-3.1-flash-image-preview", name: "Gemini 3.1 Flash Na Banana 2" },
     { id: "openai/gpt-5-image-mini", name: "GPT 5 Image Mini" },
@@ -77,7 +79,7 @@ export default function SiteSetupPage() {
         max_h5: 2,
         max_h6: 2
     })
-    
+
     // Prompt State
     const [prompts, setPrompts] = useState<any[]>([])
     const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
@@ -182,7 +184,7 @@ export default function SiteSetupPage() {
                 return
             }
             setPrompts(data || [])
-            
+
             // Auto-select first prompt if none selected
             if (data && data.length > 0 && !selectedPromptId) {
                 handleSelectPrompt(data[0])
@@ -590,8 +592,8 @@ export default function SiteSetupPage() {
                                             onClick={() => handleSelectPrompt(p)}
                                             className={cn(
                                                 "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all",
-                                                selectedPromptId === p.id 
-                                                    ? "bg-primary text-primary-foreground border-primary" 
+                                                selectedPromptId === p.id
+                                                    ? "bg-primary text-primary-foreground border-primary"
                                                     : "bg-card text-muted-foreground border-border hover:bg-accent"
                                             )}
                                         >
