@@ -130,22 +130,16 @@ ${serpDataXml}
 
 ${promptConfig.user_prompt_template}`;
 
-                // 4.5 Log Prompts for verification as requested by user
-                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_SYSTEM_PROMPT:\n${systemPrompt}`);
-                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_USER_PROMPT:\n${userPromptMessage}`);
-
                 // 5. LLM Call with Thinking Model 2
-                const aiResponse = await LLMService.completion({
+                const brief = await LLMService.completion({
                     system: systemPrompt,
                     user: userPromptMessage,
                     modelRef: 'thinking_model_2',
-                    json: true
+                    json: false
                 });
 
-                const brief = LLMService.extractJson(aiResponse);
-                
-                // Log final response for verification
-                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_RESPONSE:\n${JSON.stringify(brief, null, 2)}`);
+                // Log response for verification as requested
+                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_RESPONSE:\n${brief}`);
 
                 return { dataUpdate: { brief } };
             });
