@@ -16,6 +16,29 @@ export class SupabaseService {
     }
 
     /**
+     * Formats a slug to ensure it starts with / and optionally extracts from a URL.
+     */
+    private static formatSlug(input: string, isUrl: boolean = false): string {
+        if (!input) return "";
+        let slug = input;
+        if (isUrl) {
+            try {
+                // Extract last non-empty segment from URL
+                const url = new URL(input);
+                const segments = url.pathname.split('/').filter(Boolean);
+                slug = segments.length > 0 ? segments[segments.length - 1] : "";
+            } catch {
+                // Fallback to basic string split if URL parsing fails
+                const segments = input.split('/').filter(Boolean);
+                slug = segments.length > 0 ? segments[segments.length - 1] : "";
+            }
+        }
+        
+        // Ensure it starts with / and remove any leading slashes first to avoid //
+        return `/${slug.replace(/^\/+/, '')}`;
+    }
+
+    /**
      * Stores articles fetched from WordPress into the database.
      */
     static async upsertArticles(userId: string, blogId: string, articles: any[]) {
@@ -27,9 +50,9 @@ export class SupabaseService {
             title: article.title.rendered,
             excerpt: article.excerpt.rendered,
             content: article.content.rendered,
-            slug: article.slug,
+            slug: this.formatSlug(article.link, true),
             source_url: article.link,
-            status: "generated", // Default status for crawled content
+            status: "crawled",
         }))
 
         const { error } = await client
@@ -84,6 +107,9 @@ export class SupabaseService {
         const serpData = genData.serp || {}
         const intent = serpData.intent || 'Informational'
         
+        // Format Slug
+        const formattedSlug = this.formatSlug(job.slug);
+
         // 2. Fetch or Create Article
         let articleId: string | undefined = undefined;
         
@@ -91,7 +117,7 @@ export class SupabaseService {
         const { data: existingArticle } = await client
             .from('articles')
             .select('id')
-            .eq('slug', job.slug)
+            .eq('slug', formattedSlug)
             .eq('blog_id', job.blog_id)
             .maybeSingle()
 
@@ -115,7 +141,7 @@ export class SupabaseService {
                     blog_id: job.blog_id,
                     title: job.title,
                     content: job.content,
-                    slug: job.slug,
+                    slug: formattedSlug,
                     source_url: job.source_url || `internal://${job.slug}`,
                     status: 'generated',
                     updated_at: new Date()
@@ -140,7 +166,7 @@ export class SupabaseService {
                 .from('site_intelligence')
                 .update({
                     article_id: articleId,
-                    url: job.slug ? `/${job.slug}` : '',
+                    url: formattedSlug,
                     primary_keyword: job.primary_keyword,
                     intent: intent,
                     status: 'completed',
@@ -153,7 +179,7 @@ export class SupabaseService {
                 .insert({
                     blog_id: job.blog_id,
                     article_id: articleId,
-                    url: job.slug ? `/${job.slug}` : '',
+                    url: formattedSlug,
                     title: job.title,
                     primary_keyword: job.primary_keyword,
                     intent: intent,
