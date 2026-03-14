@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/utils/cn"
 import Link from "next/link"
+import { logUI } from "@/utils/logger"
 
 export default function ClustersPage() {
     const router = useRouter()
@@ -249,11 +250,25 @@ export default function ClustersPage() {
         if (!confirm("Are you sure? This will delete the cluster and all its articles.")) return
         try {
             const { error } = await supabase.from('content_clusters').delete().eq('id', id)
-            if (error) throw error
+            if (error) {
+                // Check for foreign key constraint violation (Postgres error code 23503)
+                if (error.code === '23503' || error.message.includes('violates foreign key constraint')) {
+                    // Log the exact error to debug_log.txt on the server
+                    await logUI('ERROR', 'Clusters:Delete', `Foreign key violation: ${error.message}`, { clusterId: id });
+                    
+                    toast.error("🔒 This cluster already has published articles. Please delete or reassign them before removing the cluster.", {
+                        duration: 5000
+                    });
+                    return;
+                }
+                throw error;
+            }
             toast.success("Cluster deleted")
             fetchClusters(selectedBlog.id)
         } catch (error: any) {
-            toast.error(error.message)
+            console.error("[Cluster Delete Error]", error);
+            logUI('ERROR', 'Clusters:Delete', error.message, { clusterId: id });
+            toast.error("Failed to delete cluster. Please try again.");
         }
     }
 
@@ -271,16 +286,55 @@ export default function ClustersPage() {
 
     const initiateWritingJob = async (page: any, cluster: any) => {
         if (!selectedBlog) return
-        const toastId = toast.loading("Initializing writing job...")
+        const toastId = toast.loading("Checking article status...")
 
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error("Unauthorized")
 
-            // Create primary keyword from slug (replace dashes with spaces)
+            // 1. If status is 'published', check for existing article
+            if (page.status === 'published') {
+                const { data: matchedArticle, error: searchError } = await supabase
+                    .from('articles')
+                    .select('id')
+                    .eq('slug', page.slug)
+                    .eq('blog_id', selectedBlog.id)
+                    .maybeSingle()
+
+                if (searchError) throw searchError
+
+                if (matchedArticle) {
+                    // Update Article with cluster_id
+                    await supabase
+                        .from('articles')
+                        .update({ cluster_id: cluster.id })
+                        .eq('id', matchedArticle.id)
+
+                    // Update Cluster Page with article_id
+                    await supabase
+                        .from('cluster_pages')
+                        .update({ article_id: matchedArticle.id })
+                        .eq('id', page.id)
+
+                    toast.success("Article already published on site!", { id: toastId })
+                    fetchClusters(selectedBlog.id)
+                    return
+                } else {
+                    // Fallback: Not found in database, mark as not_generated and proceed to queue
+                    await supabase
+                        .from('cluster_pages')
+                        .update({ status: 'not_generated' })
+                        .eq('id', page.id)
+                    
+                    toast.info("Article not found in database. Starting generation...", { id: toastId })
+                    // Continue to step 2...
+                }
+            }
+
+            // 2. Create writing job
             const primaryKeyword = (page.slug || "").replace(/^\/+/, "").split('/').pop()?.replace(/-/g, ' ') || ""
 
-            const { data, error } = await supabase
+            const { error: jobError } = await supabase
                 .from('writing_jobs')
                 .insert({
                     user_id: user.id,
@@ -292,12 +346,11 @@ export default function ClustersPage() {
                     primary_keyword: primaryKeyword,
                     status: 'awaiting_start'
                 })
-                .select()
-                .single()
 
-            if (error) throw error
+            if (jobError) throw jobError
 
             toast.success("Article added to writing queue!", { id: toastId })
+            fetchClusters(selectedBlog.id)
         } catch (error: any) {
             toast.error(error.message, { id: toastId })
         }

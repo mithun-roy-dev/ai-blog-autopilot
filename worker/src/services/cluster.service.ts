@@ -1,11 +1,13 @@
 import axios from 'axios';
 import { SupabaseService } from './supabase.service';
+import { Logger } from '../utils/logger';
 
 export class ClusterService {
     private supabase = new SupabaseService();
 
     async generateClusters(blogId: string, userId: string) {
         console.log(`[Clustering] Starting strategy generation for blog: ${blogId}`);
+        const context_tag = `Clustering:${blogId}`;
         let config: any = null;
 
         try {
@@ -61,6 +63,10 @@ export class ClusterService {
 
             // 5. Call OpenRouter
             const prompt = this.getClusteringPrompt(siteContext);
+            
+            // Log Request to debug_log.txt
+            Logger.debug(context_tag, "CLUSTERING_AI_PROMPT_REQUEST", { prompt });
+
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
                 model: config.default_model || 'openai/gpt-3.5-turbo',
                 messages: [
@@ -127,9 +133,14 @@ export class ClusterService {
 
                 const { error: pError } = await SupabaseService.getClient()
                     .from('cluster_pages')
-                    .insert(pagesToInsert);
+                    .insert(pagesToInsert)
+                    .select();
 
-                if (pError) console.error("[Clustering] Failed to save pages:", pError);
+                if (pError) {
+                    console.error("[Clustering] Failed to save pages:", pError);
+                } 
+                // Optimized: Removed the slow matching loop. 
+                // Linking now happens in UI via '+ Write' button.
             }
 
             console.log(`[Clustering] Successfully generated strategy for ${blog.name}`);

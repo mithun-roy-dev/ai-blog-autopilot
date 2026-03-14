@@ -89,7 +89,7 @@ export class SupabaseService {
     }
 
     /**
-     * Promotes a completed writing job to a public article and updates site intelligence.
+     * Promotes a completed writing job to a public article and updates site intelligence and cluster planning.
      */
     static async promoteJobToArticle(jobId: string) {
         const client = this.getClient()
@@ -130,6 +130,7 @@ export class SupabaseService {
                     content: job.content,
                     source_url: job.source_url || `internal://${job.slug}`,
                     status: 'generated',
+                    cluster_id: job.cluster_id, // Link to cluster
                     updated_at: new Date()
                 })
                 .eq('id', articleId)
@@ -144,6 +145,7 @@ export class SupabaseService {
                     slug: formattedSlug,
                     source_url: job.source_url || `internal://${job.slug}`,
                     status: 'generated',
+                    cluster_id: job.cluster_id, // Link to cluster
                     updated_at: new Date()
                 })
                 .select()
@@ -153,7 +155,21 @@ export class SupabaseService {
             if (createError) console.error(`[Job ${jobId}] ❌ Failed to create article:`, createError.message);
         }
         
-        // 3. Update site_intelligence
+        // 3. Update cluster_pages (if linked)
+        if (job.page_id && articleId) {
+            const { error: pageUpdateError } = await client
+                .from('cluster_pages')
+                .update({
+                    status: 'generated',
+                    article_id: articleId,
+                    updated_at: new Date()
+                })
+                .eq('id', job.page_id)
+            
+            if (pageUpdateError) console.error(`[Job ${jobId}] ⚠️ Failed to update cluster_page status:`, pageUpdateError.message)
+        }
+
+        // 4. Update site_intelligence
         const { data: existingIntel } = await client
             .from('site_intelligence')
             .select('id')
