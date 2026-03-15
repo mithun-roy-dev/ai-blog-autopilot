@@ -246,12 +246,19 @@ export class SupabaseService {
                 const updates = [];
 
                 // Update cluster_pages with article_id and status if article is published
+                let newStatus = page.status;
+                if (article.status === 'published') {
+                    newStatus = 'published';
+                } else if (page.status === 'not_generated') {
+                    newStatus = 'generated';
+                }
+
                 updates.push(
                     client
                         .from('cluster_pages')
                         .update({
                             article_id: article.id,
-                            status: article.status === 'published' ? 'published' : page.status,
+                            status: newStatus,
                             updated_at: new Date()
                         })
                         .eq('id', clusterPageId)

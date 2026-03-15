@@ -616,6 +616,15 @@ export default function ClustersPage() {
                                                     >
                                                         <Edit3 className="h-4 w-4" />
                                                     </button>
+                                                    {page.status === 'not_generated' && (
+                                                        <button
+                                                            onClick={() => handleDeletePage(page.id)}
+                                                            className="p-2.5 rounded-xl bg-red-500/[0.03] border border-red-500/10 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group/del shadow-sm"
+                                                            title="Delete Strategy"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-red-500/40 group-hover/del:text-white" />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => initiateWritingJob(page, cluster)}
                                                         className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 text-white font-black text-xs hover:bg-indigo-600 hover:scale-[1.05] shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
