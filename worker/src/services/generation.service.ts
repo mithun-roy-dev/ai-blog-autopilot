@@ -73,26 +73,40 @@ export class GenerationService {
                 const promptConfig = await PromptService.getPrompt('content-brief');
                 if (!promptConfig) throw new Error("Prompt 'content-brief' not found.");
 
-                // 1. Fetch Cluster & Pillar Logic
+                // 1. Fetch Cluster & Articles Logic
                 const { data: cluster } = await supabase.from('content_clusters').select('*').eq('id', job.cluster_id).single();
-                const { data: clusterPages } = await supabase.from('cluster_pages').select('title, slug, type, word_count_target').eq('cluster_id', job.cluster_id);
+                const { data: clusterPages } = await supabase.from('cluster_pages').select('*').eq('cluster_id', job.cluster_id);
+                const { data: liveArticles } = await supabase.from('articles')
+                    .select('id, source_url, slug, status')
+                    .eq('blog_id', job.blog_id)
+                    .in('status', ['crawled', 'published']);
+
                 const currentPage = clusterPages?.find(p => p.slug === job.slug);
                 const pillarPage = clusterPages?.find(p => p.type === 'pillar');
+                const articleMap = new Map((liveArticles || []).map(a => [a.id, a]));
 
                 // 2. Internal Linking Logic
-                const { data: intel } = await supabase.from('site_intelligence').select('url').eq('blog_id', job.blog_id).limit(100);
-                const { data: pubArticles } = await supabase.from('articles').select('url').eq('blog_id', job.blog_id).eq('status', 'published').limit(100);
-                
-                const allLinks = Array.from(new Set([
-                    ...(intel?.map(i => i.url) || []),
-                    ...(pubArticles?.map(a => a.url) || [])
-                ])).filter(Boolean).slice(0, 30);
+                let linksMust = "Choose relevant links from linksChoice";
+                let linksChoice: string[] = [];
 
-                let linksMust = "";
-                if (currentPage?.type === 'supporting' && pillarPage) {
-                    linksMust = pillarPage.slug;
-                } else if (allLinks.length > 0) {
-                    linksMust = allLinks[0];
+                if (currentPage?.type === 'supporting') {
+                    // linksMust: Cluster Pillar URL (if live)
+                    if (pillarPage?.article_id) {
+                        const pillarArticle = articleMap.get(pillarPage.article_id);
+                        if (pillarArticle) linksMust = pillarArticle.source_url;
+                    }
+
+                    // linksChoice: Other live supporting articles in the same cluster
+                    linksChoice = (clusterPages || [])
+                        .filter(p => p.type === 'supporting' && p.id !== currentPage.id && p.article_id)
+                        .map(p => articleMap.get(p.article_id!)?.source_url)
+                        .filter(Boolean) as string[];
+                } else {
+                    // If Pillar or unknown: All other live articles in the blog
+                    linksChoice = (liveArticles || [])
+                        .filter(a => a.slug !== job.slug)
+                        .map(a => a.source_url)
+                        .filter(Boolean);
                 }
 
                 // 3. Construct XML Blocks
@@ -126,7 +140,7 @@ export class GenerationService {
   <images>2</images>
   <links_must>${linksMust}</links_must>
   <links_choice>
-    ${allLinks.map(url => `<url>${url}</url>`).join('\n    ')}
+    ${linksChoice.map(url => `<url>${url}</url>`).join('\n    ')}
   </links_choice>
 </article_target>`;
 
