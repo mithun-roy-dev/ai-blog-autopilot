@@ -10,6 +10,7 @@ import Link from "next/link"
 export default function SitesPage() {
     const supabase = createClient()
     const [sites, setSites] = useState<any[]>([])
+    const [jobs, setJobs] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isAdding, setIsAdding] = useState(false)
     const [newSite, setNewSite] = useState({
@@ -26,7 +27,21 @@ export default function SitesPage() {
 
     useEffect(() => {
         fetchSites()
+        fetchJobs()
+        
+        const interval = setInterval(fetchJobs, 3000)
+        return () => clearInterval(interval)
     }, [])
+
+    const fetchJobs = async () => {
+        const { data } = await supabase
+            .from("job_queue")
+            .select("*")
+            .eq("type", "crawl")
+            .in("status", ["queued", "processing"])
+        
+        setJobs(data || [])
+    }
 
     const fetchSites = async () => {
         setIsLoading(true)
@@ -277,10 +292,20 @@ export default function SitesPage() {
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className={cn(
-                                "rounded-xl p-3 transition-transform group-hover:scale-110",
-                                site.site_type === 'wordpress' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                                "rounded-xl p-3 transition-transform group-hover:scale-110 flex items-center justify-center relative",
+                                site.site_type === 'wordpress' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+                                jobs.some(j => (j.payload as any).blogId === site.id) && "animate-pulse ring-2 ring-primary/20"
                             )}>
-                                <Globe className="h-6 w-6" />
+                                {jobs.some(j => (j.payload as any).blogId === site.id) ? (
+                                    <>
+                                        <RefreshCw className="h-6 w-6 animate-spin opacity-20" />
+                                        <span className="absolute text-[10px] font-bold">
+                                            {jobs.find(j => (j.payload as any).blogId === site.id)?.progress || 0}%
+                                        </span>
+                                    </>
+                                ) : (
+                                    <Globe className="h-6 w-6" />
+                                )}
                             </div>
                             <button
                                 onClick={(e) => handleDeleteSite(site.id, e)}

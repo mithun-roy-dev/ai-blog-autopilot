@@ -32,66 +32,90 @@ async function processCrawlJob(job: any) {
 
         if (blogError || !blog) throw new Error(`Blog not found: ${blogId}`)
 
-        // 2. Fetch content based on site type and auth
-        let allContent: any[] = []
+        // 2. Content Discovery
+        await SupabaseService.updateJobProgress(job.id, 10)
         let postCount = 0
         let pageCount = 0
-        let sitemapUrls: string[] = []
+        let categoryCount = 0
+        let authorCount = 0
+        let sitemapCount = 0
 
         console.log(`[Job ${job.id}] 📖 Processing ${blog.site_type} site: ${blog.url}`)
 
+        // A. Always do Sitemap Discovery for all site types (for pages, categories, sitemaps tabs)
+        console.log(`[Job ${job.id}] 🌐 Discovering content via sitemap...`)
+        const sitemapData = await WordPressService.discoverSitemapData(blog.url)
+        await SupabaseService.updateJobProgress(job.id, 30)
+        
+        // B. Fetch Posts/Pages via API if authenticated WordPress
         if (blog.site_type === 'wordpress' && blog.wp_api_key && blog.wp_username) {
-            // Priority 1: Authenticated WP REST API
-            console.log(`[Job ${job.id}] 🔐 Fetching via WordPress REST API...`)
-            const [posts, pages] = await Promise.all([
-                WordPressService.fetchContent(blog.url, 'posts', blog.wp_api_key, blog.wp_username),
-                WordPressService.fetchContent(blog.url, 'pages', blog.wp_api_key, blog.wp_username)
-            ])
-            allContent = [...posts, ...pages]
-            postCount = posts.length
-            pageCount = pages.length
+            console.log(`[Job ${job.id}] 🔐 Fetching posts via WordPress REST API...`)
+            await SupabaseService.updateJobProgress(job.id, 45)
+            const wpPosts = await WordPressService.fetchContent(blog.url, 'posts', blog.wp_api_key, blog.wp_username)
+            if (wpPosts.length > 0) {
+                await SupabaseService.upsertArticles(job.user_id, blogId, wpPosts)
+                postCount = wpPosts.length
+            }
         } else {
-            // Priority 2: Sitemap Discovery (for 'Other' sites or unauthenticated WP)
-            console.log(`[Job ${job.id}] 🌐 Discovering content via sitemap...`)
-            sitemapUrls = await WordPressService.discoverSitemapUrls(blog.url)
-
-            // Limit to first 100 for discovery depth
-            const limitedUrls = sitemapUrls.slice(0, 100)
-            console.log(`[Job ${job.id}] 🕷️ Fetching metadata for ${limitedUrls.length} discovered links...`)
-
-            const metadataResults = await Promise.all(
-                limitedUrls.map(url => WordPressService.fetchUrlMetadata(url))
-            )
-
-            allContent = limitedUrls.map((url, index) => ({
-                id: `sitemap-${index}`,
-                title: { rendered: metadataResults[index].title },
-                content: { rendered: '' },
-                excerpt: { rendered: metadataResults[index].excerpt },
-                link: url,
-                slug: url.split('/').pop() || '',
-                date: new Date().toISOString()
-            }))
-
-            // Treat sitemap-discovered links as posts for stat visibility
-            postCount = allContent.length
+            // Use sitemap-discovered posts if no API
+            if (sitemapData.posts.length > 0) {
+                console.log(`[Job ${job.id}] 🕷️ Fetching metadata for ${sitemapData.posts.length} discovered posts...`)
+                await SupabaseService.updateJobProgress(job.id, 50)
+                const postMetadata = await Promise.all(
+                    sitemapData.posts.slice(0, 100).map(url => WordPressService.fetchUrlMetadata(url))
+                )
+                const postsToUpsert = sitemapData.posts.slice(0, 100).map((url, i) => ({ 
+                    url, 
+                    title: postMetadata[i].title,
+                    excerpt: postMetadata[i].excerpt 
+                }))
+                await SupabaseService.upsertArticles(job.user_id, blogId, postsToUpsert)
+                postCount = postsToUpsert.length
+            }
         }
+
+        // C. Populate other_contents table
+        console.log(`[Job ${job.id}] 🕷️ Fetching metadata for ${sitemapData.pages.length} discovered pages...`)
+        await SupabaseService.updateJobProgress(job.id, 70)
+        const pageMetadata = await Promise.all(
+            sitemapData.pages.slice(0, 50).map(url => WordPressService.fetchUrlMetadata(url))
+        )
+
+        const otherContentItems: any[] = [
+            ...sitemapData.pages.slice(0, 50).map((url, i) => ({ 
+                type: 'page', 
+                url, 
+                title: pageMetadata[i].title, 
+                excerpt: pageMetadata[i].excerpt 
+            })),
+            ...sitemapData.categories.map(url => ({ type: 'category', url })),
+            ...sitemapData.authors.map(url => ({ type: 'author', url })),
+            ...sitemapData.sitemaps.map(url => ({ type: 'sitemap', url }))
+        ]
+
+        if (otherContentItems.length > 0) {
+            console.log(`[Job ${job.id}] 💾 Storing ${otherContentItems.length} other content items...`)
+            await SupabaseService.updateJobProgress(job.id, 90)
+            await SupabaseService.upsertOtherContent(job.user_id, blogId, otherContentItems)
+        }
+
+        pageCount = Math.min(sitemapData.pages.length, 50)
+        categoryCount = sitemapData.categories.length
+        authorCount = sitemapData.authors.length
+        sitemapCount = sitemapData.sitemaps.length
 
         // 3. Update Blog Metadata for visibility
         await SupabaseService.updateBlogMetadata(blogId, {
             last_sync: new Date().toISOString(),
             post_count: postCount,
             page_count: pageCount,
-            total_content: allContent.length,
-            sitemap_links: sitemapUrls.length,
-            discovery_method: blog.wp_api_key && blog.wp_username ? "WordPress REST API" : "Sitemap Discovery"
+            category_count: categoryCount,
+            author_count: authorCount,
+            sitemap_count: sitemapCount,
+            discovery_method: blog.wp_api_key && blog.wp_username ? "WordPress REST API + Sitemap" : "Exhaustive Sitemap Discovery"
         })
 
-        // 4. Store items in Supabase
-        if (allContent.length > 0) {
-            console.log(`[Job ${job.id}] 💾 Storing ${allContent.length} discovered items...`)
-            await SupabaseService.upsertArticles(job.user_id, blogId, allContent)
-        }
+        await SupabaseService.updateJobProgress(job.id, 100)
 
         // 5. Update job status
         await SupabaseService.updateJobStatus(job.id, 'completed')

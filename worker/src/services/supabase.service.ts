@@ -39,7 +39,7 @@ export class SupabaseService {
     }
 
     /**
-     * Stores articles fetched from WordPress into the database.
+     * Stores articles (posts) fetched from WordPress or discovered via sitemap into the database.
      */
     static async upsertArticles(userId: string, blogId: string, articles: any[]) {
         const client = this.getClient()
@@ -47,19 +47,59 @@ export class SupabaseService {
         const formattedArticles = articles.map(article => ({
             user_id: userId,
             blog_id: blogId,
-            title: article.title.rendered,
-            excerpt: article.excerpt.rendered,
-            content: article.content.rendered,
-            slug: this.formatSlug(article.link, true),
-            source_url: article.link,
+            title: article.title?.rendered || article.title || "Untitled Post",
+            excerpt: article.excerpt?.rendered || article.excerpt || "",
+            content: article.content?.rendered || article.content || "",
+            slug: this.formatSlug(article.link || article.url, true),
+            source_url: article.link || article.url,
             status: "crawled",
         }))
+
+        if (formattedArticles.length === 0) return
 
         const { error } = await client
             .from("articles")
             .upsert(formattedArticles, { onConflict: "source_url" })
 
         if (error) throw error
+    }
+
+    /**
+     * Stores other content types (page, category, author, sitemap) into the other_contents table.
+     */
+    static async upsertOtherContent(userId: string, blogId: string, items: { type: 'page' | 'category' | 'author' | 'sitemap', url: string, title?: string, excerpt?: string }[]) {
+        const client = this.getClient()
+
+        const formattedItems = items.map(item => ({
+            user_id: userId,
+            blog_id: blogId,
+            type: item.type,
+            title: item.title || item.url.split('/').filter(Boolean).pop() || 'Untitled',
+            url: item.url,
+            excerpt: item.excerpt || "",
+            last_synced_at: new Date()
+        }))
+
+        if (formattedItems.length === 0) return
+
+        const { error } = await client
+            .from("other_contents")
+            .upsert(formattedItems, { onConflict: "blog_id,url,type" })
+
+        if (error) throw error
+    }
+
+    /**
+     * Updates the progress percentage of a job.
+     */
+    static async updateJobProgress(jobId: string, progress: number) {
+        const client = this.getClient()
+        const { error } = await client
+            .from("job_queue")
+            .update({ progress, updated_at: new Date() })
+            .eq("id", jobId)
+
+        if (error) console.error(`[Job ${jobId}] ⚠️ Failed to update progress:`, error.message)
     }
 
     /**

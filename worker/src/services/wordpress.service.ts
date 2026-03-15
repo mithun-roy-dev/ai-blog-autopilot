@@ -51,14 +51,55 @@ export class WordPressService {
 
     /**
      * Attempts to find and parse URLs from sitemap, including nested sitemaps.
+     * Categorizes URLs by post, page, category, author, and sitemap.
      */
-    static async discoverSitemapUrls(baseUrl: string): Promise<string[]> {
-        const sitemapsToProcess = [`${baseUrl}/wp-sitemap.xml`, `${baseUrl}/sitemap.xml`, `${baseUrl}/sitemap_index.xml`]
-        const foundUrls = new Set<string>()
+    static async discoverSitemapData(baseUrl: string): Promise<{
+        posts: string[],
+        pages: string[],
+        categories: string[],
+        authors: string[],
+        sitemaps: string[]
+    }> {
+        const results = {
+            posts: [] as string[],
+            pages: [] as string[],
+            categories: [] as string[],
+            authors: [] as string[],
+            sitemaps: [] as string[]
+        }
+
+        const sitemapsToProcess = new Set<string>()
         const processedSitemaps = new Set<string>()
 
-        while (sitemapsToProcess.length > 0) {
-            const currentSitemap = sitemapsToProcess.shift()!
+        // 1. Check robots.txt for Sitemap directives
+        try {
+            const robotsRes = await axios.get(`${baseUrl}/robots.txt`, { timeout: 5000 })
+            const robotsContent = robotsRes.data
+            const sitemapMatches = robotsContent.match(/^Sitemap:\s*(.*)$/gmi)
+            if (sitemapMatches) {
+                sitemapMatches.forEach((line: string) => {
+                    const url = line.replace(/^Sitemap:\s*/i, '').trim()
+                    if (url) sitemapsToProcess.add(url)
+                })
+            }
+        } catch (e) {
+            console.log(`[Sitemap] ℹ️ robots.txt not found or inaccessible for ${baseUrl}`)
+        }
+
+        // 2. Add common sitemap locations
+        const commonSitemaps = [
+            `${baseUrl}/sitemap_index.xml`,
+            `${baseUrl}/sitemap.xml`,
+            `${baseUrl}/wp-sitemap.xml`,
+            `${baseUrl}/sitemap_index.xml.gz`,
+            `${baseUrl}/sitemap.xml.gz`
+        ]
+        commonSitemaps.forEach(s => sitemapsToProcess.add(s))
+
+        const sitemapQueue = Array.from(sitemapsToProcess)
+
+        while (sitemapQueue.length > 0) {
+            const currentSitemap = sitemapQueue.shift()!
             if (processedSitemaps.has(currentSitemap)) continue
             processedSitemaps.add(currentSitemap)
 
@@ -69,44 +110,102 @@ export class WordPressService {
                 if (!locs) continue
 
                 const extracted = locs.map((loc: string) => loc.replace(/<\/?loc>/g, ""))
+                
+                // Track this URL as a sitemap if it's an XML file
+                if (currentSitemap.endsWith('.xml') || currentSitemap.endsWith('.xml.gz')) {
+                    results.sitemaps.push(currentSitemap)
+                }
 
                 for (const url of extracted) {
-                    if (url.endsWith('.xml')) {
-                        sitemapsToProcess.push(url)
+                    if (url.endsWith('.xml') || url.endsWith('.xml.gz')) {
+                        sitemapQueue.push(url)
                     } else {
-                        foundUrls.add(url)
+                        // Categorize based on sitemap filename or URL patterns
+                        const sitemapLower = currentSitemap.toLowerCase()
+                        const urlLower = url.toLowerCase()
+
+                        if (sitemapLower.includes('post')) {
+                            results.posts.push(url)
+                        } else if (sitemapLower.includes('page')) {
+                            results.pages.push(url)
+                        } else if (sitemapLower.includes('category')) {
+                            results.categories.push(url)
+                        } else if (sitemapLower.includes('author')) {
+                            results.authors.push(url)
+                        } else {
+                            // Fallback categorization based on URL segments if sitemap name is generic
+                            if (urlLower.includes('/category/')) results.categories.push(url)
+                            else if (urlLower.includes('/author/')) results.authors.push(url)
+                            else results.posts.push(url) // Default to post
+                        }
                     }
                 }
 
                 // Safety break to prevent infinite loops or massive discovery
-                if (foundUrls.size > 500) break
-                if (processedSitemaps.size > 20) break
+                const totalFound = results.posts.length + results.pages.length + results.categories.length + results.authors.length
+                if (totalFound > 1000) break
+                if (processedSitemaps.size > 30) break
 
             } catch (error) {
-                console.warn(`[Sitemap] ⚠️ Could not fetch sitemap: ${currentSitemap}`)
+                // Silently skip failed sitemap fetches
             }
         }
 
-        return Array.from(foundUrls)
+        // De-duplicate results
+        return {
+            posts: Array.from(new Set(results.posts)),
+            pages: Array.from(new Set(results.pages)),
+            categories: Array.from(new Set(results.categories)),
+            authors: Array.from(new Set(results.authors)),
+            sitemaps: Array.from(new Set(results.sitemaps))
+        }
     }
 
     /**
-     * Extracts basic metadata (title, description) from a generic URL.
+     * Extracts basic metadata (title, description/excerpt) from a generic URL.
+     * Extracts first few lines of text from body if meta description is missing.
      */
     static async fetchUrlMetadata(url: string): Promise<{ title: string; excerpt: string }> {
         try {
-            const response = await axios.get(url, { timeout: 5000 })
+            const response = await axios.get(url, { 
+                timeout: 8000,
+                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+            })
             const html = response.data
 
+            // 1. Extract Title
             const titleMatch = html.match(/<title>(.*?)<\/title>/i)
-            const title = titleMatch ? titleMatch[1] : url.split('/').pop() || 'Untitled'
+            let title = titleMatch ? titleMatch[1] : url.split('/').filter(Boolean).pop() || 'Untitled'
 
-            const descMatch = html.match(/<meta name="description" content="(.*?)"/i) || html.match(/<meta property="og:description" content="(.*?)"/i)
-            const excerpt = descMatch ? descMatch[1] : 'No description available'
+            // 2. Extract Excerpt (Meta Description priority)
+            const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i) || 
+                              html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i)
+            
+            let excerpt = descMatch ? descMatch[1] : ''
 
-            return { title, excerpt }
+            // 3. Fallback: Extract from body if excerpt is missing or too short
+            if (!excerpt || excerpt.length < 30) {
+                // Remove scripts, styles, and tags
+                const bodyText = html
+                    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmi, '')
+                    .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gmi, '')
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                
+                // Get roughly the first 200 characters/2 lines
+                excerpt = bodyText.substring(0, 200).trim()
+                if (excerpt.length > 0 && excerpt.length < bodyText.length) {
+                    excerpt += '...'
+                }
+            }
+
+            return { 
+                title: this.cleanHtml(title), 
+                excerpt: this.cleanHtml(excerpt) || 'No summary available'
+            }
         } catch (error) {
-            return { title: url.split('/').pop() || 'Untitled', excerpt: 'Snippet not available' }
+            return { title: url.split('/').filter(Boolean).pop() || 'Untitled', excerpt: 'Snippet not available' }
         }
     }
 

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Globe, ArrowLeft, RefreshCw, Loader2, ExternalLink, FileText, Layout, CheckCircle2, AlertCircle, Database, Edit, Save, X, Tag, AlignLeft } from "lucide-react"
+import { Globe, ArrowLeft, RefreshCw, Loader2, ExternalLink, FileText, Layout, CheckCircle2, AlertCircle, Database, Edit, Save, X, Tag, AlignLeft, Users, ListTree } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
@@ -17,6 +17,18 @@ export default function BlogDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [isEditing, setIsEditing] = useState(false)
+    const [activeTab, setActiveTab] = useState<"post" | "page" | "category" | "author" | "sitemap">("post")
+    const [syncProgress, setSyncProgress] = useState(0)
+    const [isSyncing, setIsSyncing] = useState(false)
+    
+    // Refs to avoid stale closures in polling
+    const activeTabRef = useRef(activeTab)
+    const isSyncingRef = useRef(isSyncing)
+
+    useEffect(() => {
+        activeTabRef.current = activeTab
+    }, [activeTab])
+
     const [editData, setEditData] = useState({
         site_niche: "",
         custom_niche: "",
@@ -41,8 +53,48 @@ export default function BlogDetailPage() {
     useEffect(() => {
         if (params.id) {
             fetchBlogDetails()
+            checkSyncStatus()
+            const interval = setInterval(checkSyncStatus, 3000)
+            return () => clearInterval(interval)
         }
     }, [params.id])
+
+    const checkSyncStatus = async () => {
+        try {
+            const { data } = await supabase
+                .from("job_queue")
+                .select("status, progress")
+                .eq("type", "crawl")
+                .eq("payload->>blogId", params.id)
+                .order("created_at", { ascending: false })
+                .limit(1)
+            
+            const job = data?.[0]
+            const stillSyncing = job && (job.status === "queued" || job.status === "processing")
+            
+            if (job) setSyncProgress(job.progress || 0)
+
+            // Transition: Syncing -> Completed
+            if (isSyncingRef.current && !stillSyncing) {
+                console.log("[Sync] Job completed, refreshing data...")
+                fetchBlogDetails()
+                fetchArticles(activeTabRef.current)
+                toast.success("Sync completed! Dashboard updated.")
+            }
+
+            // Update refs and state
+            isSyncingRef.current = !!stillSyncing
+            setIsSyncing(!!stillSyncing)
+        } catch (err) {
+            console.warn("[Sync] Polling error:", err)
+        }
+    }
+
+    useEffect(() => {
+        if (params.id) {
+            fetchArticles(activeTab)
+        }
+    }, [params.id, activeTab])
 
     const fetchBlogDetails = async () => {
         setIsLoading(true)
@@ -61,19 +113,40 @@ export default function BlogDetailPage() {
                 custom_niche: nicheOptions.includes(blogData.site_niche) ? "" : (blogData.site_niche || ""),
                 site_description: blogData.site_description || ""
             })
-
-            // 2. Fetch Articles
-            const { data: articleData, error: articleError } = await supabase
-                .from("articles")
-                .select("*")
-                .eq("blog_id", params.id)
-                .order("created_at", { ascending: false })
-
-            if (articleError) throw articleError
-            setArticles(articleData || [])
         } catch (err: any) {
             setError(err.message)
             toast.error("Failed to load blog details")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const fetchArticles = async (type: string) => {
+        setIsLoading(true)
+        try {
+            if (type === 'post') {
+                const { data, error } = await supabase
+                    .from("articles")
+                    .select("*")
+                    .eq("blog_id", params.id)
+                    .order("created_at", { ascending: false })
+
+                if (error) throw error
+                setArticles(data || [])
+            } else {
+                const { data, error } = await supabase
+                    .from("other_contents")
+                    .select("*")
+                    .eq("blog_id", params.id)
+                    .eq("type", type)
+                    .order("created_at", { ascending: false })
+
+                if (error) throw error
+                setArticles(data || [])
+            }
+            setCurrentPage(1)
+        } catch (err: any) {
+            console.error("Failed to fetch content:", err)
         } finally {
             setIsLoading(false)
         }
@@ -103,6 +176,10 @@ export default function BlogDetailPage() {
 
     const triggerSync = async () => {
         const toastId = toast.loading("Triggering sync...")
+        setIsSyncing(true)
+        isSyncingRef.current = true
+        setSyncProgress(0)
+        
         try {
             const res = await fetch("/api/blogs/crawl", {
                 method: "POST",
@@ -112,6 +189,8 @@ export default function BlogDetailPage() {
             if (!res.ok) throw new Error("Failed to trigger sync")
             toast.success("Sync job queued!", { id: toastId })
         } catch (err: any) {
+            setIsSyncing(false)
+            isSyncingRef.current = false
             toast.error(err.message, { id: toastId })
         }
     }
@@ -176,53 +255,92 @@ export default function BlogDetailPage() {
                         </button>
                         <button
                             onClick={triggerSync}
-                            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            disabled={isSyncing}
+                            className={cn(
+                                "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all shadow-lg",
+                                isSyncing 
+                                    ? "bg-muted text-muted-foreground cursor-not-allowed shadow-none" 
+                                    : "bg-primary text-primary-foreground shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
+                            )}
                         >
-                            <RefreshCw className="h-4 w-4" /> Force Sync Now
+                            <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />
+                            {isSyncing ? `Syncing (${syncProgress}%)` : "Force Sync Now"}
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-4 lg:grid-cols-5">
-                <div className="rounded-2xl border bg-card/50 p-6 backdrop-blur-sm">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-5">
+                <button 
+                    onClick={() => setActiveTab('post')}
+                    className={cn(
+                        "rounded-2xl border p-6 backdrop-blur-sm transition-all text-left",
+                        activeTab === 'post' ? "bg-primary/10 border-primary ring-1 ring-primary" : "bg-card/50 hover:bg-card/80"
+                    )}
+                >
                     <div className="flex items-center gap-3 text-muted-foreground mb-4">
-                        <FileText className="h-5 w-5" />
+                        <FileText className={cn("h-5 w-5", activeTab === 'post' && "text-primary")} />
                         <span className="text-sm font-medium">Posts</span>
                     </div>
                     <p className="text-3xl font-bold">{blog.metadata?.post_count || 0}</p>
-                </div>
-                <div className="rounded-2xl border bg-card/50 p-6 backdrop-blur-sm">
+                </button>
+
+                <button 
+                    onClick={() => setActiveTab('page')}
+                    className={cn(
+                        "rounded-2xl border p-6 backdrop-blur-sm transition-all text-left",
+                        activeTab === 'page' ? "bg-primary/10 border-primary ring-1 ring-primary" : "bg-card/50 hover:bg-card/80"
+                    )}
+                >
                     <div className="flex items-center gap-3 text-muted-foreground mb-4">
-                        <FileText className="h-5 w-5" />
+                        <Layout className={cn("h-5 w-5", activeTab === 'page' && "text-primary")} />
                         <span className="text-sm font-medium">Pages</span>
                     </div>
                     <p className="text-3xl font-bold">{blog.metadata?.page_count || 0}</p>
-                </div>
-                <div className="rounded-2xl border bg-card/50 p-6 backdrop-blur-sm">
+                </button>
+
+                <button 
+                    onClick={() => setActiveTab('category')}
+                    className={cn(
+                        "rounded-2xl border p-6 backdrop-blur-sm transition-all text-left",
+                        activeTab === 'category' ? "bg-primary/10 border-primary ring-1 ring-primary" : "bg-card/50 hover:bg-card/80"
+                    )}
+                >
                     <div className="flex items-center gap-3 text-muted-foreground mb-4">
-                        <Layout className="h-5 w-5" />
-                        <span className="text-sm font-medium">Sitemap</span>
+                        <ListTree className={cn("h-5 w-5", activeTab === 'category' && "text-primary")} />
+                        <span className="text-sm font-medium">Categories</span>
                     </div>
-                    <p className="text-3xl font-bold">{blog.metadata?.sitemap_links || 0}</p>
-                </div>
-                <div className="rounded-2xl border bg-card/50 p-6 backdrop-blur-sm">
+                    <p className="text-3xl font-bold">{blog.metadata?.category_count || 0}</p>
+                </button>
+
+                <button 
+                    onClick={() => setActiveTab('author')}
+                    className={cn(
+                        "rounded-2xl border p-6 backdrop-blur-sm transition-all text-left",
+                        activeTab === 'author' ? "bg-primary/10 border-primary ring-1 ring-primary" : "bg-card/50 hover:bg-card/80"
+                    )}
+                >
                     <div className="flex items-center gap-3 text-muted-foreground mb-4">
-                        <RefreshCw className="h-5 w-5 text-indigo-500" />
-                        <span className="text-sm font-medium">Last Sync</span>
+                        <Users className={cn("h-5 w-5", activeTab === 'author' && "text-primary")} />
+                        <span className="text-sm font-medium">Authors</span>
                     </div>
-                    <p className="text-sm font-bold truncate">
-                        {blog.metadata?.last_sync ? new Date(blog.metadata.last_sync).toLocaleDateString() : 'Never'}
-                    </p>
-                </div>
-                <div className="rounded-2xl border bg-card/50 p-6 backdrop-blur-sm">
+                    <p className="text-3xl font-bold">{blog.metadata?.author_count || 0}</p>
+                </button>
+
+                <button 
+                    onClick={() => setActiveTab('sitemap')}
+                    className={cn(
+                        "rounded-2xl border p-6 backdrop-blur-sm transition-all text-left",
+                        activeTab === 'sitemap' ? "bg-primary/10 border-primary ring-1 ring-primary" : "bg-card/50 hover:bg-card/80"
+                    )}
+                >
                     <div className="flex items-center gap-3 text-muted-foreground mb-4">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                        <span className="text-sm font-medium">Status</span>
+                        <Globe className={cn("h-5 w-5", activeTab === 'sitemap' && "text-primary")} />
+                        <span className="text-sm font-medium">Sitemaps</span>
                     </div>
-                    <p className="text-3xl font-bold text-emerald-500">Active</p>
-                </div>
+                    <p className="text-3xl font-bold">{blog.metadata?.sitemap_count || 0}</p>
+                </button>
             </div>
 
             {/* Site Profile / Edit Section */}
@@ -308,9 +426,14 @@ export default function BlogDetailPage() {
             {/* Articles List */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold">Synced Knowledge Base</h2>
+                    <h2 className="text-xl font-bold">
+                        {activeTab === 'post' ? 'Synced Posts' : 
+                         activeTab === 'page' ? 'Synced Pages' : 
+                         activeTab === 'category' ? 'Synced Categories' : 
+                         activeTab === 'author' ? 'Synced Authors' : 'XML Sitemaps'}
+                    </h2>
                     <p className="text-xs text-muted-foreground">
-                        Showing {Math.min((currentPage * itemsPerPage) - itemsPerPage + 1, articles.length)}-{Math.min(currentPage * itemsPerPage, articles.length)} of {articles.length} articles
+                        Showing {Math.min((currentPage * itemsPerPage) - itemsPerPage + 1, articles.length)}-{Math.min(currentPage * itemsPerPage, articles.length)} of {articles.length} {activeTab}s
                     </p>
                 </div>
 
@@ -336,12 +459,12 @@ export default function BlogDetailPage() {
                                     </div>
 
                                     <a
-                                        href={article.source_url}
+                                        href={activeTab === 'post' ? article.source_url : article.url}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="flex items-center gap-2 py-2 px-5 rounded-xl bg-primary/5 text-primary text-xs font-bold hover:bg-primary hover:text-primary-foreground transition-all group/link"
                                     >
-                                        Visit Original Post
+                                        {activeTab === 'sitemap' ? 'Visit Sitemap' : 'Visit Original'}
                                         <ExternalLink className="h-3.5 w-3.5 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
                                     </a>
                                 </div>
