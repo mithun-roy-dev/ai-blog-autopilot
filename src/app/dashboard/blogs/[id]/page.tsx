@@ -2,10 +2,74 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Globe, ArrowLeft, RefreshCw, Loader2, ExternalLink, FileText, Layout, CheckCircle2, AlertCircle, Database, Edit, Save, X, Tag, AlignLeft, Users, ListTree } from "lucide-react"
+import { Globe, ArrowLeft, RefreshCw, Loader2, ExternalLink, FileText, Layout, CheckCircle2, AlertCircle, Database, Edit, Save, X, Tag, AlignLeft, Users, ListTree, GripVertical } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
+
+// DND Kit Imports
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    horizontalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Sortable Item Component
+function SortableCountryTag({ id, onRemove }: { id: string; onRemove: (id: string) => void }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 'auto',
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium transition-shadow group shrink-0",
+                isDragging && "shadow-xl border-primary ring-2 ring-primary/20"
+            )}
+        >
+            <div 
+                {...attributes} 
+                {...listeners} 
+                className="cursor-grab active:cursor-grabbing text-primary/40 hover:text-primary transition-colors -ml-1"
+            >
+                <GripVertical className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-primary truncate max-w-[120px]">{id}</span>
+            <button
+                type="button"
+                onClick={() => onRemove(id)}
+                className="text-primary/40 hover:text-destructive transition-colors ml-0.5"
+            >
+                <X className="h-3.5 w-3.5" />
+            </button>
+        </div>
+    );
+}
 
 export default function BlogDetailPage() {
     const params = useParams()
@@ -34,6 +98,43 @@ export default function BlogDetailPage() {
         custom_niche: "",
         site_description: ""
     })
+    const [selectedCountries, setSelectedCountries] = useState<string[]>([])
+    const [countryInput, setCountryInput] = useState("")
+
+    // DND Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    function handleDragEnd(event: any) {
+        const { active, over } = event;
+        if (active.id !== over.id) {
+            setSelectedCountries((items) => {
+                const oldIndex = items.indexOf(active.id);
+                const newIndex = items.indexOf(over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    }
+
+    const addCountry = () => {
+        if (!countryInput.trim()) return;
+        const newCountries = countryInput
+            .split(',')
+            .map(c => c.trim())
+            .filter(c => c && !selectedCountries.includes(c));
+        if (newCountries.length > 0) {
+            setSelectedCountries([...selectedCountries, ...newCountries]);
+            setCountryInput("");
+        }
+    };
+
+    const removeCountry = (country: string) => {
+        setSelectedCountries(selectedCountries.filter(c => c !== country));
+    };
     const nicheOptions = [
         "Technology / AI News",
         "Finance / Investing",
@@ -113,6 +214,12 @@ export default function BlogDetailPage() {
                 custom_niche: nicheOptions.includes(blogData.site_niche) ? "" : (blogData.site_niche || ""),
                 site_description: blogData.site_description || ""
             })
+            // Initialize countries
+            if (blogData.target_country && blogData.target_country !== 'Global') {
+                setSelectedCountries(blogData.target_country.split(','))
+            } else {
+                setSelectedCountries([])
+            }
         } catch (err: any) {
             setError(err.message)
             toast.error("Failed to load blog details")
@@ -156,17 +263,20 @@ export default function BlogDetailPage() {
         const toastId = toast.loading("Updating site details...")
         try {
             const finalNiche = editData.site_niche === "Others" ? editData.custom_niche : editData.site_niche
+            const finalCountries = selectedCountries.length > 0 ? selectedCountries.join(',') : 'Global'
+            
             const { error } = await supabase
                 .from("blogs")
                 .update({
                     site_niche: finalNiche,
-                    site_description: editData.site_description
+                    site_description: editData.site_description,
+                    target_country: finalCountries
                 })
                 .eq("id", params.id)
 
             if (error) throw error
             
-            setBlog({ ...blog, site_niche: finalNiche, site_description: editData.site_description })
+            setBlog({ ...blog, site_niche: finalNiche, site_description: editData.site_description, target_country: finalCountries })
             setIsEditing(false)
             toast.success("Site details updated!", { id: toastId })
         } catch (err: any) {
@@ -398,6 +508,56 @@ export default function BlogDetailPage() {
                                 placeholder="Short site description..."
                             />
                         </div>
+
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                <Globe className="h-3 w-3" />
+                                Target Countries (Priority Left to Right)
+                            </label>
+                            <div className="space-y-3 mt-2">
+                                <div className="flex flex-wrap gap-2 min-h-[46px] p-2 rounded-xl border bg-background/50">
+                                    {selectedCountries.length === 0 ? (
+                                        <span className="text-sm text-muted-foreground px-2 py-1.5 italic">No countries added. Defaulting to Global.</span>
+                                    ) : (
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={handleDragEnd}
+                                        >
+                                            <SortableContext
+                                                items={selectedCountries}
+                                                strategy={horizontalListSortingStrategy}
+                                            >
+                                                {selectedCountries.map((country) => (
+                                                    <SortableCountryTag key={country} id={country} onRemove={removeCountry} />
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        placeholder="e.g. USA, UK, AUSTRALIA"
+                                        value={countryInput}
+                                        onChange={(e) => setCountryInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                addCountry();
+                                            }
+                                        }}
+                                        className="flex h-10 flex-1 rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={addCountry}
+                                        className="px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/20 transition-colors"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -418,6 +578,26 @@ export default function BlogDetailPage() {
                             <p className="text-sm leading-relaxed text-muted-foreground">
                                 {blog.site_description || "No description provided for this site."}
                             </p>
+                        </div>
+                        <div className="md:col-span-2 pt-4 border-t border-dashed border-white/5">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-3">
+                                <Globe className="h-3 w-3 text-primary/60" />
+                                Target Countries (Priority Order)
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                                {(!blog.target_country || blog.target_country === 'Global') ? (
+                                    <div className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm font-medium">
+                                        Global (All countries)
+                                    </div>
+                                ) : (
+                                    blog.target_country.split(',').map((country: string, idx: number) => (
+                                        <div key={country} className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+                                            {idx === 0 && <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full leading-none">#1</span>}
+                                            {country}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
