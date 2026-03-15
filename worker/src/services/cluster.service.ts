@@ -12,35 +12,46 @@ export class ClusterService {
 
         try {
             // 1. Fetch AI Configuration (OpenRouter)
-            const { data, error: configError } = await SupabaseService.getClient()
+            Logger.debug(context_tag, "FETCH_AI_CONFIG_START");
+            const { data: config, error: configError } = await SupabaseService.getClient()
                 .from('ai_configurations')
                 .select('*')
                 .eq('provider', 'openrouter')
                 .single();
 
-            config = data;
-
             if (configError || !config) {
+                Logger.error(context_tag, "FETCH_AI_CONFIG_FAILED", configError);
                 throw new Error("OpenRouter configuration not found. Please set it up in Admin settings.");
             }
+            Logger.debug(context_tag, "FETCH_AI_CONFIG_SUCCESS", { model: config.default_model });
 
             // 2. Fetch Site Intelligence (All Existing Posts)
+            Logger.debug(context_tag, "FETCH_SITE_INTEL_START");
             const { data: intel, error: intelError } = await SupabaseService.getClient()
                 .from('site_intelligence')
                 .select('title, category, tags, url, h1')
                 .eq('blog_id', blogId)
-                .order('created_at', { ascending: false }); // Fetch all, or a very large number
+                .order('created_at', { ascending: false });
 
-            if (intelError) throw intelError;
+            if (intelError) {
+                Logger.error(context_tag, "FETCH_SITE_INTEL_FAILED", intelError);
+                throw intelError;
+            }
+            Logger.debug(context_tag, "FETCH_SITE_INTEL_SUCCESS", { count: intel?.length });
 
-            // 3. Fetch Blog Info (Fallback Context)
+            // 3. Fetch Blog Info (Dynamic Context)
+            Logger.debug(context_tag, "FETCH_BLOG_INFO_START");
             const { data: blog, error: blogError } = await SupabaseService.getClient()
                 .from('blogs')
-                .select('name, url, metadata')
+                .select('name, url, site_description, target_country')
                 .eq('id', blogId)
                 .single();
 
-            if (blogError) throw blogError;
+            if (blogError) {
+                Logger.error(context_tag, "FETCH_BLOG_INFO_FAILED", blogError);
+                throw blogError;
+            }
+            Logger.debug(context_tag, "FETCH_BLOG_INFO_SUCCESS", { name: blog.name, target_country: blog.target_country });
 
             // 4. Prepare Context for AI
             const existingCategories = Array.from(new Set(intel?.map(i => i.category).filter(Boolean) || []));
@@ -53,22 +64,24 @@ export class ClusterService {
             const siteContext = {
                 name: blog.name,
                 url: blog.url,
-                description: blog.metadata?.description || '',
-                target_country: blog.metadata?.target_country || 'Global',
+                description: blog.site_description || '',
+                target_country: blog.target_country || 'Global',
                 existing_categories: existingCategories,
                 existing_posts: existingPosts
             };
+
+            Logger.debug(context_tag, "SITE_CONTEXT_PREPARED", siteContext);
 
             console.log(`[Clustering] Context gathered. Requesting AI clusters...`);
 
             // 5. Call OpenRouter
             const prompt = this.getClusteringPrompt(siteContext);
-            
+
             // Log Request to debug_log.txt
             Logger.debug(context_tag, "CLUSTERING_AI_PROMPT_REQUEST", { prompt });
-
+            const aiModel = config.default_model || 'openai/gpt-3.5-turbo';
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-                model: config.default_model || 'openai/gpt-3.5-turbo',
+                model: aiModel,
                 messages: [
                     {
                         role: 'system',
@@ -85,14 +98,18 @@ export class ClusterService {
             });
 
             const content = response.data.choices[0].message.content;
+            Logger.debug(context_tag, "AI_RAW_RESPONSE_RECEIVED", { content });
+
             const aiResult = this.extractJson(content);
             const clusters = aiResult.clusters || [];
 
             console.log(`[Clustering] AI generated ${clusters.length} clusters. Saving to DB...`);
+            Logger.debug(context_tag, "AI_RESULT_PARSED", { cluster_count: clusters.length });
 
             // 6. Save Clusters and Pages
             for (const clusterData of clusters) {
                 // Insert Cluster
+                Logger.debug(context_tag, "SAVE_CLUSTER_START", { topic: clusterData.category_topic });
                 const { data: cluster, error: cError } = await SupabaseService.getClient()
                     .from('content_clusters')
                     .insert({
@@ -107,9 +124,10 @@ export class ClusterService {
                     .single();
 
                 if (cError) {
-                    console.error("[Clustering] Failed to save cluster:", cError);
+                    Logger.error(context_tag, "SAVE_CLUSTER_FAILED", { topic: clusterData.category_topic, error: cError });
                     continue;
                 }
+                Logger.debug(context_tag, "SAVE_CLUSTER_SUCCESS", { cluster_id: cluster.id });
 
                 // Insert Pages (Pillar + Supporting)
                 const pagesToInsert = [
@@ -131,21 +149,24 @@ export class ClusterService {
                     }))
                 ];
 
+                Logger.debug(context_tag, "SAVE_CLUSTER_PAGES_START", { count: pagesToInsert.length });
                 const { error: pError } = await SupabaseService.getClient()
                     .from('cluster_pages')
                     .insert(pagesToInsert)
                     .select();
 
                 if (pError) {
-                    console.error("[Clustering] Failed to save pages:", pError);
-                } 
-                // Optimized: Removed the slow matching loop. 
-                // Linking now happens in UI via '+ Write' button.
+                    Logger.error(context_tag, "SAVE_CLUSTER_PAGES_FAILED", { cluster_id: cluster.id, error: pError });
+                } else {
+                    Logger.debug(context_tag, "SAVE_CLUSTER_PAGES_SUCCESS", { cluster_id: cluster.id });
+                }
             }
 
             console.log(`[Clustering] Successfully generated strategy for ${blog.name}`);
+            Logger.info(context_tag, "CLUSTERING_COMPLETED_SUCCESSFULLY");
 
         } catch (err: any) {
+            Logger.error(context_tag, "CLUSTERING_SERVICE_CRITICAL_FAILURE", err);
             if (err.isAxiosError) {
                 console.error(`[Clustering] API Error (${err.response?.status}):`, err.response?.data || err.message);
                 if (err.response?.status === 404) {
