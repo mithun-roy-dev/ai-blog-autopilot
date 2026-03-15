@@ -206,4 +206,82 @@ export class SupabaseService {
             if (insertIntelError) console.error(`[Job ${jobId}] ⚠️ Failed to insert site intelligence:`, insertIntelError.message)
         }
     }
+
+    /**
+     * Synchronizes links between articles and cluster pages based on matching slugs.
+     */
+    static async syncSlugLinks(jobId: string, payload: { clusterPageId: string }) {
+        const client = this.getClient();
+        const { clusterPageId } = payload;
+
+        console.log(`[Job ${jobId}] 🔗 Syncing links for cluster page: ${clusterPageId}`);
+
+        try {
+            // 1. Fetch the cluster page and its cluster info
+            const { data: page, error: pageError } = await client
+                .from('cluster_pages')
+                .select('*, content_clusters(blog_id, user_id)')
+                .eq('id', clusterPageId)
+                .single();
+
+            if (pageError || !page) throw new Error(`Cluster page not found: ${clusterPageId}`);
+
+            const blogId = (page.content_clusters as any).blog_id;
+            const normalizedSlug = this.formatSlug(page.slug);
+
+            // 2. Search for matching article
+            const { data: article, error: articleError } = await client
+                .from('articles')
+                .select('id, cluster_id, status')
+                .eq('blog_id', blogId)
+                .eq('slug', normalizedSlug)
+                .maybeSingle();
+
+            if (articleError) throw articleError;
+
+            if (article) {
+                console.log(`[Job ${jobId}] 🎯 Found matching article: ${article.id}`);
+
+                // 3. Link both tables
+                const updates = [];
+
+                // Update cluster_pages with article_id and status if article is published
+                updates.push(
+                    client
+                        .from('cluster_pages')
+                        .update({
+                            article_id: article.id,
+                            status: article.status === 'published' ? 'published' : page.status,
+                            updated_at: new Date()
+                        })
+                        .eq('id', clusterPageId)
+                );
+
+                // Update articles with cluster_id
+                updates.push(
+                    client
+                        .from('articles')
+                        .update({
+                            cluster_id: page.cluster_id,
+                            updated_at: new Date()
+                        })
+                        .eq('id', article.id)
+                );
+
+                const results = await Promise.all(updates);
+                for (const res of results) {
+                    if (res.error) throw res.error;
+                }
+
+                console.log(`[Job ${jobId}] ✅ Successfully linked article ${article.id} to cluster page ${clusterPageId}`);
+            } else {
+                console.log(`[Job ${jobId}] 🍃 No matching article found for slug: ${normalizedSlug}`);
+            }
+
+            await this.updateJobStatus(jobId, 'completed');
+        } catch (error: any) {
+            console.error(`[Job ${jobId}] ❌ Sync failed:`, error.message);
+            await this.updateJobStatus(jobId, 'failed', error.message);
+        }
+    }
 }

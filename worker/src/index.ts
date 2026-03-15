@@ -157,6 +157,11 @@ async function processArticleGenerationJob(job: any) {
     }
 }
 
+async function processLinkSlugsJob(job: any) {
+    console.log(`[Job ${job.id}] 🔗 Starting link sync for payload:`, job.payload)
+    await SupabaseService.syncSlugLinks(job.id, job.payload)
+}
+
 async function pollJobs() {
     const supabase = SupabaseService.getClient()
 
@@ -182,6 +187,8 @@ async function pollJobs() {
         await processClusterJob(job)
     } else if (job.type === 'article_generation') {
         await processArticleGenerationJob(job)
+    } else if (job.type === 'link_slugs') {
+        await processLinkSlugsJob(job)
     } else {
         console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`)
         await SupabaseService.updateJobStatus(job.id, 'failed', `Unknown job type: ${job.type}`)
