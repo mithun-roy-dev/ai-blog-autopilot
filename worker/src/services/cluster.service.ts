@@ -85,7 +85,23 @@ export class ClusterService {
                 messages: [
                     {
                         role: 'system',
-                        content: 'You are an expert SEO Content Strategist. Your goal is to create high-authority content clusters (Pillar-and-Spoke model).'
+                        content: `You are a senior SEO Content Strategist with 10+ years of experience building topical authority for niche websites. Your expertise includes:
+                        - Semantic SEO and topic cluster architecture
+                        - Search intent classification (informational, navigational, commercial, transactional)
+                        - Keyword gap analysis and content cannibalization prevention
+                        - E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) content planning
+
+                        Your job is to architect data-driven Content Cluster strategies that maximize topical authority, improve internal linking structure, and help websites rank for their core topic space.
+
+                        RULES YOU MUST ALWAYS FOLLOW:
+                        1. Output ONLY valid JSON — no markdown, no backticks, no preamble, no explanation.
+                        2. Never invent or hallucinate article slugs. For existing articles, copy Title and Slug EXACTLY as provided.
+                        3. Never duplicate an existing article across multiple clusters. Each article belongs to exactly ONE cluster.
+                        4. Every cluster must have exactly 1 Pillar and between 4–6 Supporting Articles.
+                        5. Supporting articles must be a MIX of existing (copied exactly) and new (clearly marked).
+                        6. New articles must fill real topical gaps — not restate existing content.
+                        7. Pillar articles must be broad enough to internally link to ALL supporting articles in its cluster.
+                        8. Prioritize clusters where the site already has the most existing content first.`
                     },
                     { role: 'user', content: prompt }
                 ]
@@ -180,46 +196,84 @@ export class ClusterService {
     }
 
     private getClusteringPrompt(context: any) {
-        return `
-            Analyze the following website context and architect a comprehensive Content Strategy with AT LEAST 5 clusters.
-            
-            SITE CONTEXT:
-            - Name: ${context.name}
-            - URL: ${context.url}
-            - Description: ${context.description}
-            - Target Country: ${context.target_country}
-            - Existing Categories: ${context.existing_categories.join(', ')}
-            - Existing Articles: ${JSON.stringify(context.existing_posts.slice(0, 50))} (Truncated if > 50)
+        const existingPostsJson = JSON.stringify(context.existing_posts.slice(0, 50), null, 0);
 
-            DIRECTIONS:
-            1. Create AT LEAST 5 high-authority Content Clusters.
-            2. For each cluster, use "Existing Categories" as the foundation where relevant.
-            3. MANDATORY: Incorporate ALL "Existing Articles" provided above into their respective clusters. 
-            4. If an existing article belongs to a cluster, use its exact Title and Slug.
-            5. For content gaps, suggest NEW "Write" ideas (Pillars or Support articles) to build topical authority.
-            6. Each cluster must have 1 Pillar Content and 4-5 Supporting Articles (mix of existing and new).
-            7. Pillars should be broad "Ultimate Guides" (2500-3000 words).
-            
-            OUTPUT FORMAT (JSON ONLY, NO MARKDOWN BACKTICKS):
-            {
-              "clusters": [
+        return `
+                TASK: Build a complete Content Cluster Strategy for the website below. Achieve full topical authority coverage.
+
+                === SITE PROFILE ===
+                Name: ${context.name}
+                URL: ${context.url}
+                Description: ${context.description}
+                Target Audience: ${context.target_country}
+                Existing Categories: ${context.existing_categories.join(', ')}
+
+                === EXISTING ARTICLES (copy Title + Slug EXACTLY when referencing) ===
+                ${existingPostsJson}
+
+                === INSTRUCTIONS ===
+
+                STEP 1 — AUDIT: Mentally group all existing articles into logical topic clusters.
+                STEP 2 — GAP ANALYSIS: Identify what subtopics are missing from each cluster to achieve full topical coverage.
+                STEP 3 — ARCHITECT: Build AT LEAST 6 clusters. Prioritize clusters that already have the most existing content.
+                STEP 4 — OUTPUT: Respond ONLY with the JSON structure below.
+
+                CLUSTER RULES:
+                - Each cluster = 1 Pillar + 4 to 6 Supporting Articles
+                - Pillar = broad "Ultimate Guide" covering the full cluster topic (target: 2500–3000 words)
+                - Supporting Articles = deep-dives on subtopics (target: 1000–1500 words)
+                - Supporting articles should be a mix of EXISTING (from the list above) and NEW (gap-filling)
+                - For EXISTING articles: copy "title" and "slug" exactly, set "status": "existing"
+                - For NEW articles: write a new optimized title and slug, set "status": "new"
+                - If a Pillar already exists on the site, use it; otherwise mark it "new"
+                - Assign each existing article to exactly ONE cluster — no duplicates across clusters
+
+                INTENT CLASSIFICATION (use one per cluster):
+                - "Informational" — How-to, guides, educational
+                - "Commercial Investigation" — Reviews, comparisons, best-of lists
+                - "Transactional" — Buying, adopting, acquiring
+                - "Mixed" — Combination of informational + commercial
+
+                === OUTPUT FORMAT (JSON ONLY) ===
                 {
-                  "category_topic": "Topic Name",
-                  "intent": "Informational/Commercial/etc",
-                  "strategy_summary": "1 sentence explanation",
-                  "pillar_content": {
-                    "title": "Title",
-                    "slug": "/slug",
-                    "word_count_target": 3000
-                  },
-                  "supporting_articles": [
-                    { "title": "Title", "slug": "/slug", "word_count_target": 1200 },
-                    ... 4 more
-                  ]
+                "clusters": [
+                    {
+                    "cluster_id": 1,
+                    "category_topic": "Short topic name",
+                    "intent": "Informational",
+                    "strategy_summary": "One sentence describing why this cluster builds topical authority.",
+                    "coverage_score": "High | Medium | Low (based on how many existing articles already cover this cluster)",
+                    "pillar_content": {
+                        "title": "The Ultimate Guide to [Topic]",
+                        "slug": "/slug-here",
+                        "word_count_target": 3000,
+                        "status": "existing | new",
+                        "focus_keyword": "primary keyword",
+                        "internal_links_to_support": ["list of supporting slugs this pillar should link to"]
+                    },
+                    "supporting_articles": [
+                        {
+                        "title": "Article Title",
+                        "slug": "/slug-here",
+                        "word_count_target": 1200,
+                        "status": "existing | new",
+                        "focus_keyword": "keyword",
+                        "content_gap_filled": "One sentence explaining what gap this fills (for new articles only)"
+                        }
+                    ]
+                    }
+                ],
+                "unassigned_articles": [],
+                "total_existing_assigned": 0,
+                "total_new_recommended": 0
                 }
-              ]
-            }
-        `;
+
+                CRITICAL FINAL CHECK before outputting:
+                - Are ALL ${context.existing_posts.length} existing articles assigned to exactly one cluster?
+                - Does every cluster have between 4–6 supporting articles?
+                - Is every existing article's title and slug copied exactly?
+                - Is the output valid JSON with no markdown formatting?
+                `;
     }
 
     private extractSlug(url: string) {
