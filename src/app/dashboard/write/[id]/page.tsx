@@ -20,7 +20,9 @@ import {
     Square,
     Star,
     ChevronDown,
-    ArrowRight
+    ArrowRight,
+    Maximize2,
+    Minimize2
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
@@ -45,6 +47,7 @@ export default function JobDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [selectedViewStep, setSelectedViewStep] = useState<string | null>(null)
     const [expandedHeadings, setExpandedHeadings] = useState<{ [pageIndex: number]: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | null }>({})
+    const [isArticleExpanded, setIsArticleExpanded] = useState(false)
     const detailsRef = useRef<HTMLDivElement>(null)
 
     const prevGenerationStatus = useRef<string | null>(null)
@@ -751,7 +754,98 @@ export default function JobDetailPage() {
                                         </div>
                                     </div>
                                 )}
-                                {!isStepActive && (!job?.generation_data?.brief || stepId !== 'briefing') && (
+                                {!isStepActive && stepId === 'writing' && job?.generation_data?.article_content && (
+                                    <>
+                                        {/* Standard View */}
+                                        <div className={cn(
+                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500",
+                                            isArticleExpanded ? "hidden" : "p-8"
+                                        )}>
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                                                        <PenTool className="h-5 w-5 text-primary" />
+                                                    </div>
+                                                    <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Generated Full Article</h4>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setIsArticleExpanded(true)}
+                                                    className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+                                                >
+                                                    <Maximize2 className="h-4 w-4" /> Maximize View
+                                                </button>
+                                            </div>
+                                            <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent custom-article-view pr-4">
+                                                <div className="font-mono text-sm text-foreground/90">
+                                                    {job.generation_data.article_content.split('\n').map((line: string, i: number) => {
+                                                        const isHeading = line.trim().startsWith('#');
+                                                        const isEmpty = line.trim() === '';
+                                                        return (
+                                                            <div 
+                                                                key={i} 
+                                                                className={cn(
+                                                                    "whitespace-pre-wrap break-words",
+                                                                    isHeading ? "mt-6 mb-3 font-black text-primary text-base" : "mb-4 leading-relaxed",
+                                                                    isEmpty ? "h-2 mb-0" : ""
+                                                                )}
+                                                            >
+                                                                {line}
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded Full-Screen Overlay */}
+                                        {isArticleExpanded && (
+                                            <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+                                                <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
+                                                    <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                                                                <PenTool className="h-6 w-6 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground">Generated Full Article</h4>
+                                                                <p className="text-xs font-medium text-muted-foreground mt-1">Reading Mode</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setIsArticleExpanded(false)}
+                                                            className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                        >
+                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto p-6 sm:p-12 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-card">
+                                                        <div className="max-w-[800px] mx-auto custom-article-view">
+                                                            <div className="font-mono text-sm sm:text-base text-foreground/90">
+                                                                {job.generation_data.article_content.split('\n').map((line: string, i: number) => {
+                                                                    const isHeading = line.trim().startsWith('#');
+                                                                    const isEmpty = line.trim() === '';
+                                                                    return (
+                                                                        <div 
+                                                                            key={i} 
+                                                                            className={cn(
+                                                                                "whitespace-pre-wrap break-words",
+                                                                                isHeading ? "mt-8 mb-4 font-black text-primary text-lg" : "mb-5 leading-[1.8]",
+                                                                                isEmpty ? "h-4 mb-0" : ""
+                                                                            )}
+                                                                        >
+                                                                            {line}
+                                                                        </div>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {!isStepActive && (!job?.generation_data?.brief && stepId === 'briefing' || !job?.generation_data?.article_content && stepId === 'writing' || (stepId !== 'briefing' && stepId !== 'writing')) && (
                                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
                                         <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center">
                                             <stepMeta.icon className="h-8 w-8 opacity-40" />

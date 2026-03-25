@@ -188,30 +188,46 @@ ${promptConfig.user_prompt_template}`;
                 console.log(`[Job ${jobId}] ✍️ Writing Full Article...`);
                 
                 const generationData = await this.getGenerationData(jobId);
-                const promptConfig = await PromptService.getPrompt('writer-agent');
+                const promptConfig = await PromptService.getPrompt('writer-system-prompt');
                 
-                if (!promptConfig) throw new Error("Prompt 'writer-agent' not found.");
+                if (!promptConfig) throw new Error("Prompt 'writer-system-prompt' not found.");
 
                 const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
-                const userPrompt = PromptService.injectVariables(promptConfig.user_prompt_template, {
-                    content_brief: JSON.stringify(generationData.brief || {}, null, 2),
+                
+                // Manual placeholder replacement for [content-brief] as requested
+                const briefText = typeof generationData.brief === 'string' 
+                    ? generationData.brief 
+                    : JSON.stringify(generationData.brief || {}, null, 2);
+                
+                let userPrompt = promptConfig.user_prompt_template.replace('[content-brief]', briefText);
+                
+                // Also support standard {{keyword}} etc. if present
+                userPrompt = PromptService.injectVariables(userPrompt, {
                     keyword: job.primary_keyword,
                     intent: generationData.serp?.intent || 'Informational',
                     niche: niche
                 });
 
+                // Logging prompts before calling OpenRouter as requested
+                Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_SYSTEM:\n${systemPrompt}`);
+                Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_USER:\n${userPrompt}`);
+
                 const articleContent = await LLMService.completion({
                     system: systemPrompt,
-                    user: userPrompt
+                    user: userPrompt,
+                    modelRef: 'thinking_model_1'
                 });
-                
+
+                // Logging response for verification as requested
+                Logger.debug(`Job:${jobId}`, `WRITER_AGENT_RESPONSE:\n${articleContent}`);
+
                 // Update the job with the generated content
                 await supabase
                     .from('writing_jobs')
                     .update({ content: articleContent, updated_at: new Date() })
                     .eq('id', jobId);
 
-                return { dataUpdate: {} };
+                return { dataUpdate: { article_content: articleContent } };
             });
 
             const currentMode = await this.getCurrentWritingMode(job.blog_id);
