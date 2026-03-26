@@ -26,6 +26,8 @@ const OPENROUTER_MODELS = [
     { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large Preview (Free)" },
     { id: "google/gemini-2.0-flash-001", name: "Gemini 2.0 Flash" },
     { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet" },
+    { id: "deepseek/deepseek-r1", name: "DeepSeek r1" },
+    { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
     { id: "deepseek/deepseek-chat", name: "DeepSeek Chat" },
     { id: "openai/gpt-4o", name: "GPT-4o" },
     { id: "anthropic/claude-opus-4.6", name: "Claude Opus 4.6" },
@@ -35,7 +37,9 @@ const OPENROUTER_MODELS = [
     { id: "google/gemini-3-pro-image-preview", name: "Gemini 3 Nano Banana Pro" },
     { id: "google/gemini-3.1-flash-image-preview", name: "Gemini 3.1 Flash Na Banana 2" },
     { id: "openai/gpt-5-image-mini", name: "GPT 5 Image Mini" },
+    { id: "minimax/minimax-m2.7", name: "Minimax M2-2.7" },
     { id: "minimax/minimax-m2.5", name: "Minimax M2-2.5" },
+    { id: "minimax/minimax-m2.5:free", name: "Minimax M2-2.5 free" },
     { id: "meta-llama/llama-3.1-70b-instruct", name: "Llama 3.1 70B" },
 ]
 

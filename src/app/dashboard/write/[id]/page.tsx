@@ -22,7 +22,9 @@ import {
     ChevronDown,
     ArrowRight,
     Maximize2,
-    Minimize2
+    Minimize2,
+    Copy,
+    Check
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/utils/cn"
@@ -47,7 +49,8 @@ export default function JobDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [selectedViewStep, setSelectedViewStep] = useState<string | null>(null)
     const [expandedHeadings, setExpandedHeadings] = useState<{ [pageIndex: number]: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | null }>({})
-    const [isArticleExpanded, setIsArticleExpanded] = useState(false)
+    const [expandedStepData, setExpandedStepData] = useState<string | null>(null)
+    const [copiedStep, setCopiedStep] = useState<string | null>(null)
     const detailsRef = useRef<HTMLDivElement>(null)
 
     const prevGenerationStatus = useRef<string | null>(null)
@@ -129,13 +132,20 @@ export default function JobDetailPage() {
         setSelectedViewStep(newStatus)
     }, [job?.generation_status])
 
-    // Maps each step to the next step in the pipeline
     const NEXT_STEP: Record<string, string> = {
         serp_calling: 'serp_analyzing',
         serp_analyzing: 'briefing',
         briefing: 'writing',
         writing: 'editing',
         editing: 'humanizing',
+    }
+
+    const handleCopy = (text: string, stepId: string) => {
+        if (!text) return
+        navigator.clipboard.writeText(text)
+        setCopiedStep(stepId)
+        toast.success("Copied to clipboard!")
+        setTimeout(() => setCopiedStep(null), 2000)
     }
 
     const handleProceed = async () => {
@@ -618,6 +628,7 @@ export default function JobDetailPage() {
                                                         >
                                                             <span className="font-black text-muted-foreground mr-1.5">H6</span>
                                                             <span className="font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/10">{page.h6.length} items</span>
+```
                                                             <ChevronDown className={cn("ml-1.5 h-3.5 w-3.5 text-muted-foreground transition-transform", expandedHeadings[i] === 'h6' && "rotate-180 text-primary")} />
                                                         </button>
                                                     )}
@@ -737,43 +748,444 @@ export default function JobDetailPage() {
                                         <p className="font-bold text-sm uppercase tracking-widest animate-pulse">Running {stepMeta.name}...</p>
                                     </div>
                                 )}
-                                {!isStepActive && stepId === 'briefing' && job?.generation_data?.brief && (
-                                    <div className="p-8 rounded-[2rem] bg-accent/10 border border-border/30 text-left">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-                                                <FileText className="h-5 w-5 text-primary" />
+                                {!isStepActive && stepId === 'serp_calling' && job?.generation_data?.serp?.results && (
+                                    <>
+                                        {/* Standard View */}
+                                        <div className={cn(
+                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500 relative z-10",
+                                            expandedStepData === 'serp_calling' ? "hidden" : "p-6 sm:p-8"
+                                        )}>
+                                            <div className="flex items-center justify-between mb-8 pb-6 border-b border-border/50">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20 shadow-inner">
+                                                        <Search className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Scraped SERP Data</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1 font-medium">{job.generation_data.serp.results.length} results analyzed</p>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setExpandedStepData('serp_calling')}
+                                                    className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                >
+                                                    <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
+                                                </button>
                                             </div>
-                                            <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Generated Content Brief</h4>
+
+                                            <div className="max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                                                    {job.generation_data.serp.results.map((result: any, i: number) => (
+                                                        <a 
+                                                            key={i} 
+                                                            href={result.url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="block p-5 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group"
+                                                        >
+                                                            <div className="flex items-start gap-4">
+                                                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                                                    #{i + 1}
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                                                                            {new URL(result.url).hostname.replace('www.', '')}
+                                                                        </span>
+                                                                    </div>
+                                                                    <h5 className="font-bold text-sm text-foreground/90 leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                                                                        {result.title}
+                                                                    </h5>
+                                                                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                                                                        {result.snippet}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                                            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground/90 bg-transparent p-0 border-none">
-                                                {typeof job.generation_data.brief === 'string' 
-                                                    ? job.generation_data.brief 
-                                                    : JSON.stringify(job.generation_data.brief, null, 2)}
-                                            </pre>
+
+                                        {/* Expanded Full-Screen Overlay */}
+                                        {expandedStepData === 'serp_calling' && (
+                                            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+                                                <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
+                                                    <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                                                                <Search className="h-6 w-6 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground">Scraped SERP Data</h4>
+                                                                <p className="text-xs font-medium text-muted-foreground mt-1">{job.generation_data.serp.results.length} results analyzed</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setExpandedStepData(null)}
+                                                            className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                        >
+                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-accent/5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                                                            {job.generation_data.serp.results.map((result: any, i: number) => (
+                                                                <a 
+                                                                    key={i} 
+                                                                    href={result.url} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    className="block p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group"
+                                                                >
+                                                                    <div className="flex items-start gap-4">
+                                                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                                                            #{i + 1}
+                                                                        </div>
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div className="flex items-center gap-2 mb-2">
+                                                                                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                                                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
+                                                                                    {new URL(result.url).hostname.replace('www.', '')}
+                                                                                </span>
+                                                                            </div>
+                                                                            <h5 className="font-bold text-sm text-foreground/90 leading-tight mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                                                                                {result.title}
+                                                                            </h5>
+                                                                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                                                                                {result.snippet}
+                                                                            </p>
+                                                                            <div className="mt-4 flex items-center text-[10px] font-semibold text-primary/80 group-hover:text-primary transition-colors uppercase tracking-widest gap-1">
+                                                                                View source <ExternalLink className="h-3 w-3" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {!isStepActive && stepId === 'serp_analyzing' && job?.generation_data?.competitor_analysis && (
+                                    <>
+                                        {/* Standard View */}
+                                        <div className={cn(
+                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500 relative z-10",
+                                            expandedStepData === 'serp_analyzing' ? "hidden" : "p-6 sm:p-8"
+                                        )}>
+                                            <div className="flex items-center justify-between mb-8 pb-6 border-b border-border/50">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20 shadow-inner">
+                                                        <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Competitor Analysis</h4>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setExpandedStepData('serp_analyzing')}
+                                                    className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                >
+                                                    <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
+                                                </button>
+                                            </div>
+
+                                            <div className="max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                                                <div className="space-y-4">
+                                                    {job.generation_data.competitor_analysis.map((page: any, i: number) => (
+                                                        <div key={i} className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                                                            {/* Accordion content elided below -> full representation shown */}
+                                                            <div 
+                                                                className="w-full text-left p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-accent/30 transition-colors"
+                                                                onClick={() => setExpandedHeadings(prev => ({
+                                                                    ...prev,
+                                                                    [i]: prev[i] ? null : 'h1'
+                                                                }))}
+                                                            >
+                                                                <div className="flex items-center gap-4 pr-4">
+                                                                    <div className="hidden sm:flex h-10 w-10 rounded-xl bg-accent items-center justify-center text-muted-foreground font-black text-xs shrink-0">
+                                                                        #{i + 1}
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <Globe className="h-3 w-3 text-muted-foreground" />
+                                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{new URL(page.url).hostname.replace('www.', '')}</span>
+                                                                        </div>
+                                                                        <h5 className="font-bold text-sm text-foreground/90 leading-tight">{page.title || 'Untitled Page'}</h5>
+                                                                        <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                                                                            <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {(page.content || '').length} length</span>
+                                                                            <span>•</span>
+                                                                            <span>{Object.keys(page.headings || {}).reduce((acc, level) => acc + (page.headings[level]?.length || 0), 0)} Headings</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className={cn(
+                                                                    "p-2 rounded-xl transition-all duration-300 border shadow-sm",
+                                                                    expandedHeadings[i] ? "bg-primary text-primary-foreground border-primary rotate-180" : "bg-card text-muted-foreground border-border/50 hover:bg-accent"
+                                                                )}>
+                                                                    <ChevronDown className="h-4 w-4" />
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {/* Expanded Headings Content */}
+                                                            {expandedHeadings[i] && (
+                                                                <div className="border-t border-border/50 bg-accent/5 p-4 sm:p-6 animate-in slide-in-from-top-2 duration-200">
+                                                                    {page.headings ? (
+                                                                        <div className="space-y-6">
+                                                                            {Object.entries(page.headings).map(([level, items]: [string, any]) => {
+                                                                                if (!items || items.length === 0) return null;
+                                                                                return (
+                                                                                    <div key={level}>
+                                                                                        <h6 className="text-[10px] font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
+                                                                                            <span className="h-px bg-primary/20 flex-1"></span>
+                                                                                            {level.toUpperCase()}
+                                                                                            <span className="h-px bg-primary/20 flex-1"></span>
+                                                                                        </h6>
+                                                                                        <ul className="space-y-2">
+                                                                                            {items.map((heading: string, hIdx: number) => (
+                                                                                                <li key={hIdx} className="text-sm font-medium text-foreground/80 leading-relaxed flex items-start gap-2">
+                                                                                                    <span className="text-primary mt-1 opacity-50">•</span>
+                                                                                                    <span>{heading}</span>
+                                                                                                </li>
+                                                                                            ))}
+                                                                                        </ul>
+                                                                                    </div>
+                                                                                )
+                                                                            })}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="text-sm text-muted-foreground italic text-center py-4">No headings found on this page.</div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+
+                                        {/* Expanded Full-Screen Overlay */}
+                                        {expandedStepData === 'serp_analyzing' && (
+                                            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+                                                <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
+                                                    <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                                                                <Zap className="h-6 w-6 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground">Competitor Analysis</h4>
+                                                                <p className="text-xs font-medium text-muted-foreground mt-1">Detailed heading structure for {job.generation_data.competitor_analysis.length} pages</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setExpandedStepData(null)}
+                                                            className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                        >
+                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-accent/5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                                                        <div className="space-y-6">
+                                                            {job.generation_data.competitor_analysis.map((page: any, i: number) => (
+                                                                <div key={i} className="rounded-2xl border border-border/50 bg-card overflow-hidden transition-all shadow-sm shadow-black/5 hover:border-primary/20 hover:shadow-md">
+                                                                    <div 
+                                                                        className="w-full text-left p-6 sm:p-8 flex items-center justify-between cursor-pointer hover:bg-accent/30 transition-colors"
+                                                                        onClick={() => setExpandedHeadings(prev => ({
+                                                                            ...prev,
+                                                                            [i]: prev[i] ? null : 'h1'
+                                                                        }))}
+                                                                    >
+                                                                        <div className="flex items-center gap-6 pr-4">
+                                                                            <div className="hidden sm:flex h-14 w-14 rounded-2xl bg-accent items-center justify-center text-muted-foreground font-black text-lg shrink-0 border border-border/50">
+                                                                                #{i + 1}
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                    <Globe className="h-4 w-4 text-muted-foreground" />
+                                                                                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{new URL(page.url).hostname.replace('www.', '')}</span>
+                                                                                </div>
+                                                                                <h5 className="font-bold text-lg text-foreground/90 leading-tight mb-3">{page.title || 'Untitled Page'}</h5>
+                                                                                <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                                                                    <span className="flex items-center gap-1.5 bg-accent/50 px-3 py-1.5 rounded-lg border border-border/50"><FileText className="h-3 w-3" /> {(page.content || '').length} length</span>
+                                                                                    <span className="flex items-center gap-1.5 bg-accent/50 px-3 py-1.5 rounded-lg border border-border/50">{Object.keys(page.headings || {}).reduce((acc, level) => acc + (page.headings[level]?.length || 0), 0)} Headings</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className={cn(
+                                                                            "p-3 rounded-xl transition-all duration-300 border shadow-sm",
+                                                                            expandedHeadings[i] ? "bg-primary text-primary-foreground border-primary rotate-180" : "bg-card text-muted-foreground border-border/50 hover:bg-accent"
+                                                                        )}>
+                                                                            <ChevronDown className="h-5 w-5" />
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {expandedHeadings[i] && (
+                                                                        <div className="border-t border-border/50 bg-accent/5 p-6 sm:p-8 animate-in slide-in-from-top-4 duration-300">
+                                                                            {page.headings ? (
+                                                                                <div className="space-y-8">
+                                                                                    {Object.entries(page.headings).map(([level, items]: [string, any]) => {
+                                                                                        if (!items || items.length === 0) return null;
+                                                                                        return (
+                                                                                            <div key={level} className="bg-card p-6 rounded-2xl border border-border/50 shadow-sm">
+                                                                                                <h6 className="text-xs font-black uppercase tracking-widest text-primary mb-4 flex items-center gap-4">
+                                                                                                    <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg border border-primary/20 shrink-0">{level.toUpperCase()}</span>
+                                                                                                    <span className="h-px bg-border flex-1"></span>
+                                                                                                </h6>
+                                                                                                <ul className="space-y-3">
+                                                                                                    {items.map((heading: string, hIdx: number) => (
+                                                                                                        <li key={hIdx} className="text-base font-medium text-foreground/80 flex items-start gap-4 p-3 rounded-xl hover:bg-accent/50 transition-colors border border-transparent hover:border-border/50">
+                                                                                                            <div className="h-6 w-6 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5">
+                                                                                                                <span className="text-[10px] font-bold text-muted-foreground">{hIdx + 1}</span>
+                                                                                                            </div>
+                                                                                                            <span className="leading-relaxed">{heading}</span>
+                                                                                                        </li>
+                                                                                                    ))}
+                                                                                                </ul>
+                                                                                            </div>
+                                                                                        )
+                                                                                    })}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <div className="text-sm text-muted-foreground italic text-center py-8 bg-card rounded-2xl border border-border/50 border-dashed">No headings found on this page.</div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {!isStepActive && stepId === 'briefing' && job?.generation_data?.brief && (
+                                    <>
+                                        {/* Standard View */}
+                                        <div className={cn(
+                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500 relative z-10",
+                                            expandedStepData === 'briefing' ? "hidden" : "p-8"
+                                        )}>
+                                            <div className="flex items-center justify-between mb-6 pb-6 border-b border-border/50">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                                                        <FileText className="h-5 w-5 text-primary" />
+                                                    </div>
+                                                    <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Generated Content Brief</h4>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button 
+                                                        onClick={() => handleCopy(
+                                                            typeof job.generation_data.brief === 'string' ? job.generation_data.brief : JSON.stringify(job.generation_data.brief, null, 2),
+                                                            'briefing'
+                                                        )}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground/80"
+                                                    >
+                                                        {copiedStep === 'briefing' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />} 
+                                                        <span className="hidden sm:inline">{copiedStep === 'briefing' ? 'Copied' : 'Copy'}</span>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setExpandedStepData('briefing')}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground"
+                                                    >
+                                                        <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="max-h-[500px] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground/90 bg-transparent p-0 border-none">
+                                                        {typeof job.generation_data.brief === 'string' 
+                                                            ? job.generation_data.brief 
+                                                            : JSON.stringify(job.generation_data.brief, null, 2)}
+                                                    </pre>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded Full-Screen Overlay */}
+                                        {expandedStepData === 'briefing' && (
+                                            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+                                                <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
+                                                    <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                                                                <FileText className="h-6 w-6 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground">Generated Content Brief</h4>
+                                                                <p className="text-xs font-medium text-muted-foreground mt-1">Reading Mode</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 sm:gap-3">
+                                                            <button 
+                                                                onClick={() => handleCopy(
+                                                                    typeof job.generation_data.brief === 'string' ? job.generation_data.brief : JSON.stringify(job.generation_data.brief, null, 2),
+                                                                    'briefing_max'
+                                                                )}
+                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-foreground/80"
+                                                            >
+                                                                {copiedStep === 'briefing_max' ? <Check className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" /> : <Copy className="h-4 sm:h-5 w-4 sm:w-5" />} 
+                                                                <span className="hidden sm:inline">{copiedStep === 'briefing_max' ? 'Copied' : 'Copy text'}</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setExpandedStepData(null)}
+                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                            >
+                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto p-6 sm:p-12 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-card">
+                                                        <div className="max-w-[800px] mx-auto custom-article-view">
+                                                            <div className="prose prose-sm sm:prose-base lg:prose-lg dark:prose-invert max-w-none">
+                                                                <pre className="whitespace-pre-wrap font-sans text-sm sm:text-base leading-relaxed text-foreground/90 bg-transparent p-0 border-none">
+                                                                    {typeof job.generation_data.brief === 'string' 
+                                                                        ? job.generation_data.brief 
+                                                                        : JSON.stringify(job.generation_data.brief, null, 2)}
+                                                                </pre>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                                 {!isStepActive && stepId === 'writing' && job?.generation_data?.article_content && (
                                     <>
                                         {/* Standard View */}
                                         <div className={cn(
-                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500",
-                                            isArticleExpanded ? "hidden" : "p-8"
+                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500 relative z-10",
+                                            expandedStepData === 'writing' ? "hidden" : "p-8"
                                         )}>
-                                            <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center justify-between mb-6 pb-6 border-b border-border/50">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
                                                         <PenTool className="h-5 w-5 text-primary" />
                                                     </div>
                                                     <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Generated Full Article</h4>
                                                 </div>
-                                                <button 
-                                                    onClick={() => setIsArticleExpanded(true)}
-                                                    className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
-                                                >
-                                                    <Maximize2 className="h-4 w-4" /> Maximize View
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button 
+                                                        onClick={() => handleCopy(job.generation_data.article_content, 'writing')}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground/80"
+                                                    >
+                                                        {copiedStep === 'writing' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />} 
+                                                        <span className="hidden sm:inline">{copiedStep === 'writing' ? 'Copied' : 'Copy'}</span>
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setExpandedStepData('writing')}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground"
+                                                    >
+                                                        <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent custom-article-view pr-4">
                                                 <div className="font-mono text-sm text-foreground/90">
@@ -798,8 +1210,8 @@ export default function JobDetailPage() {
                                         </div>
 
                                         {/* Expanded Full-Screen Overlay */}
-                                        {isArticleExpanded && (
-                                            <div className="fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+                                        {expandedStepData === 'writing' && (
+                                            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
                                                 <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
                                                     <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
                                                         <div className="flex items-center gap-4">
@@ -811,12 +1223,21 @@ export default function JobDetailPage() {
                                                                 <p className="text-xs font-medium text-muted-foreground mt-1">Reading Mode</p>
                                                             </div>
                                                         </div>
-                                                        <button 
-                                                            onClick={() => setIsArticleExpanded(false)}
-                                                            className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
-                                                        >
-                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
-                                                        </button>
+                                                        <div className="flex items-center gap-2 sm:gap-3">
+                                                            <button 
+                                                                onClick={() => handleCopy(job.generation_data.article_content, 'writing_max')}
+                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-foreground/80"
+                                                            >
+                                                                {copiedStep === 'writing_max' ? <Check className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" /> : <Copy className="h-4 sm:h-5 w-4 sm:w-5" />} 
+                                                                <span className="hidden sm:inline">{copiedStep === 'writing_max' ? 'Copied' : 'Copy text'}</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setExpandedStepData(null)}
+                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                            >
+                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                     <div className="flex-1 overflow-y-auto p-6 sm:p-12 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-card">
                                                         <div className="max-w-[800px] mx-auto custom-article-view">
