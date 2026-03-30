@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal } from "lucide-react"
+import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal, Bot } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/utils/cn"
@@ -11,6 +11,7 @@ const PROVIDERS = [
     { id: "openrouter", name: "OpenRouter", icon: Globe, description: "Access OpenAI, Anthropic, Google and deepseek via a single API." },
     { id: "openai", name: "OpenAI", icon: Zap, description: "Direct access to GPT-4o, GPT-3.5-Turbo and more." },
     { id: "claude", name: "Claude (Anthropic)", icon: Cpu, description: "High-performance AI with advanced reasoning." },
+    { id: "google", name: "Google AI", icon: Bot, description: "Direct access to Gemini and Imagen models." },
     { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
     { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
     { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
@@ -41,6 +42,18 @@ const OPENROUTER_MODELS = [
     { id: "minimax/minimax-m2.5", name: "Minimax M2-2.5" },
     { id: "minimax/minimax-m2.5:free", name: "Minimax M2-2.5 free" },
     { id: "meta-llama/llama-3.1-70b-instruct", name: "Llama 3.1 70B" },
+]
+
+const GOOGLE_LLM_MODELS = [
+    { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash Exp" },
+    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" },
+    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
+]
+
+const GOOGLE_IMAGE_MODELS = [
+    { id: "imagen-3.0-generate-001", name: "Imagen 3.0 Generate" },
+    { id: "google/gemini-3-pro-image-preview", name: "Gemini 3 Nano Banana Pro" },
+    { id: "google/gemini-3.1-flash-image-preview", name: "Gemini 3.1 Flash Na Banana 2" },
 ]
 
 export default function SiteSetupPage() {
@@ -458,6 +471,41 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
+                        {selectedProvider === 'google' && (
+                            <div className="space-y-6 mt-4 animate-in fade-in duration-300">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> LLM Text Chat Model
+                                        </label>
+                                        <select
+                                            value={formData.default_model}
+                                            onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {GOOGLE_LLM_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Text to Image Model
+                                        </label>
+                                        <select
+                                            value={formData.image_model_1}
+                                            onChange={(e) => setFormData({ ...formData, image_model_1: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {GOOGLE_IMAGE_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {selectedProvider === 'openrouter' && (
                             <div className="space-y-6 mt-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -718,10 +766,10 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
-                        {selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && (
+                        {selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && (
                             <div className="p-4 mt-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
                                 <AlertCircle className="h-5 w-5 shrink-0" />
-                                <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> for immediate multi-model functionality.</p>
+                                <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> or <strong>Google</strong> for immediate multi-model functionality.</p>
                             </div>
                         )}
 
@@ -768,7 +816,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
