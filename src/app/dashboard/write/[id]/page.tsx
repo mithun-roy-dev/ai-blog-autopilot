@@ -24,9 +24,13 @@ import {
     Maximize2,
     Minimize2,
     Copy,
-    Check
+    Check,
+    Eye,
+    Code
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
 import { logUI } from "@/utils/logger"
@@ -51,6 +55,7 @@ export default function JobDetailPage() {
     const [expandedHeadings, setExpandedHeadings] = useState<{ [pageIndex: number]: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | null }>({})
     const [expandedStepData, setExpandedStepData] = useState<string | null>(null)
     const [copiedStep, setCopiedStep] = useState<string | null>(null)
+    const [showFormattedWriter, setShowFormattedWriter] = useState(false)
     const detailsRef = useRef<HTMLDivElement>(null)
 
     const prevGenerationStatus = useRef<string | null>(null)
@@ -824,9 +829,9 @@ export default function JobDetailPage() {
                                                         </div>
                                                         <button 
                                                             onClick={() => setExpandedStepData(null)}
-                                                            className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                            className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center justify-center title='Minimize view'"
                                                         >
-                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" />
                                                         </button>
                                                     </div>
                                                     <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-accent/5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
@@ -888,9 +893,9 @@ export default function JobDetailPage() {
                                                 </div>
                                                 <button 
                                                     onClick={() => setExpandedStepData('serp_analyzing')}
-                                                    className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                    className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center justify-center title='Maximize view'"
                                                 >
-                                                    <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
+                                                    <Maximize2 className="h-4 w-4" />
                                                 </button>
                                             </div>
 
@@ -984,9 +989,9 @@ export default function JobDetailPage() {
                                                         </div>
                                                         <button 
                                                             onClick={() => setExpandedStepData(null)}
-                                                            className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                            className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center justify-center title='Minimize view'"
                                                         >
-                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" />
                                                         </button>
                                                     </div>
                                                     <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-accent/5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
@@ -1091,9 +1096,9 @@ export default function JobDetailPage() {
                                                     </button>
                                                     <button 
                                                         onClick={() => setExpandedStepData('briefing')}
-                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground"
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center justify-center title='Maximize view'"
                                                     >
-                                                        <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
+                                                        <Maximize2 className="h-4 w-4" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1135,9 +1140,9 @@ export default function JobDetailPage() {
                                                             </button>
                                                             <button 
                                                                 onClick={() => setExpandedStepData(null)}
-                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                                className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center justify-center title='Minimize view'"
                                                             >
-                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" />
                                                             </button>
                                                         </div>
                                                     </div>
@@ -1173,6 +1178,13 @@ export default function JobDetailPage() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <button 
+                                                        onClick={() => setShowFormattedWriter(!showFormattedWriter)}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground/80"
+                                                    >
+                                                        {showFormattedWriter ? <Code className="h-4 w-4" /> : <Eye className="h-4 w-4" />} 
+                                                        <span className="hidden sm:inline">{showFormattedWriter ? 'Raw Markdown' : 'Formatted View'}</span>
+                                                    </button>
+                                                    <button 
                                                         onClick={() => handleCopy(job.generation_data.article_content, 'writing')}
                                                         className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground/80"
                                                     >
@@ -1181,31 +1193,39 @@ export default function JobDetailPage() {
                                                     </button>
                                                     <button 
                                                         onClick={() => setExpandedStepData('writing')}
-                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground"
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center justify-center title='Maximize view'"
                                                     >
-                                                        <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
+                                                        <Maximize2 className="h-4 w-4" />
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent custom-article-view pr-4">
-                                                <div className="font-mono text-sm text-foreground/90">
-                                                    {job.generation_data.article_content.split('\n').map((line: string, i: number) => {
-                                                        const isHeading = line.trim().startsWith('#');
-                                                        const isEmpty = line.trim() === '';
-                                                        return (
-                                                            <div 
-                                                                key={i} 
-                                                                className={cn(
-                                                                    "whitespace-pre-wrap break-words",
-                                                                    isHeading ? "mt-6 mb-3 font-black text-primary text-base" : "mb-4 leading-relaxed",
-                                                                    isEmpty ? "h-2 mb-0" : ""
-                                                                )}
-                                                            >
-                                                                {line}
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </div>
+                                            <div className={cn("max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent custom-article-view pr-4", showFormattedWriter ? "bg-accent/5 p-6 rounded-2xl" : "")}>
+                                                {!showFormattedWriter ? (
+                                                    <div className="font-mono text-sm text-foreground/90">
+                                                        {job.generation_data.article_content.split('\n').map((line: string, i: number) => {
+                                                            const isHeading = line.trim().startsWith('#');
+                                                            const isEmpty = line.trim() === '';
+                                                            return (
+                                                                <div 
+                                                                    key={i} 
+                                                                    className={cn(
+                                                                        "whitespace-pre-wrap break-words",
+                                                                        isHeading ? "mt-6 mb-3 font-black text-primary text-base" : "mb-4 leading-relaxed",
+                                                                        isEmpty ? "h-2 mb-0" : ""
+                                                                    )}
+                                                                >
+                                                                    {line}
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <div className="prose prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-semibold prose-a:text-blue-600">
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                            {job.generation_data.article_content}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -1225,6 +1245,13 @@ export default function JobDetailPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2 sm:gap-3">
                                                             <button 
+                                                                onClick={() => setShowFormattedWriter(!showFormattedWriter)}
+                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-foreground/80"
+                                                            >
+                                                                {showFormattedWriter ? <Code className="h-4 sm:h-5 w-4 sm:w-5" /> : <Eye className="h-4 sm:h-5 w-4 sm:w-5" />} 
+                                                                <span className="hidden sm:inline">{showFormattedWriter ? 'Raw Markdown' : 'Formatted View'}</span>
+                                                            </button>
+                                                            <button 
                                                                 onClick={() => handleCopy(job.generation_data.article_content, 'writing_max')}
                                                                 className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-foreground/80"
                                                             >
@@ -1233,32 +1260,40 @@ export default function JobDetailPage() {
                                                             </button>
                                                             <button 
                                                                 onClick={() => setExpandedStepData(null)}
-                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
+                                                                className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center justify-center title='Minimize view'"
                                                             >
-                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" /> <span className="hidden sm:inline">Minimize View</span>
+                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" />
                                                             </button>
                                                         </div>
                                                     </div>
                                                     <div className="flex-1 overflow-y-auto p-6 sm:p-12 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-card">
                                                         <div className="max-w-[800px] mx-auto custom-article-view">
-                                                            <div className="font-mono text-sm sm:text-base text-foreground/90">
-                                                                {job.generation_data.article_content.split('\n').map((line: string, i: number) => {
-                                                                    const isHeading = line.trim().startsWith('#');
-                                                                    const isEmpty = line.trim() === '';
-                                                                    return (
-                                                                        <div 
-                                                                            key={i} 
-                                                                            className={cn(
-                                                                                "whitespace-pre-wrap break-words",
-                                                                                isHeading ? "mt-8 mb-4 font-black text-primary text-lg" : "mb-5 leading-[1.8]",
-                                                                                isEmpty ? "h-4 mb-0" : ""
-                                                                            )}
-                                                                        >
-                                                                            {line}
-                                                                        </div>
-                                                                    )
-                                                                })}
-                                                            </div>
+                                                            {!showFormattedWriter ? (
+                                                                <div className="font-mono text-sm sm:text-base text-foreground/90">
+                                                                    {job.generation_data.article_content.split('\n').map((line: string, i: number) => {
+                                                                        const isHeading = line.trim().startsWith('#');
+                                                                        const isEmpty = line.trim() === '';
+                                                                        return (
+                                                                            <div 
+                                                                                key={i} 
+                                                                                className={cn(
+                                                                                    "whitespace-pre-wrap break-words",
+                                                                                    isHeading ? "mt-8 mb-4 font-black text-primary text-lg" : "mb-5 leading-[1.8]",
+                                                                                    isEmpty ? "h-4 mb-0" : ""
+                                                                                )}
+                                                                            >
+                                                                                {line}
+                                                                            </div>
+                                                                        )
+                                                                    })}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="prose prose-base sm:prose-lg prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-semibold prose-a:text-blue-600">
+                                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                        {job.generation_data.article_content}
+                                                                    </ReactMarkdown>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
