@@ -66,7 +66,8 @@ export default function SiteSetupPage() {
         image_model_1: "openai/gpt-oss-120b:free",
         image_model_2: "openai/gpt-oss-120b:free",
         free_model_1: "openai/gpt-oss-120b:free",
-        free_model_2: "openai/gpt-oss-120b:free"
+        free_model_2: "openai/gpt-oss-120b:free",
+        writer_model: "openai/gpt-oss-120b:free"
     })
 
     // System Settings State
@@ -166,7 +167,8 @@ export default function SiteSetupPage() {
                     image_model_1: current.image_model_1 || "openai/gpt-oss-120b:free",
                     image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
                     free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
-                    free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free"
+                    free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free",
+                    writer_model: current.writer_model || "openai/gpt-oss-120b:free"
                 })
             }
         } catch (err: any) {
@@ -223,7 +225,8 @@ export default function SiteSetupPage() {
                 image_model_1: current.image_model_1 || "openai/gpt-oss-120b:free",
                 image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
                 free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
-                free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free"
+                free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free",
+                writer_model: current.writer_model || "openai/gpt-oss-120b:free"
             })
         } else {
             setFormData({
@@ -236,7 +239,8 @@ export default function SiteSetupPage() {
                 image_model_1: "openai/gpt-oss-120b:free",
                 image_model_2: "openai/gpt-oss-120b:free",
                 free_model_1: "openai/gpt-oss-120b:free",
-                free_model_2: "openai/gpt-oss-120b:free"
+                free_model_2: "openai/gpt-oss-120b:free",
+                writer_model: "openai/gpt-oss-120b:free"
             })
         }
     }, [selectedProvider, configs])
@@ -292,6 +296,7 @@ export default function SiteSetupPage() {
                         image_model_2: formData.image_model_2,
                         free_model_1: formData.free_model_1,
                         free_model_2: formData.free_model_2,
+                        writer_model: formData.writer_model,
                         updated_at: new Date().toISOString()
                     }, { onConflict: "provider" })
 
@@ -463,6 +468,20 @@ export default function SiteSetupPage() {
                                         <select
                                             value={formData.default_model}
                                             onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Writer AI Model
+                                        </label>
+                                        <select
+                                            value={formData.writer_model}
+                                            onChange={(e) => setFormData({ ...formData, writer_model: e.target.value })}
                                             className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
                                         >
                                             {OPENROUTER_MODELS.map((model) => (

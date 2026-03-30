@@ -215,7 +215,7 @@ ${promptConfig.user_prompt_template}`;
                 const articleContent = await LLMService.completion({
                     system: systemPrompt,
                     user: userPrompt,
-                    modelRef: 'thinking_model_1'
+                    modelRef: 'writer_model'
                 });
 
                 // Logging response for verification as requested
