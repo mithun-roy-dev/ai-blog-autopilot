@@ -15,7 +15,7 @@ const PROVIDERS = [
     { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
     { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
     { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
-    { id: "system_ops", name: "System Operations", icon: Shield, description: "Manage global application settings and operational toggles." },
+    { id: "system_ops", name: "System Setup", icon: Shield, description: "Manage global application settings and operational toggles." },
 ]
 
 const OPENROUTER_MODELS = [
@@ -86,7 +86,9 @@ export default function SiteSetupPage() {
     // System Settings State
     const [systemSettings, setSystemSettings] = useState({
         enable_debug: true,
-        enable_error: true
+        enable_error: true,
+        global_image_provider: "openrouter",
+        super_admin_image_provider: "google"
     })
 
     // Crawl Setup State
@@ -146,7 +148,9 @@ export default function SiteSetupPage() {
             if (!sysError && sysData) {
                 setSystemSettings({
                     enable_debug: sysData.value.enable_debug ?? true,
-                    enable_error: sysData.value.enable_error ?? true
+                    enable_error: sysData.value.enable_error ?? true,
+                    global_image_provider: sysData.value.global_image_provider ?? "openrouter",
+                    super_admin_image_provider: sysData.value.super_admin_image_provider ?? "google"
                 })
             }
 
@@ -774,41 +778,99 @@ export default function SiteSetupPage() {
                         )}
 
                         {selectedProvider === 'system_ops' && (
-                            <div className="space-y-6 mt-4">
-                                <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-primary/50 transition-colors">
-                                    <div className="space-y-0.5">
-                                        <h4 className="text-sm font-bold flex items-center gap-2">
-                                            Enable Debug Logging
-                                        </h4>
-                                        <p className="text-[11px] text-muted-foreground">Log ALL application lifecycle events and info payload to server (debug_log.txt).</p>
+                            <div className="space-y-8 mt-4 animate-in fade-in duration-300">
+                                {/* Global System Setup Configuration */}
+                                <div className="space-y-6">
+                                    <div className="border-b border-border/50 pb-4">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                                            <Globe className="h-5 w-5 text-primary" /> Global System Setup Configuration
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">These settings apply globally to all standard users across the platform.</p>
                                     </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="sr-only peer"
-                                            checked={systemSettings.enable_debug}
-                                            onChange={(e) => setSystemSettings(s => ({ ...s, enable_debug: e.target.checked }))}
-                                        />
-                                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                    </label>
+                                    <div className="grid gap-4">
+                                        <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-primary/50 transition-colors">
+                                            <div className="space-y-0.5">
+                                                <h4 className="text-sm font-bold flex items-center gap-2">
+                                                    Enable Debug Logging
+                                                </h4>
+                                                <p className="text-[11px] text-muted-foreground">Log ALL application lifecycle events and info payload to server (debug_log.txt).</p>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={systemSettings.enable_debug}
+                                                    onChange={(e) => setSystemSettings(s => ({ ...s, enable_debug: e.target.checked }))}
+                                                />
+                                                <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-red-500/50 transition-colors">
+                                            <div className="space-y-0.5">
+                                                <h4 className="text-sm font-bold flex items-center gap-2">
+                                                    Enable Error Logging
+                                                </h4>
+                                                <p className="text-[11px] text-muted-foreground">Capture critical UI crashes and API failures strictly to server (error_log.txt).</p>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={systemSettings.enable_error}
+                                                    onChange={(e) => setSystemSettings(s => ({ ...s, enable_error: e.target.checked }))}
+                                                />
+                                                <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                                            </label>
+                                        </div>
+
+                                        <div className="p-4 rounded-xl border bg-background hover:border-primary/50 transition-colors">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="block text-sm font-bold">Global Image Generation Provider</label>
+                                                    <p className="text-[11px] text-muted-foreground">The default provider for standard users invoking image generations.</p>
+                                                </div>
+                                                <select
+                                                    value={systemSettings.global_image_provider}
+                                                    onChange={(e) => setSystemSettings(s => ({ ...s, global_image_provider: e.target.value }))}
+                                                    className="w-full sm:w-1/3 bg-card border rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                                >
+                                                    {PROVIDERS.filter(p => p.id !== 'system_ops' && p.id !== 'prompt_setup' && p.id !== 'serp_crawl_setup' && p.id !== 'serpapi').map(p => (
+                                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-red-500/50 transition-colors">
-                                    <div className="space-y-0.5">
-                                        <h4 className="text-sm font-bold flex items-center gap-2">
-                                            Enable Error Logging
-                                        </h4>
-                                        <p className="text-[11px] text-muted-foreground">Capture critical UI crashes and API failures strictly to server (error_log.txt).</p>
+                                {/* Super Admin System Setup Configuration */}
+                                <div className="space-y-6 pt-4">
+                                    <div className="border-b border-border/50 pb-4">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                                            <Shield className="h-5 w-5 text-orange-500" /> Super Admin System Setup Configuration
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">These settings inherit the global configuration but allow specific overrides exclusively for super admins.</p>
                                     </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="sr-only peer"
-                                            checked={systemSettings.enable_error}
-                                            onChange={(e) => setSystemSettings(s => ({ ...s, enable_error: e.target.checked }))}
-                                        />
-                                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
-                                    </label>
+                                    <div className="grid gap-4">
+                                        <div className="p-4 rounded-xl border bg-background hover:border-orange-500/50 transition-colors">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="block text-sm font-bold">Super Admin Image Generation Provider</label>
+                                                    <p className="text-[11px] text-muted-foreground">The dedicated provider for super admin workflows and tools.</p>
+                                                </div>
+                                                <select
+                                                    value={systemSettings.super_admin_image_provider}
+                                                    onChange={(e) => setSystemSettings(s => ({ ...s, super_admin_image_provider: e.target.value }))}
+                                                    className="w-full sm:w-1/3 bg-card border rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
+                                                >
+                                                    {PROVIDERS.filter(p => p.id !== 'system_ops' && p.id !== 'prompt_setup' && p.id !== 'serp_crawl_setup' && p.id !== 'serpapi').map(p => (
+                                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
