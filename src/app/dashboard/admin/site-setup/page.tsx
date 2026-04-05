@@ -41,6 +41,8 @@ const OPENROUTER_MODELS = [
     { id: "minimax/minimax-m2.7", name: "Minimax M2-2.7" },
     { id: "minimax/minimax-m2.5", name: "Minimax M2-2.5" },
     { id: "minimax/minimax-m2.5:free", name: "Minimax M2-2.5 free" },
+    { id: "mistralai/mistral-nemo", name: "Mistral Nemo" },
+    { id: "google/gemma-4-26b-a4b-it", name: "Gemma 4 26B A4B IT" },
     { id: "meta-llama/llama-3.1-70b-instruct", name: "Llama 3.1 70B" },
 ]
 
@@ -80,7 +82,8 @@ export default function SiteSetupPage() {
         image_model_2: "openai/gpt-oss-120b:free",
         free_model_1: "openai/gpt-oss-120b:free",
         free_model_2: "openai/gpt-oss-120b:free",
-        writer_model: "openai/gpt-oss-120b:free"
+        writer_model: "openai/gpt-oss-120b:free",
+        image_metadata_model: "mistralai/mistral-nemo"
     })
 
     // System Settings State
@@ -185,7 +188,8 @@ export default function SiteSetupPage() {
                     image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
                     free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
                     free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free",
-                    writer_model: current.writer_model || "openai/gpt-oss-120b:free"
+                    writer_model: current.writer_model || "openai/gpt-oss-120b:free",
+                    image_metadata_model: current.image_metadata_model || "mistralai/mistral-nemo"
                 })
             }
         } catch (err: any) {
@@ -243,7 +247,8 @@ export default function SiteSetupPage() {
                 image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
                 free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
                 free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free",
-                writer_model: current.writer_model || "openai/gpt-oss-120b:free"
+                writer_model: current.writer_model || "openai/gpt-oss-120b:free",
+                image_metadata_model: current.image_metadata_model || "mistralai/mistral-nemo"
             })
         } else {
             setFormData({
@@ -257,7 +262,8 @@ export default function SiteSetupPage() {
                 image_model_2: "openai/gpt-oss-120b:free",
                 free_model_1: "openai/gpt-oss-120b:free",
                 free_model_2: "openai/gpt-oss-120b:free",
-                writer_model: "openai/gpt-oss-120b:free"
+                writer_model: "openai/gpt-oss-120b:free",
+                image_metadata_model: "mistralai/mistral-nemo"
             })
         }
     }, [selectedProvider, configs])
@@ -314,6 +320,7 @@ export default function SiteSetupPage() {
                         free_model_1: formData.free_model_1,
                         free_model_2: formData.free_model_2,
                         writer_model: formData.writer_model,
+                        image_metadata_model: formData.image_metadata_model,
                         updated_at: new Date().toISOString()
                     }, { onConflict: "provider" })
 
@@ -646,6 +653,20 @@ export default function SiteSetupPage() {
                                         <select
                                             value={formData.free_model_2}
                                             onChange={(e) => setFormData({ ...formData, free_model_2: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {OPENROUTER_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Image Metadata Model
+                                        </label>
+                                        <select
+                                            value={formData.image_metadata_model}
+                                            onChange={(e) => setFormData({ ...formData, image_metadata_model: e.target.value })}
                                             className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
                                         >
                                             {OPENROUTER_MODELS.map((model) => (
