@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal, Bot } from "lucide-react"
+import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal, Bot, Database } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/utils/cn"
@@ -16,6 +16,7 @@ const PROVIDERS = [
     { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
     { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
     { id: "system_ops", name: "System Setup", icon: Shield, description: "Manage global application settings and operational toggles." },
+    { id: "cloudflare_r2", name: "Cloudflare R2", icon: Database, description: "Configure API credentials for Cloudflare R2 object storage." },
 ]
 
 const OPENROUTER_MODELS = [
@@ -791,7 +792,7 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
-                        {selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && (
+                        {selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2' && (
                             <div className="p-4 mt-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
                                 <AlertCircle className="h-5 w-5 shrink-0" />
                                 <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> or <strong>Google</strong> for immediate multi-model functionality.</p>
@@ -899,7 +900,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
