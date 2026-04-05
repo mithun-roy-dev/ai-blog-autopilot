@@ -4,6 +4,7 @@ import * as cheerio from 'cheerio';
 import { PromptService } from './prompt.service';
 import { LLMService } from './llm.service';
 import { Logger } from '../utils/logger';
+import { ImageService } from './image.service';
 
 export class GenerationService {
     /**
@@ -233,6 +234,19 @@ ${promptConfig.user_prompt_template}`;
             const currentMode = await this.getCurrentWritingMode(job.blog_id);
             if (currentMode === 'Manual') {
                 await this.pauseForApproval(jobId, 'writing');
+                return;
+            }
+        }
+
+        // Step 4.5: Image Agent
+        if (progress['imaging']?.status !== 'completed') {
+            await this.executeStep(jobId, 'imaging', async () => {
+                return await this.step45ImageAgent(job, jobId, supabase);
+            });
+
+            const currentMode = await this.getCurrentWritingMode(job.blog_id);
+            if (currentMode === 'Manual') {
+                await this.pauseForApproval(jobId, 'imaging');
                 return;
             }
         }
@@ -596,6 +610,164 @@ ${promptConfig.user_prompt_template}`;
                 analysis: {
                     pages: analysisPages,
                     average_word_count: averageWordCount
+                }
+            }
+        };
+    }
+
+    /**
+     * Step 4.5: Image Agent — extract placeholders, generate images, upload to R2, replace in content
+     */
+    private static async step45ImageAgent(job: any, jobId: string, supabase: any) {
+        console.log(`[Job ${jobId}] 🖼️ Image Agent: Starting image generation pipeline...`);
+
+        // 1. Fetch current article content
+        const { data: jobData } = await supabase
+            .from('writing_jobs')
+            .select('content, blog_id, user_id, blogs(name)')
+            .eq('id', jobId)
+            .single();
+
+        const articleContent: string = jobData?.content || '';
+        const siteName: string = jobData?.blogs?.name || 'Unknown Site';
+        const userId: string = jobData?.user_id;
+        const blogId: string = jobData?.blog_id;
+
+        // 2. Extract image placeholders
+        const imageBlocks = ImageService.extractImagePlaceholders(articleContent);
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: Found ${imageBlocks.length} image placeholder(s)`);
+
+        if (imageBlocks.length === 0) {
+            console.log(`[Job ${jobId}] 🖼️ Image Agent: No [IMAGE] placeholders found — skipping`);
+            return { dataUpdate: { images_count: 0 } };
+        }
+
+        // 3. Determine which image provider to use (super admin vs global)
+        const SUPER_ADMIN_EMAIL = 'mithunroyabir@gmail.com';
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('id', userId)
+            .single();
+
+        const isSuperAdmin = profile?.email === SUPER_ADMIN_EMAIL;
+
+        const { data: sysConfig } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'logging_config')
+            .single();
+
+        // Log the raw DB values so we can diagnose provider selection
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: Profile email="${profile?.email}" isSuperAdmin=${isSuperAdmin}`);
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: system_settings[logging_config].value = ${JSON.stringify(sysConfig?.value)}`);
+
+        const rawProvider = isSuperAdmin
+            ? sysConfig?.value?.super_admin_image_provider
+            : sysConfig?.value?.global_image_provider;
+
+        const imageProvider: string = rawProvider || 'openrouter';
+
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: rawProvider="${rawProvider}" → resolved imageProvider="${imageProvider}"`);
+
+
+        // 4. Fetch OpenRouter config (for metadata model + api key)
+        const { data: orConfig } = await supabase
+            .from('ai_configurations')
+            .select('api_key, image_metadata_model')
+            .eq('provider', 'openrouter')
+            .single();
+
+        if (!orConfig?.api_key) throw new Error('OpenRouter API key not configured.');
+        const metadataModel = orConfig.image_metadata_model || 'mistralai/mistral-nemo';
+
+        // 5. Fetch Cloudflare R2 config
+        const { data: r2Data } = await supabase
+            .from('ai_configurations')
+            .select('api_key')
+            .eq('provider', 'cloudflare_r2')
+            .single();
+
+        if (!r2Data?.api_key) throw new Error('Cloudflare R2 not configured. Add credentials in Site Setup.');
+        const r2Config = ImageService.parseR2Config(r2Data.api_key);
+
+        // 6. Process each image block
+        let updatedContent = articleContent;
+        let successCount = 0;
+        const imageUrls: Array<{ number: number; type: string; url: string; alt: string; caption: string }> = [];
+
+        for (const block of imageBlocks) {
+            try {
+                console.log(`[Job ${jobId}] 🖼️ Processing image #${block.number} (${block.type})...`);
+
+                // Step A: Generate image metadata/prompt via LLM
+                const metadataContent = await ImageService.generateImageMetadata(
+                    block,
+                    metadataModel,
+                    orConfig.api_key,
+                    jobId
+                );
+
+                // Step B: Generate the actual image
+                const imageBuffer = await ImageService.generateImage(
+                    metadataContent,
+                    block.type,
+                    imageProvider,
+                    siteName,
+                    jobId
+                );
+
+                // Step C: Upload to Cloudflare R2 with isolated hierarchical path
+                // Path: users/{userId}/blogs/{blogId}/jobs/{jobId}/img-{type}-{number}-{timestamp}.jpg
+                // This ensures each user's images are stored in their own namespace
+                // and URLs are unguessable since all IDs are UUIDs.
+                const timestamp = Date.now();
+                const imageType = block.type === 'featured' ? 'featured' : 'inbody';
+                const r2Key = `users/${userId}/blogs/${blogId}/jobs/${jobId}/img-${imageType}-${block.number}-${timestamp}.jpg`;
+                const publicUrl = await ImageService.uploadToR2(imageBuffer, r2Key, r2Config, jobId);
+
+                Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: R2 path = ${r2Key}`);
+
+                // Step D: Replace the [IMAGE ... ] block with <figure> HTML
+                const figureHtml = ImageService.formatImageHtml(block, publicUrl);
+                updatedContent = updatedContent.replace(block.rawBlock, figureHtml);
+
+                // Track success
+                successCount++;
+                imageUrls.push({
+                    number: block.number,
+                    type: block.type,
+                    url: publicUrl,
+                    alt: block.alt,
+                    caption: block.caption,
+                });
+
+                console.log(`[Job ${jobId}] ✅ Image #${block.number} generated and uploaded: ${publicUrl}`);
+            } catch (imgError: any) {
+                // Log error but don't fail the whole step for a single image
+                Logger.debug(`Job:${jobId}`, `IMAGE_AGENT_ERROR [#${block.number}]: ${imgError.message}`);
+                console.error(`[Job ${jobId}] ⚠️ Failed to generate image #${block.number}: ${imgError.message}`);
+            }
+        }
+
+        // 7. Save the updated article content back to writing_jobs.content (used by later steps)
+        await supabase
+            .from('writing_jobs')
+            .update({ content: updatedContent, updated_at: new Date() })
+            .eq('id', jobId);
+
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: Completed. ${successCount}/${imageBlocks.length} image(s) generated.`);
+
+        // 8. Return imaging result — stored in generation_data.imaging for the frontend panel
+        //    article_with_images = full article HTML (markdown + <figure> HTML mixed)
+        //    image_urls          = list of generated R2 URLs with metadata
+        return {
+            dataUpdate: {
+                imaging: {
+                    images_count: imageBlocks.length,
+                    images_generated: successCount,
+                    image_urls: imageUrls,
+                    article_with_images: updatedContent,
                 }
             }
         };

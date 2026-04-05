@@ -10,6 +10,7 @@ import {
     PenTool,
     Edit,
     UserCheck,
+    Image,
     Clock,
     CheckCircle2,
     AlertCircle,
@@ -31,6 +32,7 @@ import {
 import { createClient } from "@/utils/supabase/client"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
 import { logUI } from "@/utils/logger"
@@ -40,6 +42,7 @@ const STEPS = [
     { id: 'serp_analyzing', name: 'SERP Analyzer', icon: PieChart, description: 'Analyzing competitor content' },
     { id: 'briefing', name: 'Content Brief', icon: FileText, description: 'Generating article structure' },
     { id: 'writing', name: 'Writer Agent', icon: PenTool, description: 'AI Writing in progress' },
+    { id: 'imaging', name: 'Image Agent', icon: Image, description: 'Generating & placing AI images' },
     { id: 'editing', name: 'Editor Agent', icon: Edit, description: 'Reviewing and refining' },
     { id: 'humanizing', name: 'Humanizer Agent', icon: UserCheck, description: 'Final persona polish' },
 ]
@@ -141,7 +144,8 @@ export default function JobDetailPage() {
         serp_calling: 'serp_analyzing',
         serp_analyzing: 'briefing',
         briefing: 'writing',
-        writing: 'editing',
+        writing: 'imaging',
+        imaging: 'editing',
         editing: 'humanizing',
     }
 
@@ -336,7 +340,8 @@ export default function JobDetailPage() {
                                 {job?.generation_status === 'serp_calling' ? 'Proceed to SERP Analysis' :
                                  job?.generation_status === 'serp_analyzing' ? 'Proceed to Content Brief' :
                                  job?.generation_status === 'briefing' ? 'Proceed to Writing' :
-                                 job?.generation_status === 'writing' ? 'Proceed to Editing' :
+                                 job?.generation_status === 'writing' ? 'Proceed to Image Agent' :
+                                 job?.generation_status === 'imaging' ? 'Proceed to Editing' :
                                  job?.generation_status === 'editing' ? 'Proceed to Humanizing' :
                                  'Proceed to Next Step'}
                             </button>
@@ -714,12 +719,13 @@ export default function JobDetailPage() {
                     </div>
                 )}
 
-                {/* Steps 3-6: Panels with inline Proceed buttons in Manual mode */}
-                {(['briefing', 'writing', 'editing', 'humanizing'] as const).map((stepId) => {
+                {/* Steps 3-7: Panels with inline Proceed buttons in Manual mode */}
+                {(['briefing', 'writing', 'imaging', 'editing', 'humanizing'] as const).map((stepId) => {
                     const stepMeta = STEPS.find(s => s.id === stepId)!
                     const nextStepLabel =
                         stepId === 'briefing' ? 'Proceed to Writing' :
-                        stepId === 'writing' ? 'Proceed to Editing' :
+                        stepId === 'writing' ? 'Proceed to Image Agent' :
+                        stepId === 'imaging' ? 'Proceed to Editing' :
                         stepId === 'editing' ? 'Proceed to Humanizing' :
                         'Finish'
                     const isStepPaused = job?.status === 'awaiting_approval' && job?.generation_status === stepId
@@ -753,129 +759,8 @@ export default function JobDetailPage() {
                                         <p className="font-bold text-sm uppercase tracking-widest animate-pulse">Running {stepMeta.name}...</p>
                                     </div>
                                 )}
-                                {!isStepActive && stepId === 'serp_calling' && job?.generation_data?.serp?.results && (
-                                    <>
-                                        {/* Standard View */}
-                                        <div className={cn(
-                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500 relative z-10",
-                                            expandedStepData === 'serp_calling' ? "hidden" : "p-6 sm:p-8"
-                                        )}>
-                                            <div className="flex items-center justify-between mb-8 pb-6 border-b border-border/50">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20 shadow-inner">
-                                                        <Search className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Scraped SERP Data</h4>
-                                                        <p className="text-xs text-muted-foreground mt-1 font-medium">{job.generation_data.serp.results.length} results analyzed</p>
-                                                    </div>
-                                                </div>
-                                                <button 
-                                                    onClick={() => setExpandedStepData('serp_calling')}
-                                                    className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest"
-                                                >
-                                                    <Maximize2 className="h-4 w-4" /> Maximize <span className="hidden sm:inline">View</span>
-                                                </button>
-                                            </div>
 
-                                            <div className="max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                                                    {job.generation_data.serp.results.map((result: any, i: number) => (
-                                                        <a 
-                                                            key={i} 
-                                                            href={result.url} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer"
-                                                            className="block p-5 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group"
-                                                        >
-                                                            <div className="flex items-start gap-4">
-                                                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                                                    #{i + 1}
-                                                                </div>
-                                                                <div className="min-w-0 flex-1">
-                                                                    <div className="flex items-center gap-2 mb-2">
-                                                                        <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
-                                                                            {new URL(result.url).hostname.replace('www.', '')}
-                                                                        </span>
-                                                                    </div>
-                                                                    <h5 className="font-bold text-sm text-foreground/90 leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                                                                        {result.title}
-                                                                    </h5>
-                                                                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                                                                        {result.snippet}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </a>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Expanded Full-Screen Overlay */}
-                                        {expandedStepData === 'serp_calling' && (
-                                            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
-                                                <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
-                                                    <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
-                                                                <Search className="h-6 w-6 text-primary" />
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground">Scraped SERP Data</h4>
-                                                                <p className="text-xs font-medium text-muted-foreground mt-1">{job.generation_data.serp.results.length} results analyzed</p>
-                                                            </div>
-                                                        </div>
-                                                        <button 
-                                                            onClick={() => setExpandedStepData(null)}
-                                                            className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center justify-center title='Minimize view'"
-                                                        >
-                                                            <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" />
-                                                        </button>
-                                                    </div>
-                                                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 bg-accent/5 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                                                            {job.generation_data.serp.results.map((result: any, i: number) => (
-                                                                <a 
-                                                                    key={i} 
-                                                                    href={result.url} 
-                                                                    target="_blank" 
-                                                                    rel="noopener noreferrer"
-                                                                    className="block p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group"
-                                                                >
-                                                                    <div className="flex items-start gap-4">
-                                                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                                                            #{i + 1}
-                                                                        </div>
-                                                                        <div className="min-w-0 flex-1">
-                                                                            <div className="flex items-center gap-2 mb-2">
-                                                                                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider truncate">
-                                                                                    {new URL(result.url).hostname.replace('www.', '')}
-                                                                                </span>
-                                                                            </div>
-                                                                            <h5 className="font-bold text-sm text-foreground/90 leading-tight mb-3 group-hover:text-primary transition-colors line-clamp-2">
-                                                                                {result.title}
-                                                                            </h5>
-                                                                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                                                                                {result.snippet}
-                                                                            </p>
-                                                                            <div className="mt-4 flex items-center text-[10px] font-semibold text-primary/80 group-hover:text-primary transition-colors uppercase tracking-widest gap-1">
-                                                                                View source <ExternalLink className="h-3 w-3" />
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </a>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                                {!isStepActive && stepId === 'serp_analyzing' && job?.generation_data?.competitor_analysis && (
+                                {!isStepActive && job?.generation_data?.competitor_analysis && (
                                     <>
                                         {/* Standard View */}
                                         <div className={cn(
@@ -1301,7 +1186,118 @@ export default function JobDetailPage() {
                                         )}
                                     </>
                                 )}
-                                {!isStepActive && (!job?.generation_data?.brief && stepId === 'briefing' || !job?.generation_data?.article_content && stepId === 'writing' || (stepId !== 'briefing' && stepId !== 'writing')) && (
+                                {!isStepActive && stepId === 'imaging' && job?.generation_data?.imaging && (
+                                    <>
+                                        {/* Image summary bar */}
+                                        <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b border-border/50">
+                                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                <span className="text-xs font-black uppercase tracking-widest text-emerald-600">
+                                                    {job.generation_data.imaging.images_generated} / {job.generation_data.imaging.images_count} Images Generated
+                                                </span>
+                                            </div>
+                                            {job.generation_data.imaging.image_urls?.map((img: any) => (
+                                                <a
+                                                    key={img.number}
+                                                    href={img.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card border border-border/50 hover:border-primary/30 transition-all text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary"
+                                                >
+                                                    <Image className="h-3 w-3" />
+                                                    #{img.number} {img.type}
+                                                    <ExternalLink className="h-2.5 w-2.5" />
+                                                </a>
+                                            ))}
+                                        </div>
+
+                                        {/* Standard View — Full Article with Images */}
+                                        <div className={cn(
+                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500 relative z-10",
+                                            expandedStepData === 'imaging' ? "hidden" : "p-8"
+                                        )}>
+                                            <div className="flex items-center justify-between mb-6 pb-6 border-b border-border/50">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                                                        <Image className="h-5 w-5 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Article with AI Images</h4>
+                                                        <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Full article with [IMAGE] placeholders replaced by live R2 images</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleCopy(job.generation_data.imaging.article_with_images, 'imaging')}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground/80"
+                                                    >
+                                                        {copiedStep === 'imaging' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                        <span className="hidden sm:inline">{copiedStep === 'imaging' ? 'Copied' : 'Copy'}</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setExpandedStepData('imaging')}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center justify-center"
+                                                    >
+                                                        <Maximize2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4 custom-article-view">
+                                                <div className="prose prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-semibold prose-img:rounded-2xl prose-img:shadow-lg prose-figure:my-8">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                                        {job.generation_data.imaging.article_with_images}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded Full-Screen Overlay */}
+                                        {expandedStepData === 'imaging' && (
+                                            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+                                                <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
+                                                    <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
+                                                                <Image className="h-6 w-6 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground">Article with AI Images</h4>
+                                                                <p className="text-xs font-medium text-muted-foreground mt-1">
+                                                                    {job.generation_data.imaging.images_generated} images embedded • Full reading mode
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleCopy(job.generation_data.imaging.article_with_images, 'imaging_max')}
+                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-foreground/80"
+                                                            >
+                                                                {copiedStep === 'imaging_max' ? <Check className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" /> : <Copy className="h-4 sm:h-5 w-4 sm:w-5" />}
+                                                                <span className="hidden sm:inline">{copiedStep === 'imaging_max' ? 'Copied' : 'Copy HTML'}</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setExpandedStepData(null)}
+                                                                className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center justify-center"
+                                                            >
+                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto p-6 sm:p-12 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-card">
+                                                        <div className="max-w-[800px] mx-auto custom-article-view">
+                                                            <div className="prose prose-base sm:prose-lg prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-semibold prose-img:rounded-2xl prose-img:shadow-xl prose-figure:my-10 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-muted-foreground">
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                                                    {job.generation_data.imaging.article_with_images}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {!isStepActive && (!job?.generation_data?.brief && stepId === 'briefing' || !job?.generation_data?.article_content && stepId === 'writing' || !job?.generation_data?.imaging && stepId === 'imaging' || (stepId !== 'briefing' && stepId !== 'writing' && stepId !== 'imaging')) && (
                                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
                                         <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center">
                                             <stepMeta.icon className="h-8 w-8 opacity-40" />
