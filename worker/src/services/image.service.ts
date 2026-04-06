@@ -134,8 +134,9 @@ export class ImageService {
         imageType: 'featured' | 'in-body',
         provider: string,
         siteName: string,
-        jobId: string
-    ): Promise<Buffer> {
+        jobId: string,
+        sharpConfig: any = {}
+    ): Promise<{ buffer: Buffer; extension: string }> {
         const supabase = SupabaseService.getClient();
 
         const imageGenSlug = imageType === 'featured'
@@ -274,20 +275,44 @@ export class ImageService {
             throw new Error(`[ImageService] Unsupported image provider: "${provider}". Use OpenRouter or Google.`);
         }
 
-        // Apply strict pixel resizing and format to WebP using sharp
-        const targetWidth = imageType === 'featured' ? 1200 : 500;
-        const targetHeight = imageType === 'featured' ? 630 : 1000;
+        // Apply strict pixel resizing and format based on global config
+        const targetWidth = imageType === 'featured' 
+            ? (sharpConfig.image_featured_width || 1200) 
+            : (sharpConfig.image_inbody_width || 500);
+            
+        const targetHeight = imageType === 'featured' 
+            ? (sharpConfig.image_featured_height || 630) 
+            : (sharpConfig.image_inbody_height || 1000);
+            
+        const targetFormat = imageType === 'featured'
+            ? (sharpConfig.image_featured_format || 'webp')
+            : (sharpConfig.image_inbody_format || 'webp');
+            
+        const targetQuality = imageType === 'featured'
+            ? (sharpConfig.image_featured_quality || 85)
+            : (sharpConfig.image_inbody_quality || 85);
 
         try {
-            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_FORMATTING: Resizing to ${targetWidth}x${targetHeight} via sharp (WebP)`);
-            const finalBuffer = await sharp(imageBuffer)
-                .resize({ width: targetWidth, height: targetHeight, fit: 'cover' })
-                .webp({ quality: 85 })
-                .toBuffer();
-            return finalBuffer;
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_FORMATTING: Resizing to ${targetWidth}x${targetHeight} via sharp (${targetFormat.toUpperCase()})`);
+            const sharpInstance = sharp(imageBuffer).resize({ width: targetWidth, height: targetHeight, fit: 'cover' });
+            
+            if (targetFormat === 'jpeg' || targetFormat === 'jpg') {
+                sharpInstance.jpeg({ quality: targetQuality });
+            } else if (targetFormat === 'png') {
+                sharpInstance.png({ quality: targetQuality });
+            } else if (targetFormat === 'avif') {
+                sharpInstance.avif({ quality: targetQuality });
+            } else {
+                sharpInstance.webp({ quality: targetQuality });
+            }
+            
+            const finalBuffer = await sharpInstance.toBuffer();
+            const extension = targetFormat === 'jpeg' ? 'jpg' : targetFormat;
+            
+            return { buffer: finalBuffer, extension };
         } catch (e: any) {
             Logger.debug(`Job:${jobId}`, `IMAGE_GEN_FORMATTING_ERROR: Cannot process with sharp: ${e.message}. Returning original buffer.`);
-            return imageBuffer;
+            return { buffer: imageBuffer, extension: 'jpg' };
         }
     }
 
@@ -402,7 +427,7 @@ export class ImageService {
             }
         });
 
-        const contentType = r2Key.endsWith('.webp') ? 'image/webp' : r2Key.endsWith('.png') ? 'image/png' : 'image/jpeg';
+        const contentType = r2Key.endsWith('.webp') ? 'image/webp' : r2Key.endsWith('.avif') ? 'image/avif' : r2Key.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
         Logger.debug(`Job:${jobId}`, `R2_UPLOAD_REQUEST: bucket=${r2Config.bucketName} key=${r2Key}`);
 

@@ -709,22 +709,23 @@ ${promptConfig.user_prompt_template}`;
                 );
 
                 // Step B: Generate the actual image
-                const imageBuffer = await ImageService.generateImage(
+                const imageResult = await ImageService.generateImage(
                     metadataContent,
                     block.type,
                     imageProvider,
                     siteName,
-                    jobId
+                    jobId,
+                    sysConfig?.value || {}
                 );
 
                 // Step C: Upload to Cloudflare R2 with isolated hierarchical path
-                // Path: users/{userId}/blogs/{blogId}/jobs/{jobId}/img-{type}-{number}-{timestamp}.jpg
+                // Path: users/{userId}/blogs/{blogId}/jobs/{jobId}/img-{type}-{number}-{timestamp}.[ext]
                 // This ensures each user's images are stored in their own namespace
                 // and URLs are unguessable since all IDs are UUIDs.
                 const timestamp = Date.now();
                 const imageType = block.type === 'featured' ? 'featured' : 'inbody';
-                const r2Key = `users/${userId}/blogs/${blogId}/jobs/${jobId}/img-${imageType}-${block.number}-${timestamp}.webp`;
-                const publicUrl = await ImageService.uploadToR2(imageBuffer, r2Key, r2Config, jobId);
+                const r2Key = `users/${userId}/blogs/${blogId}/jobs/${jobId}/img-${imageType}-${block.number}-${timestamp}.${imageResult.extension}`;
+                const publicUrl = await ImageService.uploadToR2(imageResult.buffer, r2Key, r2Config, jobId);
 
                 Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: R2 path = ${r2Key}`);
 

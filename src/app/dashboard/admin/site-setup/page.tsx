@@ -92,7 +92,15 @@ export default function SiteSetupPage() {
         enable_debug: true,
         enable_error: true,
         global_image_provider: "openrouter",
-        super_admin_image_provider: "google"
+        super_admin_image_provider: "google",
+        image_featured_width: 1200,
+        image_featured_height: 630,
+        image_featured_format: "webp",
+        image_featured_quality: 85,
+        image_inbody_width: 500,
+        image_inbody_height: 1000,
+        image_inbody_format: "webp",
+        image_inbody_quality: 85
     })
 
     // Crawl Setup State
@@ -154,7 +162,15 @@ export default function SiteSetupPage() {
                     enable_debug: sysData.value.enable_debug ?? true,
                     enable_error: sysData.value.enable_error ?? true,
                     global_image_provider: sysData.value.global_image_provider ?? "openrouter",
-                    super_admin_image_provider: sysData.value.super_admin_image_provider ?? "google"
+                    super_admin_image_provider: sysData.value.super_admin_image_provider ?? "google",
+                    image_featured_width: sysData.value.image_featured_width ?? 1200,
+                    image_featured_height: sysData.value.image_featured_height ?? 630,
+                    image_featured_format: sysData.value.image_featured_format ?? "webp",
+                    image_featured_quality: sysData.value.image_featured_quality ?? 85,
+                    image_inbody_width: sysData.value.image_inbody_width ?? 500,
+                    image_inbody_height: sysData.value.image_inbody_height ?? 1000,
+                    image_inbody_format: sysData.value.image_inbody_format ?? "webp",
+                    image_inbody_quality: sysData.value.image_inbody_quality ?? 85
                 })
             }
 
@@ -861,6 +877,128 @@ export default function SiteSetupPage() {
                                                         <option key={p.id} value={p.id}>{p.name}</option>
                                                     ))}
                                                 </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Sharp Image Output Configuration */}
+                                <div className="space-y-6 pt-4">
+                                    <div className="border-b border-border/50 pb-4">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                                            <Globe className="h-5 w-5 text-primary" /> Sharp Image Output Setup
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">Configure dimensions, formats, and quality for the Sharp image processing pipeline.</p>
+                                    </div>
+                                    
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        {/* Featured Image */}
+                                        <div className="space-y-4 p-5 rounded-2xl border bg-background/50">
+                                            <h4 className="font-bold text-sm text-primary flex justify-between items-center">
+                                                Featured Image
+                                            </h4>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Width (px)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={systemSettings.image_featured_width}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_featured_width: parseInt(e.target.value) || 1200 }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Height (px)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={systemSettings.image_featured_height}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_featured_height: parseInt(e.target.value) || 630 }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Format</label>
+                                                    <select
+                                                        value={systemSettings.image_featured_format}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_featured_format: e.target.value }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                                    >
+                                                        <option value="webp">WebP</option>
+                                                        <option value="jpeg">JPEG</option>
+                                                        <option value="png">PNG</option>
+                                                        <option value="avif">AVIF</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Quality (1-100)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="100"
+                                                        value={systemSettings.image_featured_quality}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_featured_quality: parseInt(e.target.value) || 85 }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Post Body Image */}
+                                        <div className="space-y-4 p-5 rounded-2xl border bg-background/50">
+                                            <h4 className="font-bold text-sm text-primary flex justify-between items-center">
+                                                Post Body Image (In-Body)
+                                            </h4>
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Width (px)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={systemSettings.image_inbody_width}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_inbody_width: parseInt(e.target.value) || 500 }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Height (px)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={systemSettings.image_inbody_height}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_inbody_height: parseInt(e.target.value) || 1000 }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Format</label>
+                                                    <select
+                                                        value={systemSettings.image_inbody_format}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_inbody_format: e.target.value }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                                    >
+                                                        <option value="webp">WebP</option>
+                                                        <option value="jpeg">JPEG</option>
+                                                        <option value="png">PNG</option>
+                                                        <option value="avif">AVIF</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-semibold text-muted-foreground">Quality (1-100)</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="100"
+                                                        value={systemSettings.image_inbody_quality}
+                                                        onChange={(e) => setSystemSettings(s => ({ ...s, image_inbody_quality: parseInt(e.target.value) || 85 }))}
+                                                        className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
