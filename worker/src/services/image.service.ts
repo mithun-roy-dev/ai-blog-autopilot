@@ -271,23 +271,214 @@ export class ImageService {
                 throw new Error(`[ImageService] Google AI (${imageModel}) returned no image data. Response: ${JSON.stringify(response?.data).substring(0, 300)}`);
             }
 
+        } else if (provider === 'kie_api') {
+            const { data: kieConfig } = await supabase
+                .from('ai_configurations')
+                .select('api_key, image_model_1, image_model_2')
+                .eq('provider', 'kie_api')
+                .single();
+
+            if (!kieConfig?.api_key) throw new Error('[ImageService] Kie API key not found in Site Setup.');
+            const kieAspectRatio = imageType === 'featured' ? '16:9' : '9:16';
+            const imageModel = imageType === 'featured'
+                ? (kieConfig.image_model_1 || 'seedream/4.5-text-to-image')
+                : (kieConfig.image_model_2 || 'seedream/4.5-text-to-image');
+
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_REQUEST [Kie API] model="${imageModel}"`);
+
+            // Compact the prompt to reduce token count (removes newlines, tabs, and extra spaces)
+            const prompt = `${systemPrompt} ${userMessage}`.replace(/\s+/g, ' ').trim();
+
+            let inputPayload: any = { prompt };
+
+            switch (imageModel) {
+                case 'nano-banana-2':
+                    inputPayload = {
+                        ...inputPayload,
+                        aspect_ratio: kieAspectRatio,
+                        resolution: "1K",
+                        output_format: "png"
+                    };
+                    break;
+                case 'google/nano-banana':
+                    inputPayload = {
+                        ...inputPayload,
+                        image_size: kieAspectRatio,
+                        output_format: "png",
+                    };
+                    break;
+
+                case 'seedream/4.5-text-to-image':
+                    inputPayload = {
+                        ...inputPayload,
+                        aspect_ratio: kieAspectRatio,
+                        quality: "basic",
+                        max_images: 1,
+                        nsfw_checker: false
+                    };
+                    break;
+                case 'bytedance/seedream-v4-text-to-imag':
+                    inputPayload = {
+                        ...inputPayload,
+                        image_resolution: "1K",
+                        max_images: 1,
+                        nsfw_checker: false
+                    };
+                    break;
+                case 'nano-banana-pro':
+                    inputPayload = {
+                        ...inputPayload,
+                        aspect_ratio: kieAspectRatio,
+                        resolution: "1K",
+                        output_format: "png"
+                    };
+                    break;
+                case 'google/imagen4-fast':
+                    inputPayload = {
+                        ...inputPayload,
+                        aspect_ratio: kieAspectRatio,
+                        negative_prompt: "",
+                        num_images: "1"
+                    };
+                    break;
+                case 'grok-imagine/text-to-image':
+                    inputPayload = {
+                        ...inputPayload,
+                        aspect_ratio: kieAspectRatio,
+                    };
+                    break;
+                case 'wan/2-7-image':
+                    inputPayload = {
+                        ...inputPayload,
+                        aspect_ratio: kieAspectRatio,
+                        resolution: "2K",
+                        thinking_mode: false,
+                        watermark: false,
+                        // Add any Grok-specific fields here if needed
+                    };
+                    break;
+                default:
+                    // Default fallback for other models (e.g. wan-image, nano-banana)
+                    inputPayload = {
+                        ...inputPayload,
+                        aspect_ratio: kieAspectRatio,
+                        quality: "basic",
+                        max_images: 1,
+                        nsfw_checker: false
+                    };
+                    break;
+            }
+
+            const response = await axios.post(
+                'https://api.kie.ai/api/v1/jobs/createTask',
+                {
+                    model: imageModel,
+                    input: inputPayload
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${kieConfig.api_key}`
+                    }
+                }
+            );
+
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RAW_RESPONSE [Kie API Create Task]: ${JSON.stringify(response.data).substring(0, 400)}`);
+
+            const taskId = response.data?.data?.taskId;
+
+            if (!taskId) {
+                throw new Error(`[ImageService] Kie API returned no taskId. Response: ${JSON.stringify(response?.data).substring(0, 300)}`);
+            }
+
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_TASK_ID [Kie API]: Created task ${taskId}. Beginning polling loop.`);
+
+            // Polling Loop
+            let resultUrl = null;
+            let attempts = 0;
+            const maxAttempts = 24; // 120 seconds max at 5s/poll
+
+            while (attempts < maxAttempts) {
+                await new Promise(r => setTimeout(r, 5000));
+                attempts++;
+
+                try {
+                    const statusRes = await axios.get(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${taskId}`, {
+                        headers: { 'Authorization': `Bearer ${kieConfig.api_key}` }
+                    });
+
+                    // Parse potential custom code in response body
+                    const responseCode = statusRes.data?.code;
+                    const state = statusRes.data?.data?.state || statusRes.data?.data?.status;
+
+                    Logger.debug(`Job:${jobId}`, `IMAGE_GEN_POLL [Kie API Poll ${attempts}/${maxAttempts}]: code=${responseCode}, state=${state}`);
+
+                    // If API returns 200 OK HTTP but its internal custom code is a failure
+                    if (responseCode !== 200 && responseCode !== undefined) {
+                        throw new Error(`Kie API generation failed with internal code ${responseCode}: ${statusRes.data?.msg || 'Error'}`);
+                    }
+
+                    if (state === 'success') {
+                        const rawResultJson = statusRes.data?.data?.resultJson;
+                        let parsedResultUrls: string[] = [];
+
+                        if (rawResultJson && typeof rawResultJson === 'string') {
+                            try {
+                                const parsed = JSON.parse(rawResultJson);
+                                parsedResultUrls = parsed.resultUrls || [];
+                            } catch (e) {
+                                Logger.debug(`Job:${jobId}`, `Failed to parse resultJson: ${e}`);
+                            }
+                        }
+
+                        resultUrl = parsedResultUrls[0] || statusRes.data?.data?.resultUrls?.[0] || statusRes.data?.data?.image_url;
+                        break;
+                    }
+                } catch (pollErr: any) {
+                    Logger.debug(`Job:${jobId}`, `IMAGE_GEN_POLL_ERROR: ${pollErr.message}`);
+
+                    // If Axios threw a non-2xx error, let's check if it's a permanent failure based on the status codes
+                    if (pollErr.response && pollErr.response.status) {
+                        const httpStatus = pollErr.response.status;
+                        // 401 Unauthorized, 402 Insufficient Credits, 404 Not Found, 422 Validation, 501 Generation Failed, 505 Disabled
+                        if ([401, 402, 404, 422, 501, 505].includes(httpStatus)) {
+                            throw new Error(`Kie API generation failed permanently with HTTP ${httpStatus}. Details: ${JSON.stringify(pollErr.response.data || pollErr.message)}`);
+                        }
+                    }
+
+                    if (pollErr.message.includes('generation failed permanently') || pollErr.message.includes('generation failed with internal code')) {
+                        throw pollErr;
+                    }
+                    // otherwise, swallow temporary HTTP fetching errors and try again
+                }
+            }
+
+            if (!resultUrl) {
+                throw new Error(`[ImageService] Kie API polling timed out or returned no URL after ${maxAttempts} attempts.`);
+            }
+
+            // Download the image using arraybuffer
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_DOWNLOAD [Kie API]: Fetching image from ${resultUrl}`);
+            const downloadResponse = await axios.get(resultUrl, { responseType: 'arraybuffer' });
+            imageBuffer = Buffer.from(downloadResponse.data);
+
         } else {
-            throw new Error(`[ImageService] Unsupported image provider: "${provider}". Use OpenRouter or Google.`);
+            throw new Error(`[ImageService] Unsupported image provider: "${provider}". Use OpenRouter, Google, or Kie API.`);
         }
 
         // Apply strict pixel resizing and format based on global config
-        const targetWidth = imageType === 'featured' 
-            ? (sharpConfig.image_featured_width || 1200) 
+        const targetWidth = imageType === 'featured'
+            ? (sharpConfig.image_featured_width || 1200)
             : (sharpConfig.image_inbody_width || 500);
-            
-        const targetHeight = imageType === 'featured' 
-            ? (sharpConfig.image_featured_height || 630) 
+
+        const targetHeight = imageType === 'featured'
+            ? (sharpConfig.image_featured_height || 630)
             : (sharpConfig.image_inbody_height || 1000);
-            
+
         const targetFormat = imageType === 'featured'
             ? (sharpConfig.image_featured_format || 'webp')
             : (sharpConfig.image_inbody_format || 'webp');
-            
+
         const targetQuality = imageType === 'featured'
             ? (sharpConfig.image_featured_quality || 85)
             : (sharpConfig.image_inbody_quality || 85);
@@ -295,7 +486,7 @@ export class ImageService {
         try {
             Logger.debug(`Job:${jobId}`, `IMAGE_GEN_FORMATTING: Resizing to ${targetWidth}x${targetHeight} via sharp (${targetFormat.toUpperCase()})`);
             const sharpInstance = sharp(imageBuffer).resize({ width: targetWidth, height: targetHeight, fit: 'cover' });
-            
+
             if (targetFormat === 'jpeg' || targetFormat === 'jpg') {
                 sharpInstance.jpeg({ quality: targetQuality });
             } else if (targetFormat === 'png') {
@@ -305,10 +496,10 @@ export class ImageService {
             } else {
                 sharpInstance.webp({ quality: targetQuality });
             }
-            
+
             const finalBuffer = await sharpInstance.toBuffer();
             const extension = targetFormat === 'jpeg' ? 'jpg' : targetFormat;
-            
+
             return { buffer: finalBuffer, extension };
         } catch (e: any) {
             Logger.debug(`Job:${jobId}`, `IMAGE_GEN_FORMATTING_ERROR: Cannot process with sharp: ${e.message}. Returning original buffer.`);

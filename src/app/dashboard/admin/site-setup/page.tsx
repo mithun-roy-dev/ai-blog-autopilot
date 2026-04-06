@@ -12,6 +12,7 @@ const PROVIDERS = [
     { id: "openai", name: "OpenAI", icon: Zap, description: "Direct access to GPT-4o, GPT-3.5-Turbo and more." },
     { id: "claude", name: "Claude (Anthropic)", icon: Cpu, description: "High-performance AI with advanced reasoning." },
     { id: "google", name: "Google AI", icon: Bot, description: "Direct access to Gemini and Imagen models." },
+    { id: "kie_api", name: "Kie API", icon: Zap, description: "Kie API featuring Seedream, Nano Banana and Wan Image models." },
     { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
     { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
     { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
@@ -57,6 +58,17 @@ const GOOGLE_IMAGE_MODELS = [
     { id: "imagen-3.0-generate-001", name: "Imagen 3.0 Generate" },
     { id: "google/gemini-3-pro-image-preview", name: "Gemini 3 Nano Banana Pro" },
     { id: "google/gemini-3.1-flash-image-preview", name: "Gemini 3.1 Flash Na Banana 2" },
+]
+
+const KIE_IMAGE_MODELS = [
+    { id: "bytedance/seedream-v4-text-to-image", name: "Seedream 4.0" },
+    { id: "seedream/4.5-text-to-image", name: "Seedream 4.5" },
+    { id: "nano-banana-2", name: "Nano Banana 2" },
+    { id: "google/nano-banana", name: "Nano Banana" },
+    { id: "nano-banana-pro", name: "Nano Banana Pro" },
+    { id: "grok-imagine/text-to-image", name: "Grok Imagine" },
+    { id: "google/imagen4-fast", name: "Google Imagen 4 Fast" },
+    { id: "wan/2-7-image", name: "Wan Image" },
 ]
 
 export default function SiteSetupPage() {
@@ -534,6 +546,41 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
+                        {selectedProvider === 'kie_api' && (
+                            <div className="space-y-6 mt-4 animate-in fade-in duration-300">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> Feature Image Model
+                                        </label>
+                                        <select
+                                            value={formData.image_model_1}
+                                            onChange={(e) => setFormData({ ...formData, image_model_1: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {KIE_IMAGE_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Cpu className="h-4 w-4 text-primary" /> In-Body Image Model
+                                        </label>
+                                        <select
+                                            value={formData.image_model_2}
+                                            onChange={(e) => setFormData({ ...formData, image_model_2: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                                        >
+                                            {KIE_IMAGE_MODELS.map((model) => (
+                                                <option key={model.id} value={model.id}>{model.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {selectedProvider === 'openrouter' && (
                             <div className="space-y-6 mt-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -890,14 +937,14 @@ export default function SiteSetupPage() {
                                         </h3>
                                         <p className="text-xs text-muted-foreground mt-1">Configure dimensions, formats, and quality for the Sharp image processing pipeline.</p>
                                     </div>
-                                    
+
                                     <div className="grid md:grid-cols-2 gap-6">
                                         {/* Featured Image */}
                                         <div className="space-y-4 p-5 rounded-2xl border bg-background/50">
                                             <h4 className="font-bold text-sm text-primary flex justify-between items-center">
                                                 Featured Image
                                             </h4>
-                                            
+
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <label className="text-xs font-semibold text-muted-foreground">Width (px)</label>
@@ -952,7 +999,7 @@ export default function SiteSetupPage() {
                                             <h4 className="font-bold text-sm text-primary flex justify-between items-center">
                                                 Post Body Image (In-Body)
                                             </h4>
-                                            
+
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <label className="text-xs font-semibold text-muted-foreground">Width (px)</label>
@@ -1038,7 +1085,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'kie_api' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
