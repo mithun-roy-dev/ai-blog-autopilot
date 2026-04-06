@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SupabaseService } from './supabase.service';
 import { PromptService } from './prompt.service';
 import { Logger } from '../utils/logger';
+import sharp from 'sharp';
 
 export interface ImageBlock {
     rawBlock: string;       // Full original "[IMAGE ... ]" string for replacement
@@ -160,6 +161,8 @@ export class ImageService {
 
         Logger.debug(`Job:${jobId}`, `IMAGE_GEN_REQUEST [${imageType}] provider:${provider} slug:${imageGenSlug}\nSYSTEM:\n${systemPrompt}\nUSER (metadata output as prompt):\n${userMessage}`);
 
+        let imageBuffer: Buffer | null = null;
+
         if (provider === 'openrouter') {
             const { data: orConfig } = await supabase
                 .from('ai_configurations')
@@ -171,12 +174,18 @@ export class ImageService {
 
             const imageModel = orConfig.image_model_1 || 'openai/gpt-image-1';
 
+            const imageConfig = imageType === 'featured'
+                ? { aspect_ratio: '16:9', image_size: '1K' }
+                : { aspect_ratio: '9:16', image_size: '1K' };
+
             const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
                 model: imageModel,
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userMessage }
-                ]
+                ],
+                modalities: ["image"],
+                image_config: imageConfig
             }, {
                 headers: {
                     'Authorization': `Bearer ${orConfig.api_key}`,
@@ -188,10 +197,11 @@ export class ImageService {
             Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RAW_RESPONSE [${imageType}]: ${JSON.stringify(response.data?.choices?.[0]?.message).substring(0, 600)}`);
 
             // Handle all known OpenRouter image response formats
-            const result = await ImageService.extractImageFromResponse(response.data, jobId, imageType);
-            if (result) return result;
+            imageBuffer = await ImageService.extractImageFromResponse(response.data, jobId, imageType);
 
-            throw new Error(`[ImageService] Could not extract image from OpenRouter response. Raw message: ${JSON.stringify(response.data?.choices?.[0]?.message).substring(0, 400)}`);
+            if (!imageBuffer) {
+                throw new Error(`[ImageService] Could not extract image from OpenRouter response. Raw message: ${JSON.stringify(response.data?.choices?.[0]?.message).substring(0, 400)}`);
+            }
 
         } else if (provider === 'google') {
             const { data: googleConfig } = await supabase
@@ -218,10 +228,11 @@ export class ImageService {
 
             if (imageModel.startsWith('imagen-')) {
                 // ── Imagen models: use :predict endpoint ─────────────────────
-                Logger.debug(`Job:${jobId}`, `IMAGE_GEN_REQUEST [Imagen/${imageModel}]: using :predict endpoint`);
+                const googleAspectRatio = imageType === 'featured' ? '16:9' : '9:16';
+                Logger.debug(`Job:${jobId}`, `IMAGE_GEN_REQUEST [Imagen/${imageModel}]: using :predict endpoint with aspect ratio ${googleAspectRatio}`);
                 response = await axios.post(
                     `${apiBase}:predict?key=${googleConfig.api_key}`,
-                    { instances: [{ prompt }], parameters: { sampleCount: 1 } },
+                    { instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: googleAspectRatio, imageSize: '1K' } },
                     { headers: { 'Content-Type': 'application/json' } }
                 );
                 Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RAW_RESPONSE [Imagen/${imageModel}]: ${JSON.stringify(response.data).substring(0, 400)}`);
@@ -229,7 +240,7 @@ export class ImageService {
                 const base64 = response.data?.predictions?.[0]?.bytesBase64Encoded;
                 if (base64) {
                     Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RESPONSE [Imagen/${imageModel}]: image received`);
-                    return Buffer.from(base64, 'base64');
+                    imageBuffer = Buffer.from(base64, 'base64');
                 }
 
             } else {
@@ -249,16 +260,34 @@ export class ImageService {
                 for (const part of parts) {
                     if (part?.inlineData?.data) {
                         Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RESPONSE [Gemini/${imageModel}]: image received via inlineData`);
-                        return Buffer.from(part.inlineData.data, 'base64');
+                        imageBuffer = Buffer.from(part.inlineData.data, 'base64');
+                        break;
                     }
                 }
             }
 
-            throw new Error(`[ImageService] Google AI (${imageModel}) returned no image data. Response: ${JSON.stringify(response?.data).substring(0, 300)}`);
-
+            if (!imageBuffer) {
+                throw new Error(`[ImageService] Google AI (${imageModel}) returned no image data. Response: ${JSON.stringify(response?.data).substring(0, 300)}`);
+            }
 
         } else {
             throw new Error(`[ImageService] Unsupported image provider: "${provider}". Use OpenRouter or Google.`);
+        }
+
+        // Apply strict pixel resizing and format to WebP using sharp
+        const targetWidth = imageType === 'featured' ? 1200 : 500;
+        const targetHeight = imageType === 'featured' ? 630 : 1000;
+
+        try {
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_FORMATTING: Resizing to ${targetWidth}x${targetHeight} via sharp (WebP)`);
+            const finalBuffer = await sharp(imageBuffer)
+                .resize({ width: targetWidth, height: targetHeight, fit: 'cover' })
+                .webp({ quality: 85 })
+                .toBuffer();
+            return finalBuffer;
+        } catch (e: any) {
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_FORMATTING_ERROR: Cannot process with sharp: ${e.message}. Returning original buffer.`);
+            return imageBuffer;
         }
     }
 
@@ -277,6 +306,22 @@ export class ImageService {
     ): Promise<Buffer | null> {
         const message = responseData?.choices?.[0]?.message;
 
+        if (!message) return null;
+
+        // ── Format New: OpenRouter dedicated 'images' array ───────────────────
+        if (message.images && Array.isArray(message.images) && message.images.length > 0) {
+            const imageUrl = message.images[0]?.image_url?.url || message.images[0]?.url;
+            if (imageUrl?.startsWith('data:image/')) {
+                Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RESPONSE [${imageType}]: Format OpenRouter Images — base64 data URI`);
+                return Buffer.from(imageUrl.split(',')[1], 'base64');
+            }
+            if (imageUrl) {
+                Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RESPONSE [${imageType}]: Format OpenRouter Images — URL: ${imageUrl}`);
+                const imgResp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+                return Buffer.from(imgResp.data);
+            }
+        }
+
         // ── Format A: string content ──────────────────────────────────────────
         if (typeof message?.content === 'string' && message.content.length > 0) {
             const content: string = message.content;
@@ -289,7 +334,7 @@ export class ImageService {
             }
 
             // A2: URL in content text — download the image
-            const urlMatch = content.match(/https?:\/\/[^\s"'<>]+/i);
+            const urlMatch = content.match(/https?:\/\/[^\s"'<>\)]+/i);
             if (urlMatch) {
                 Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RESPONSE [${imageType}]: Format A2 — URL: ${urlMatch[0]}`);
                 const imgResp = await axios.get(urlMatch[0], { responseType: 'arraybuffer' });
@@ -329,6 +374,11 @@ export class ImageService {
             return Buffer.from(imgResp.data);
         }
 
+        // ── Handle Reasoning-Only Responses ───────────────────────────
+        if (message.reasoning_details && !message.content && !message.images) {
+            Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RESPONSE [${imageType}]: Model returned reasoning tokens but no image or content.`);
+        }
+
         return null;
     }
 
@@ -352,7 +402,7 @@ export class ImageService {
             }
         });
 
-        const contentType = r2Key.endsWith('.png') ? 'image/png' : 'image/jpeg';
+        const contentType = r2Key.endsWith('.webp') ? 'image/webp' : r2Key.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
         Logger.debug(`Job:${jobId}`, `R2_UPLOAD_REQUEST: bucket=${r2Config.bucketName} key=${r2Key}`);
 

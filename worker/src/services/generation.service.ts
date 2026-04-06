@@ -723,7 +723,7 @@ ${promptConfig.user_prompt_template}`;
                 // and URLs are unguessable since all IDs are UUIDs.
                 const timestamp = Date.now();
                 const imageType = block.type === 'featured' ? 'featured' : 'inbody';
-                const r2Key = `users/${userId}/blogs/${blogId}/jobs/${jobId}/img-${imageType}-${block.number}-${timestamp}.jpg`;
+                const r2Key = `users/${userId}/blogs/${blogId}/jobs/${jobId}/img-${imageType}-${block.number}-${timestamp}.webp`;
                 const publicUrl = await ImageService.uploadToR2(imageBuffer, r2Key, r2Config, jobId);
 
                 Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: R2 path = ${r2Key}`);
