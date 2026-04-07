@@ -2,6 +2,7 @@ import axios from 'axios';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SupabaseService } from './supabase.service';
 import { PromptService } from './prompt.service';
+import { LLMService } from './llm.service';
 import { Logger } from '../utils/logger';
 import sharp from 'sharp';
 
@@ -69,8 +70,9 @@ export class ImageService {
     static async generateImageMetadata(
         block: ImageBlock,
         metadataModel: string,
-        openrouterApiKey: string,
-        jobId: string
+        apiKey: string,
+        jobId: string,
+        provider: string = 'openrouter'
     ): Promise<string> {
         const metadataSlug = block.type === 'featured'
             ? 'featured-image-metadata'
@@ -96,23 +98,17 @@ export class ImageService {
             { 'image-data': imageDataText }
         );
 
-        Logger.debug(`Job:${jobId}`, `IMAGE_METADATA_REQUEST [${block.type}#${block.number}] slug:${metadataSlug} model:${metadataModel}\nSYSTEM:\n${promptConfig.system_prompt}\nUSER:\n${userPrompt}`);
+        Logger.debug(`Job:${jobId}`, `IMAGE_METADATA_REQUEST [${block.type}#${block.number}] slug:${metadataSlug} provider:${provider} model:${metadataModel}\nSYSTEM:\n${promptConfig.system_prompt}\nUSER:\n${userPrompt}`);
 
-        const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        // 7. Call LLM for metadata (use centralized service for logs and timeouts)
+        const metadataContent = await LLMService.completion({
+            system: promptConfig.system_prompt,
+            user: userPrompt,
+            provider: provider,
             model: metadataModel,
-            messages: [
-                { role: 'system', content: promptConfig.system_prompt },
-                { role: 'user', content: userPrompt }
-            ]
-        }, {
-            headers: {
-                'Authorization': `Bearer ${openrouterApiKey}`,
-                'HTTP-Referer': 'https://ai-blog-autopilot.com',
-                'X-Title': 'AI Blog Autopilot'
-            }
+            json: false
         });
 
-        const metadataContent = response.data.choices[0].message.content;
         Logger.debug(`Job:${jobId}`, `IMAGE_METADATA_RESPONSE [${block.type}#${block.number}]:\n${metadataContent}`);
 
         return metadataContent;
@@ -167,13 +163,15 @@ export class ImageService {
         if (provider === 'openrouter') {
             const { data: orConfig } = await supabase
                 .from('ai_configurations')
-                .select('api_key, image_model_1')
+                .select('api_key, feature_image_model, inbody_image_model')
                 .eq('provider', 'openrouter')
                 .single();
 
             if (!orConfig?.api_key) throw new Error('[ImageService] OpenRouter API key not found.');
 
-            const imageModel = orConfig.image_model_1 || 'openai/gpt-image-1';
+            const imageModel = imageType === 'featured'
+                ? (orConfig.feature_image_model || 'openai/gpt-image-1')
+                : (orConfig.inbody_image_model || 'openai/gpt-image-1');
 
             const imageConfig = imageType === 'featured'
                 ? { aspect_ratio: '16:9', image_size: '1K' }
@@ -207,14 +205,16 @@ export class ImageService {
         } else if (provider === 'google') {
             const { data: googleConfig } = await supabase
                 .from('ai_configurations')
-                .select('api_key, image_model_1')
+                .select('api_key, feature_image_model, inbody_image_model')
                 .eq('provider', 'google')
                 .single();
 
             if (!googleConfig?.api_key) throw new Error('[ImageService] Google API key not found in Site Setup.');
 
             // "Text to Image Model" field from Google AI provider config
-            const rawModel = googleConfig.image_model_1 || 'imagen-3.0-generate-001';
+            const rawModel = imageType === 'featured'
+                ? (googleConfig.feature_image_model || 'imagen-3.0-generate-001')
+                : (googleConfig.inbody_image_model || 'imagen-3.0-generate-001');
 
             // Strip OpenRouter-style "google/" prefix — Google's own API uses bare model IDs
             // e.g. "google/gemini-3-pro-image-preview" → "gemini-3-pro-image-preview"
@@ -274,15 +274,15 @@ export class ImageService {
         } else if (provider === 'kie_api') {
             const { data: kieConfig } = await supabase
                 .from('ai_configurations')
-                .select('api_key, image_model_1, image_model_2')
+                .select('api_key, feature_image_model, inbody_image_model')
                 .eq('provider', 'kie_api')
                 .single();
 
             if (!kieConfig?.api_key) throw new Error('[ImageService] Kie API key not found in Site Setup.');
             const kieAspectRatio = imageType === 'featured' ? '16:9' : '9:16';
             const imageModel = imageType === 'featured'
-                ? (kieConfig.image_model_1 || 'seedream/4.5-text-to-image')
-                : (kieConfig.image_model_2 || 'seedream/4.5-text-to-image');
+                ? (kieConfig.feature_image_model || 'seedream/4.5-text-to-image')
+                : (kieConfig.inbody_image_model || 'seedream/4.5-text-to-image');
 
             Logger.debug(`Job:${jobId}`, `IMAGE_GEN_REQUEST [Kie API] model="${imageModel}"`);
 

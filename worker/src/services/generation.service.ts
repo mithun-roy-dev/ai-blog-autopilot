@@ -31,107 +31,107 @@ export class GenerationService {
                 .select('writing_mode, niche, custom_niche, metadata')
                 .eq('id', job.blog_id)
                 .single();
-            
+
             const writingMode = blog?.writing_mode || 'Auto';
             const niche = blog?.niche === 'Others' ? blog.custom_niche : blog?.niche || 'General';
             console.log(`[Job ${jobId}] 🛠️ Mode: ${writingMode} | Niche: ${niche}`);
 
             const progress = await this.getProgress(jobId);
 
-        // Step 1: SERP API Calling
-        if (progress['serp_calling']?.status !== 'completed') {
-            await this.executeStep(jobId, 'serp_calling', async () => {
-                return await this.step1SerpApi(job);
-            });
+            // Step 1: SERP API Calling
+            if (progress['serp_calling']?.status !== 'completed') {
+                await this.executeStep(jobId, 'serp_calling', async () => {
+                    return await this.step1SerpApi(job);
+                });
 
-            const currentMode = await this.getCurrentWritingMode(job.blog_id);
-            if (currentMode === 'Manual') {
-                await this.pauseForApproval(jobId, 'serp_calling');
-                return;
+                const currentMode = await this.getCurrentWritingMode(job.blog_id);
+                if (currentMode === 'Manual') {
+                    await this.pauseForApproval(jobId, 'serp_calling');
+                    return;
+                }
             }
-        }
 
-        // Step 2: SERP Analyzer
-        if (progress['serp_analyzing']?.status !== 'completed') {
-            await this.executeStep(jobId, 'serp_analyzing', async () => {
-                const updatedJobData = await this.getGenerationData(jobId);
-                return await this.step2SerpAnalyzer(job, updatedJobData);
-            });
+            // Step 2: SERP Analyzer
+            if (progress['serp_analyzing']?.status !== 'completed') {
+                await this.executeStep(jobId, 'serp_analyzing', async () => {
+                    const updatedJobData = await this.getGenerationData(jobId);
+                    return await this.step2SerpAnalyzer(job, updatedJobData);
+                });
 
-            const currentMode = await this.getCurrentWritingMode(job.blog_id);
-            if (currentMode === 'Manual') {
-                await this.pauseForApproval(jobId, 'serp_analyzing');
-                return;
+                const currentMode = await this.getCurrentWritingMode(job.blog_id);
+                if (currentMode === 'Manual') {
+                    await this.pauseForApproval(jobId, 'serp_analyzing');
+                    return;
+                }
             }
-        }
 
-        // Step 3: Content Brief
-        if (progress['briefing']?.status !== 'completed') {
-            await this.executeStep(jobId, 'briefing', async () => {
-                console.log(`[Job ${jobId}] 📝 Generating Dynamic Content Brief...`);
-                
-                const generationData = await this.getGenerationData(jobId);
-                const promptConfig = await PromptService.getPrompt('content-brief');
-                if (!promptConfig) throw new Error("Prompt 'content-brief' not found.");
+            // Step 3: Content Brief
+            if (progress['briefing']?.status !== 'completed') {
+                await this.executeStep(jobId, 'briefing', async () => {
+                    console.log(`[Job ${jobId}] 📝 Generating Dynamic Content Brief...`);
 
-                // 1. Fetch Cluster & Articles Logic
-                const { data: cluster } = await supabase.from('content_clusters').select('*').eq('id', job.cluster_id).single();
-                const { data: clusterPages } = await supabase.from('cluster_pages').select('*').eq('cluster_id', job.cluster_id);
-                const { data: liveArticles } = await supabase.from('articles')
-                    .select('id, source_url, slug, status')
-                    .eq('blog_id', job.blog_id)
-                    .in('status', ['crawled', 'published']);
+                    const generationData = await this.getGenerationData(jobId);
+                    const promptConfig = await PromptService.getPrompt('content-brief');
+                    if (!promptConfig) throw new Error("Prompt 'content-brief' not found.");
 
-                const currentPage = clusterPages?.find(p => p.slug === job.slug);
-                const pillarPage = clusterPages?.find(p => p.type === 'pillar');
-                const articleMap = new Map((liveArticles || []).map(a => [a.id, a]));
+                    // 1. Fetch Cluster & Articles Logic
+                    const { data: cluster } = await supabase.from('content_clusters').select('*').eq('id', job.cluster_id).single();
+                    const { data: clusterPages } = await supabase.from('cluster_pages').select('*').eq('cluster_id', job.cluster_id);
+                    const { data: liveArticles } = await supabase.from('articles')
+                        .select('id, source_url, slug, status')
+                        .eq('blog_id', job.blog_id)
+                        .in('status', ['crawled', 'published']);
 
-                // 2. Internal Linking Logic
-                let linksMust = "Choose relevant links from linksChoice";
-                let linksChoice: string[] = [];
+                    const currentPage = clusterPages?.find(p => p.slug === job.slug);
+                    const pillarPage = clusterPages?.find(p => p.type === 'pillar');
+                    const articleMap = new Map((liveArticles || []).map(a => [a.id, a]));
 
-                if (currentPage?.type === 'supporting') {
-                    // linksMust: Cluster Pillar URL (if live)
-                    if (pillarPage?.article_id) {
-                        const pillarArticle = articleMap.get(pillarPage.article_id);
-                        if (pillarArticle) linksMust = pillarArticle.source_url;
+                    // 2. Internal Linking Logic
+                    let linksMust = "Choose relevant links from linksChoice";
+                    let linksChoice: string[] = [];
+
+                    if (currentPage?.type === 'supporting') {
+                        // linksMust: Cluster Pillar URL (if live)
+                        if (pillarPage?.article_id) {
+                            const pillarArticle = articleMap.get(pillarPage.article_id);
+                            if (pillarArticle) linksMust = pillarArticle.source_url;
+                        }
+
+                        // linksChoice: Other live supporting articles in the same cluster
+                        linksChoice = (clusterPages || [])
+                            .filter(p => p.type === 'supporting' && p.id !== currentPage.id && p.article_id)
+                            .map(p => articleMap.get(p.article_id!)?.source_url)
+                            .filter(Boolean) as string[];
+                    } else {
+                        // If Pillar or unknown: All other live articles in the blog
+                        linksChoice = (liveArticles || [])
+                            .filter(a => a.slug !== job.slug)
+                            .map(a => a.source_url)
+                            .filter(Boolean);
                     }
 
-                    // linksChoice: Other live supporting articles in the same cluster
-                    linksChoice = (clusterPages || [])
-                        .filter(p => p.type === 'supporting' && p.id !== currentPage.id && p.article_id)
-                        .map(p => articleMap.get(p.article_id!)?.source_url)
-                        .filter(Boolean) as string[];
-                } else {
-                    // If Pillar or unknown: All other live articles in the blog
-                    linksChoice = (liveArticles || [])
-                        .filter(a => a.slug !== job.slug)
-                        .map(a => a.source_url)
-                        .filter(Boolean);
-                }
-
-                // 3. Construct XML Blocks
-                const siteContextXml = `
+                    // 3. Construct XML Blocks
+                    const siteContextXml = `
 <site_context>
   <site_description_short>${blog?.metadata?.description || 'General niche blog'}</site_description_short>
   <site_niche>${niche}</site_niche>
 </site_context>`;
 
-                // 3. Word Count Resolution Logic
-                const targetWords = currentPage?.word_count_target || 1200;
-                const avgWords = generationData.analysis?.average_word_count || 0;
-                const threshold = avgWords * 1.5;
+                    // 3. Word Count Resolution Logic
+                    const targetWords = currentPage?.word_count_target || 1200;
+                    const avgWords = generationData.analysis?.average_word_count || 0;
+                    const threshold = avgWords * 1.5;
 
-                Logger.debug(`Job:${jobId}`, `WORD_COUNT_LOGIC: Target: ${targetWords}, Avg: ${avgWords}, Threshold: ${threshold}`);
+                    Logger.debug(`Job:${jobId}`, `WORD_COUNT_LOGIC: Target: ${targetWords}, Avg: ${avgWords}, Threshold: ${threshold}`);
 
-                let resolvedWordCount = targetWords;
-                if (targetWords < threshold) {
-                    resolvedWordCount = Math.round(avgWords * 1.6);
-                    Logger.debug(`Job:${jobId}`, `WORD_COUNT_OVERRIDE: New Target: ${resolvedWordCount}`);
-                }
+                    let resolvedWordCount = targetWords;
+                    if (targetWords < threshold) {
+                        resolvedWordCount = Math.round(avgWords * 1.6);
+                        Logger.debug(`Job:${jobId}`, `WORD_COUNT_OVERRIDE: New Target: ${resolvedWordCount}`);
+                    }
 
-                // 4. Construct XML Blocks
-                const articleTargetXml = `
+                    // 4. Construct XML Blocks
+                    const articleTargetXml = `
 <article_target>
   <title>${job.title}</title>
   <keyword>${job.primary_keyword}</keyword>
@@ -145,154 +145,154 @@ export class GenerationService {
   </links_choice>
 </article_target>`;
 
-                const serpDataXml = `
+                    const serpDataXml = `
 <serp_data>
 ${JSON.stringify(this.compressSerp(generationData), null, 2)}
 </serp_data>`;
 
-                // 4. Final Prompt Construction
-                const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
-                const userPromptMessage = `
+                    // 4. Final Prompt Construction
+                    const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
+                    const userPromptMessage = `
 ${siteContextXml}
 ${articleTargetXml}
 ${serpDataXml}
 
 ${promptConfig.user_prompt_template}`;
 
-                // Log the full user message as requested
-                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_PROMPT_USER:\n${userPromptMessage}`);
+                    // Log the full user message as requested
+                    Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_PROMPT_USER:\n${userPromptMessage}`);
 
-                // 5. LLM Call with Thinking Model 2
-                const brief = await LLMService.completion({
-                    system: systemPrompt,
-                    user: userPromptMessage,
-                    modelRef: 'thinking_model_2',
-                    json: false
+                    // 5. LLM Call — provider and model resolved dynamically from System Setup
+                    const brief = await LLMService.completion({
+                        system: systemPrompt,
+                        user: userPromptMessage,
+                        taskRef: 'content_brief',
+                        json: false
+                    });
+
+                    // Log response for verification as requested
+                    Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_RESPONSE:\n${brief}`);
+
+                    return { dataUpdate: { brief } };
                 });
 
-                // Log response for verification as requested
-                Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_RESPONSE:\n${brief}`);
-
-                return { dataUpdate: { brief } };
-            });
-
-            const currentMode = await this.getCurrentWritingMode(job.blog_id);
-            if (currentMode === 'Manual') {
-                await this.pauseForApproval(jobId, 'briefing');
-                return;
+                const currentMode = await this.getCurrentWritingMode(job.blog_id);
+                if (currentMode === 'Manual') {
+                    await this.pauseForApproval(jobId, 'briefing');
+                    return;
+                }
             }
-        }
 
-        // Step 4: Writer Agent
-        if (progress['writing']?.status !== 'completed') {
-            await this.executeStep(jobId, 'writing', async () => {
-                console.log(`[Job ${jobId}] ✍️ Writing Full Article...`);
-                
-                const generationData = await this.getGenerationData(jobId);
-                const promptConfig = await PromptService.getPrompt('writer-system-prompt');
-                
-                if (!promptConfig) throw new Error("Prompt 'writer-system-prompt' not found.");
+            // Step 4: Writer Agent
+            if (progress['writing']?.status !== 'completed') {
+                await this.executeStep(jobId, 'writing', async () => {
+                    console.log(`[Job ${jobId}] ✍️ Writing Full Article...`);
 
-                const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
-                
-                // Manual placeholder replacement for [content-brief] as requested
-                const briefText = typeof generationData.brief === 'string' 
-                    ? generationData.brief 
-                    : JSON.stringify(generationData.brief || {}, null, 2);
-                
-                let userPrompt = promptConfig.user_prompt_template.replace('[content-brief]', briefText);
-                
-                // Also support standard {{keyword}} etc. if present
-                userPrompt = PromptService.injectVariables(userPrompt, {
-                    keyword: job.primary_keyword,
-                    intent: generationData.serp?.intent || 'Informational',
-                    niche: niche
+                    const generationData = await this.getGenerationData(jobId);
+                    const promptConfig = await PromptService.getPrompt('writer-system-prompt');
+
+                    if (!promptConfig) throw new Error("Prompt 'writer-system-prompt' not found.");
+
+                    const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, { niche });
+
+                    // Manual placeholder replacement for [content-brief] as requested
+                    const briefText = typeof generationData.brief === 'string'
+                        ? generationData.brief
+                        : JSON.stringify(generationData.brief || {}, null, 2);
+
+                    let userPrompt = promptConfig.user_prompt_template.replace('[content-brief]', briefText);
+
+                    // Also support standard {{keyword}} etc. if present
+                    userPrompt = PromptService.injectVariables(userPrompt, {
+                        keyword: job.primary_keyword,
+                        intent: generationData.serp?.intent || 'Informational',
+                        niche: niche
+                    });
+
+                    // Logging prompts before calling OpenRouter as requested
+                    Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_SYSTEM:\n${systemPrompt}`);
+                    Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_USER:\n${userPrompt}`);
+
+                    const articleContent = await LLMService.completion({
+                        system: systemPrompt,
+                        user: userPrompt,
+                        taskRef: 'writer'
+                    });
+
+                    // Logging response for verification as requested
+                    Logger.debug(`Job:${jobId}`, `WRITER_AGENT_RESPONSE:\n${articleContent}`);
+
+                    // Update the job with the generated content
+                    await supabase
+                        .from('writing_jobs')
+                        .update({ content: articleContent, updated_at: new Date() })
+                        .eq('id', jobId);
+
+                    return { dataUpdate: { article_content: articleContent } };
                 });
 
-                // Logging prompts before calling OpenRouter as requested
-                Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_SYSTEM:\n${systemPrompt}`);
-                Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_USER:\n${userPrompt}`);
+                const currentMode = await this.getCurrentWritingMode(job.blog_id);
+                if (currentMode === 'Manual') {
+                    await this.pauseForApproval(jobId, 'writing');
+                    return;
+                }
+            }
 
-                const articleContent = await LLMService.completion({
-                    system: systemPrompt,
-                    user: userPrompt,
-                    modelRef: 'writer_model'
+            // Step 4.5: Image Agent
+            if (progress['imaging']?.status !== 'completed') {
+                await this.executeStep(jobId, 'imaging', async () => {
+                    return await this.step45ImageAgent(job, jobId, supabase);
                 });
 
-                // Logging response for verification as requested
-                Logger.debug(`Job:${jobId}`, `WRITER_AGENT_RESPONSE:\n${articleContent}`);
-
-                // Update the job with the generated content
-                await supabase
-                    .from('writing_jobs')
-                    .update({ content: articleContent, updated_at: new Date() })
-                    .eq('id', jobId);
-
-                return { dataUpdate: { article_content: articleContent } };
-            });
-
-            const currentMode = await this.getCurrentWritingMode(job.blog_id);
-            if (currentMode === 'Manual') {
-                await this.pauseForApproval(jobId, 'writing');
-                return;
+                const currentMode = await this.getCurrentWritingMode(job.blog_id);
+                if (currentMode === 'Manual') {
+                    await this.pauseForApproval(jobId, 'imaging');
+                    return;
+                }
             }
-        }
 
-        // Step 4.5: Image Agent
-        if (progress['imaging']?.status !== 'completed') {
-            await this.executeStep(jobId, 'imaging', async () => {
-                return await this.step45ImageAgent(job, jobId, supabase);
-            });
+            // Step 5: Editor Agent (stub)
+            if (progress['editing']?.status !== 'completed') {
+                await this.executeStep(jobId, 'editing', async () => {
+                    console.log(`[Job ${jobId}] ✏️ Editor Agent step (stub – AI logic coming soon)`);
+                    return { dataUpdate: {} };
+                });
 
-            const currentMode = await this.getCurrentWritingMode(job.blog_id);
-            if (currentMode === 'Manual') {
-                await this.pauseForApproval(jobId, 'imaging');
-                return;
+                const currentMode = await this.getCurrentWritingMode(job.blog_id);
+                if (currentMode === 'Manual') {
+                    await this.pauseForApproval(jobId, 'editing');
+                    return;
+                }
             }
-        }
 
-        // Step 5: Editor Agent (stub)
-        if (progress['editing']?.status !== 'completed') {
-            await this.executeStep(jobId, 'editing', async () => {
-                console.log(`[Job ${jobId}] ✏️ Editor Agent step (stub – AI logic coming soon)`);
-                return { dataUpdate: {} };
-            });
+            // Step 6: Humanizer Agent (stub)
+            if (progress['humanizing']?.status !== 'completed') {
+                await this.executeStep(jobId, 'humanizing', async () => {
+                    console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent step (stub – AI logic coming soon)`);
+                    return { dataUpdate: {} };
+                });
 
-            const currentMode = await this.getCurrentWritingMode(job.blog_id);
-            if (currentMode === 'Manual') {
-                await this.pauseForApproval(jobId, 'editing');
-                return;
+                // No pause after the last step — mark job as completed in all modes
             }
-        }
 
-        // Step 6: Humanizer Agent (stub)
-        if (progress['humanizing']?.status !== 'completed') {
-            await this.executeStep(jobId, 'humanizing', async () => {
-                console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent step (stub – AI logic coming soon)`);
-                return { dataUpdate: {} };
-            });
+            // All steps done — mark the writing_job as completed
+            await supabase
+                .from('writing_jobs')
+                .update({
+                    status: 'completed',
+                    generation_status: 'completed',
+                    updated_at: new Date()
+                })
+                .eq('id', jobId);
 
-            // No pause after the last step — mark job as completed in all modes
-        }
+            // 🚀 Promote to Article and Site Intelligence
+            console.log(`[Job ${jobId}] 📦 Promoting job to public article and intelligence...`);
+            await SupabaseService.promoteJobToArticle(jobId);
 
-        // All steps done — mark the writing_job as completed
-        await supabase
-            .from('writing_jobs')
-            .update({
-                status: 'completed',
-                generation_status: 'completed',
-                updated_at: new Date()
-            })
-            .eq('id', jobId);
-
-        // 🚀 Promote to Article and Site Intelligence
-        console.log(`[Job ${jobId}] 📦 Promoting job to public article and intelligence...`);
-        await SupabaseService.promoteJobToArticle(jobId);
-
-        console.log(`[Job ${jobId}] 🎉 All steps completed successfully!`);
+            Logger.info(`Job:${jobId}`, `🎉 All steps completed successfully!`);
 
         } catch (error: any) {
-            console.error(`[Job ${jobId}] ❌ Generation failed:`, error.message);
+            Logger.error(`Job:${jobId}`, `❌ Generation pipeline failed: ${error.message}`, error);
             const supabase = SupabaseService.getClient();
             await supabase
                 .from('writing_jobs')
@@ -365,7 +365,7 @@ ${promptConfig.user_prompt_template}`;
     private static async pauseForApproval(jobId: string, currentStep: string) {
         const supabase = SupabaseService.getClient();
         console.log(`[Job ${jobId}] ⏸️ Pausing after ${currentStep} for manual review.`);
-        
+
         await supabase
             .from('writing_jobs')
             .update({
@@ -658,29 +658,17 @@ ${promptConfig.user_prompt_template}`;
             .eq('key', 'logging_config')
             .single();
 
-        // Log the raw DB values so we can diagnose provider selection
+        const configValue = sysConfig?.value as any;
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: configValue keys=${Object.keys(configValue || {}).join(', ')}`);
         Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: Profile email="${profile?.email}" isSuperAdmin=${isSuperAdmin}`);
-        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: system_settings[logging_config].value = ${JSON.stringify(sysConfig?.value)}`);
-
-        const rawProvider = isSuperAdmin
-            ? sysConfig?.value?.super_admin_image_provider
-            : sysConfig?.value?.global_image_provider;
-
-        const imageProvider: string = rawProvider || 'openrouter';
-
-        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: rawProvider="${rawProvider}" → resolved imageProvider="${imageProvider}"`);
 
 
-        // 4. Fetch OpenRouter config (for metadata model + api key)
-        const { data: orConfig } = await supabase
-            .from('ai_configurations')
-            .select('api_key, image_metadata_model')
-            .eq('provider', 'openrouter')
-            .single();
-
-        if (!orConfig?.api_key) throw new Error('OpenRouter API key not configured.');
-        const metadataModel = orConfig.image_metadata_model || 'mistralai/mistral-nemo';
-
+        // 4. Resolve image metadata model and API key dynamically from System Setup
+        const metadataResolved = await LLMService.resolveTask('image_metadata');
+        const metadataModel = metadataResolved.model;
+        const metadataApiKey = metadataResolved.apiKey;
+        const metadataProvider = metadataResolved.provider;
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: metadataModel="${metadataModel}" → resolved metadataProvider="${metadataProvider}"`);
         // 5. Fetch Cloudflare R2 config
         const { data: r2Data } = await supabase
             .from('ai_configurations')
@@ -704,18 +692,23 @@ ${promptConfig.user_prompt_template}`;
                 const metadataContent = await ImageService.generateImageMetadata(
                     block,
                     metadataModel,
-                    orConfig.api_key,
-                    jobId
+                    metadataApiKey,
+                    jobId,
+                    metadataProvider
                 );
 
                 // Step B: Generate the actual image
+                const imageProvider = block.type === 'featured'
+                    ? configValue?.feature_image_provider
+                    : configValue?.inbody_image_provider;
+
                 const imageResult = await ImageService.generateImage(
                     metadataContent,
                     block.type,
-                    imageProvider,
+                    imageProvider || 'openrouter',
                     siteName,
                     jobId,
-                    sysConfig?.value || {}
+                    configValue || {}
                 );
 
                 // Step C: Upload to Cloudflare R2 with isolated hierarchical path
@@ -777,7 +770,7 @@ ${promptConfig.user_prompt_template}`;
     private static compressSerp(generationData: any): any {
         const raw = generationData.serp || {};
         const analysis = generationData.analysis || {};
-        
+
         return {
             avg_words: analysis.average_word_count || 0,
             organic: (raw.organic_results || []).slice(0, 8).map((r: any) => ({

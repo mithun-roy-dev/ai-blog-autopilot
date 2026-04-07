@@ -71,6 +71,15 @@ const KIE_IMAGE_MODELS = [
     { id: "wan/2-7-image", name: "Wan Image" },
 ]
 
+const KIE_LLM_MODELS = [
+    { id: "claude-haiku-4-5", name: "Claude Haiku 4.5" },
+    { id: "claude-opus-4-5", name: "Claude Opus 4.5" },
+    { id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5" },
+    { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
+    { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+    { id: "gpt-5-4", name: "GPT 5.4" },
+]
+
 export default function SiteSetupPage() {
     const supabase = createClient()
     const router = useRouter()
@@ -83,28 +92,25 @@ export default function SiteSetupPage() {
 
     const SelectedProviderIcon = PROVIDERS.find(p => p.id === selectedProvider)?.icon || Shield
 
-    // Form State
+    // Form State - only api_key; models are managed in System Setup
     const [formData, setFormData] = useState({
-        api_key: "",
-        default_model: "openai/gpt-oss-120b:free",
-        thinking_model_1: "openai/gpt-oss-120b:free",
-        thinking_model_2: "openai/gpt-oss-120b:free",
-        fast_model_1: "openai/gpt-oss-120b:free",
-        fast_model_2: "openai/gpt-oss-120b:free",
-        image_model_1: "openai/gpt-oss-120b:free",
-        image_model_2: "openai/gpt-oss-120b:free",
-        free_model_1: "openai/gpt-oss-120b:free",
-        free_model_2: "openai/gpt-oss-120b:free",
-        writer_model: "openai/gpt-oss-120b:free",
-        image_metadata_model: "mistralai/mistral-nemo"
+        api_key: ""
     })
 
     // System Settings State
     const [systemSettings, setSystemSettings] = useState({
         enable_debug: true,
         enable_error: true,
-        global_image_provider: "openrouter",
-        super_admin_image_provider: "google",
+        content_brief_provider: "kie_api",
+        content_brief_model: "claude-haiku-4-5",
+        writer_provider: "kie_api",
+        writer_model: "claude-haiku-4-5",
+        image_metadata_provider: "kie_api",
+        image_metadata_model: "claude-haiku-4-5",
+        feature_image_provider: "kie_api",
+        feature_image_model: "bytedance/seedream-v4-text-to-image",
+        inbody_image_provider: "kie_api",
+        inbody_image_model: "bytedance/seedream-v4-text-to-image",
         image_featured_width: 1200,
         image_featured_height: 630,
         image_featured_format: "webp",
@@ -173,8 +179,16 @@ export default function SiteSetupPage() {
                 setSystemSettings({
                     enable_debug: sysData.value.enable_debug ?? true,
                     enable_error: sysData.value.enable_error ?? true,
-                    global_image_provider: sysData.value.global_image_provider ?? "openrouter",
-                    super_admin_image_provider: sysData.value.super_admin_image_provider ?? "google",
+                    content_brief_provider: sysData.value.content_brief_provider ?? "kie_api",
+                    content_brief_model: sysData.value.content_brief_model ?? "claude-haiku-4-5",
+                    writer_provider: sysData.value.writer_provider ?? "kie_api",
+                    writer_model: sysData.value.writer_model ?? "claude-haiku-4-5",
+                    image_metadata_provider: sysData.value.image_metadata_provider ?? "kie_api",
+                    image_metadata_model: sysData.value.image_metadata_model ?? "claude-haiku-4-5",
+                    feature_image_provider: sysData.value.feature_image_provider ?? "kie_api",
+                    feature_image_model: sysData.value.feature_image_model ?? "bytedance/seedream-v4-text-to-image",
+                    inbody_image_provider: sysData.value.inbody_image_provider ?? "kie_api",
+                    inbody_image_model: sysData.value.inbody_image_model ?? "bytedance/seedream-v4-text-to-image",
                     image_featured_width: sysData.value.image_featured_width ?? 1200,
                     image_featured_height: sysData.value.image_featured_height ?? 630,
                     image_featured_format: sysData.value.image_featured_format ?? "webp",
@@ -206,20 +220,7 @@ export default function SiteSetupPage() {
             // Auto-populate form if config exists for selected provider
             const current = aiData?.find(c => c.provider === selectedProvider)
             if (current) {
-                setFormData({
-                    api_key: current.api_key || "",
-                    default_model: current.default_model || "openai/gpt-oss-120b:free",
-                    thinking_model_1: current.thinking_model_1 || "openai/gpt-oss-120b:free",
-                    thinking_model_2: current.thinking_model_2 || "openai/gpt-oss-120b:free",
-                    fast_model_1: current.fast_model_1 || "openai/gpt-oss-120b:free",
-                    fast_model_2: current.fast_model_2 || "openai/gpt-oss-120b:free",
-                    image_model_1: current.image_model_1 || "openai/gpt-oss-120b:free",
-                    image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
-                    free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
-                    free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free",
-                    writer_model: current.writer_model || "openai/gpt-oss-120b:free",
-                    image_metadata_model: current.image_metadata_model || "mistralai/mistral-nemo"
-                })
+                setFormData({ api_key: current.api_key || "" })
             }
         } catch (err: any) {
             console.error("Error fetching configs:", err)
@@ -264,37 +265,7 @@ export default function SiteSetupPage() {
 
     useEffect(() => {
         const current = configs.find(c => c.provider === selectedProvider)
-        if (current) {
-            setFormData({
-                api_key: current.api_key || "",
-                default_model: current.default_model || "openai/gpt-oss-120b:free",
-                thinking_model_1: current.thinking_model_1 || "openai/gpt-oss-120b:free",
-                thinking_model_2: current.thinking_model_2 || "openai/gpt-oss-120b:free",
-                fast_model_1: current.fast_model_1 || "openai/gpt-oss-120b:free",
-                fast_model_2: current.fast_model_2 || "openai/gpt-oss-120b:free",
-                image_model_1: current.image_model_1 || "openai/gpt-oss-120b:free",
-                image_model_2: current.image_model_2 || "openai/gpt-oss-120b:free",
-                free_model_1: current.free_model_1 || "openai/gpt-oss-120b:free",
-                free_model_2: current.free_model_2 || "openai/gpt-oss-120b:free",
-                writer_model: current.writer_model || "openai/gpt-oss-120b:free",
-                image_metadata_model: current.image_metadata_model || "mistralai/mistral-nemo"
-            })
-        } else {
-            setFormData({
-                api_key: "",
-                default_model: "openai/gpt-oss-120b:free",
-                thinking_model_1: "openai/gpt-oss-120b:free",
-                thinking_model_2: "openai/gpt-oss-120b:free",
-                fast_model_1: "openai/gpt-oss-120b:free",
-                fast_model_2: "openai/gpt-oss-120b:free",
-                image_model_1: "openai/gpt-oss-120b:free",
-                image_model_2: "openai/gpt-oss-120b:free",
-                free_model_1: "openai/gpt-oss-120b:free",
-                free_model_2: "openai/gpt-oss-120b:free",
-                writer_model: "openai/gpt-oss-120b:free",
-                image_metadata_model: "mistralai/mistral-nemo"
-            })
-        }
+        setFormData({ api_key: current?.api_key || "" })
     }, [selectedProvider, configs])
 
     const handleSave = async (e: React.FormEvent) => {
@@ -304,18 +275,44 @@ export default function SiteSetupPage() {
 
         try {
             if (selectedProvider === 'system_ops') {
-                const { error } = await supabase
+                // 1. Save full system settings (operators + other config) to system_settings
+                const { error: sysError } = await supabase
                     .from("system_settings")
                     .upsert({
                         key: "logging_config",
                         value: systemSettings,
                         updated_at: new Date().toISOString()
                     }, { onConflict: "key" })
+                if (sysError) throw sysError
 
-                if (error) throw error
-                toast.success(`System settings saved!`, { id: toastId })
-                if (error) throw error
-                toast.success(`Crawl setup saved!`, { id: toastId })
+                // 2. For each task, upsert the selected model into the correct provider row in ai_configurations
+                const taskMappings = [
+                    { provider: systemSettings.content_brief_provider, column: 'content_brief_model', model: systemSettings.content_brief_model },
+                    { provider: systemSettings.writer_provider, column: 'writer_model', model: systemSettings.writer_model },
+                    { provider: systemSettings.image_metadata_provider, column: 'image_metadata_model', model: systemSettings.image_metadata_model },
+                    { provider: systemSettings.feature_image_provider, column: 'feature_image_model', model: systemSettings.feature_image_model },
+                    { provider: systemSettings.inbody_image_provider, column: 'inbody_image_model', model: systemSettings.inbody_image_model },
+                ]
+
+                // Group by provider to batch upserts
+                const byProvider: Record<string, Record<string, string>> = {}
+                for (const t of taskMappings) {
+                    if (!byProvider[t.provider]) byProvider[t.provider] = {}
+                    byProvider[t.provider][t.column] = t.model
+                }
+
+                const upsertPromises = Object.entries(byProvider).map(([provider, modelCols]) =>
+                    supabase
+                        .from("ai_configurations")
+                        .upsert({ provider, ...modelCols, updated_at: new Date().toISOString() }, { onConflict: "provider" })
+                )
+
+                const results = await Promise.all(upsertPromises)
+                const upsertError = results.find(r => r.error)?.error
+                if (upsertError) throw upsertError
+
+                toast.success(`System settings and model configurations saved!`, { id: toastId })
+
             } else if (selectedProvider === 'prompt_setup') {
                 const { error } = await supabase
                     .from("ai_prompts")
@@ -334,27 +331,17 @@ export default function SiteSetupPage() {
                 toast.success(`Prompt "${promptFormData.name}" saved!`, { id: toastId })
                 fetchPrompts()
             } else {
+                // For individual provider pages: only save the API key
                 const { error } = await supabase
                     .from("ai_configurations")
                     .upsert({
                         provider: selectedProvider,
                         api_key: formData.api_key,
-                        default_model: formData.default_model,
-                        thinking_model_1: formData.thinking_model_1,
-                        thinking_model_2: formData.thinking_model_2,
-                        fast_model_1: formData.fast_model_1,
-                        fast_model_2: formData.fast_model_2,
-                        image_model_1: formData.image_model_1,
-                        image_model_2: formData.image_model_2,
-                        free_model_1: formData.free_model_1,
-                        free_model_2: formData.free_model_2,
-                        writer_model: formData.writer_model,
-                        image_metadata_model: formData.image_metadata_model,
                         updated_at: new Date().toISOString()
                     }, { onConflict: "provider" })
 
                 if (error) throw error
-                toast.success(`${selectedProvider.toUpperCase()} configuration saved!`, { id: toastId })
+                toast.success(`${selectedProvider.toUpperCase()} API key saved!`, { id: toastId })
             }
 
             fetchConfigs()
@@ -512,233 +499,23 @@ export default function SiteSetupPage() {
                         )}
 
                         {selectedProvider === 'google' && (
-                            <div className="space-y-6 mt-4 animate-in fade-in duration-300">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> LLM Text Chat Model
-                                        </label>
-                                        <select
-                                            value={formData.default_model}
-                                            onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {GOOGLE_LLM_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Text to Image Model
-                                        </label>
-                                        <select
-                                            value={formData.image_model_1}
-                                            onChange={(e) => setFormData({ ...formData, image_model_1: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {GOOGLE_IMAGE_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
+                            <div className="mt-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-blue-600 dark:text-blue-400 text-xs flex gap-3">
+                                <AlertCircle className="h-5 w-5 shrink-0" />
+                                <p>Model selection for Google AI is managed centrally in <strong>System Setup → AI Generation Global Setup</strong>. Enter your API key above and save.</p>
                             </div>
                         )}
 
                         {selectedProvider === 'kie_api' && (
-                            <div className="space-y-6 mt-4 animate-in fade-in duration-300">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Feature Image Model
-                                        </label>
-                                        <select
-                                            value={formData.image_model_1}
-                                            onChange={(e) => setFormData({ ...formData, image_model_1: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {KIE_IMAGE_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> In-Body Image Model
-                                        </label>
-                                        <select
-                                            value={formData.image_model_2}
-                                            onChange={(e) => setFormData({ ...formData, image_model_2: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {KIE_IMAGE_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
+                            <div className="mt-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-blue-600 dark:text-blue-400 text-xs flex gap-3">
+                                <AlertCircle className="h-5 w-5 shrink-0" />
+                                <p>Model selection for Kie API is managed centrally in <strong>System Setup → AI Generation Global Setup</strong>. Enter your API key above and save.</p>
                             </div>
                         )}
 
                         {selectedProvider === 'openrouter' && (
-                            <div className="space-y-6 mt-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Default AI Model
-                                        </label>
-                                        <select
-                                            value={formData.default_model}
-                                            onChange={(e) => setFormData({ ...formData, default_model: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Writer AI Model
-                                        </label>
-                                        <select
-                                            value={formData.writer_model}
-                                            onChange={(e) => setFormData({ ...formData, writer_model: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Thinking Model 1
-                                        </label>
-                                        <select
-                                            value={formData.thinking_model_1}
-                                            onChange={(e) => setFormData({ ...formData, thinking_model_1: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Thinking Model 2
-                                        </label>
-                                        <select
-                                            value={formData.thinking_model_2}
-                                            onChange={(e) => setFormData({ ...formData, thinking_model_2: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Fast Model 1
-                                        </label>
-                                        <select
-                                            value={formData.fast_model_1}
-                                            onChange={(e) => setFormData({ ...formData, fast_model_1: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Fast Model 2
-                                        </label>
-                                        <select
-                                            value={formData.fast_model_2}
-                                            onChange={(e) => setFormData({ ...formData, fast_model_2: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Image Model 1
-                                        </label>
-                                        <select
-                                            value={formData.image_model_1}
-                                            onChange={(e) => setFormData({ ...formData, image_model_1: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Image Model 2
-                                        </label>
-                                        <select
-                                            value={formData.image_model_2}
-                                            onChange={(e) => setFormData({ ...formData, image_model_2: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Free Model 1
-                                        </label>
-                                        <select
-                                            value={formData.free_model_1}
-                                            onChange={(e) => setFormData({ ...formData, free_model_1: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Free Model 2
-                                        </label>
-                                        <select
-                                            value={formData.free_model_2}
-                                            onChange={(e) => setFormData({ ...formData, free_model_2: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Cpu className="h-4 w-4 text-primary" /> Image Metadata Model
-                                        </label>
-                                        <select
-                                            value={formData.image_metadata_model}
-                                            onChange={(e) => setFormData({ ...formData, image_metadata_model: e.target.value })}
-                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
-                                        >
-                                            {OPENROUTER_MODELS.map((model) => (
-                                                <option key={model.id} value={model.id}>{model.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
+                            <div className="mt-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-blue-600 dark:text-blue-400 text-xs flex gap-3">
+                                <AlertCircle className="h-5 w-5 shrink-0" />
+                                <p>Model selection for OpenRouter is managed centrally in <strong>System Setup → AI Generation Global Setup</strong>. Enter your API key above and save.</p>
                             </div>
                         )}
 
@@ -909,23 +686,98 @@ export default function SiteSetupPage() {
                                             </label>
                                         </div>
 
-                                        <div className="p-4 rounded-xl border bg-background hover:border-primary/50 transition-colors">
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                <div className="space-y-1">
-                                                    <label className="block text-sm font-bold">Global Image Generation Provider</label>
-                                                    <p className="text-[11px] text-muted-foreground">The default provider for standard users invoking image generations.</p>
+                                    </div>
+                                </div>
+
+                                {/* AI Generation Global Setup */}
+                                <div className="space-y-6 pt-4">
+                                    <div className="border-b border-border/50 pb-4">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                                            <Bot className="h-5 w-5 text-primary" /> AI Generation Global Setup
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">Configure global API providers and models for each step of the AI generation pipeline.</p>
+                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        {[
+                                            { id: 'content_brief', label: 'Content Brief Model', isImage: false },
+                                            { id: 'writer', label: 'Writer AI Model', isImage: false },
+                                            { id: 'image_metadata', label: 'Image Metadata Model', isImage: false },
+                                            { id: 'feature_image', label: 'Feature Image Model', isImage: true },
+                                            { id: 'inbody_image', label: 'In-Body Image Model', isImage: true }
+                                        ].map(category => {
+                                            const providerKey = `${category.id}_provider` as keyof typeof systemSettings;
+                                            const modelKey = `${category.id}_model` as keyof typeof systemSettings;
+                                            const providerValue = systemSettings[providerKey] as string;
+                                            const modelValue = systemSettings[modelKey] as string;
+
+                                            const getModelsList = () => {
+                                                if (category.isImage) {
+                                                    if (providerValue === 'kie_api') return KIE_IMAGE_MODELS;
+                                                    if (providerValue === 'google') return GOOGLE_IMAGE_MODELS;
+                                                    return OPENROUTER_MODELS;
+                                                } else {
+                                                    if (providerValue === 'kie_api') return KIE_LLM_MODELS;
+                                                    if (providerValue === 'google') return GOOGLE_LLM_MODELS;
+                                                    return OPENROUTER_MODELS;
+                                                }
+                                            }
+                                            
+                                            const modelsList = getModelsList();
+
+                                            return (
+                                                <div key={category.id} className="space-y-4 p-5 rounded-2xl border bg-background/50">
+                                                    <h4 className="font-bold text-sm text-primary flex justify-between items-center">
+                                                        {category.label}
+                                                    </h4>
+                                                    <div className="space-y-3">
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-xs font-semibold text-muted-foreground">API Provider</label>
+                                                            <select
+                                                                value={providerValue}
+                                                                onChange={(e) => {
+                                                                    const newProvider = e.target.value;
+                                                                    let newModel = modelsList[0]?.id; // Default fallback if switching
+                                                                    
+                                                                    // Guess best first model on switch
+                                                                    if (category.isImage) {
+                                                                        if (newProvider === 'kie_api') newModel = KIE_IMAGE_MODELS[0].id;
+                                                                        if (newProvider === 'google') newModel = GOOGLE_IMAGE_MODELS[0].id;
+                                                                        if (newProvider === 'openrouter') newModel = OPENROUTER_MODELS[0].id;
+                                                                    } else {
+                                                                        if (newProvider === 'kie_api') newModel = KIE_LLM_MODELS[0].id;
+                                                                        if (newProvider === 'google') newModel = GOOGLE_LLM_MODELS[0].id;
+                                                                        if (newProvider === 'openrouter') newModel = OPENROUTER_MODELS[0].id;
+                                                                    }
+                                                                    
+                                                                    setSystemSettings(s => ({
+                                                                        ...s,
+                                                                        [providerKey]: newProvider,
+                                                                        [modelKey]: newModel
+                                                                    }))
+                                                                }}
+                                                                className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                                            >
+                                                                <option value="kie_api">Kie API</option>
+                                                                <option value="openrouter">OpenRouter</option>
+                                                                <option value="google">Google AI</option>
+                                                            </select>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-xs font-semibold text-muted-foreground">Model</label>
+                                                            <select
+                                                                value={modelValue}
+                                                                onChange={(e) => setSystemSettings(s => ({ ...s, [modelKey]: e.target.value }))}
+                                                                className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                                            >
+                                                                {modelsList.map(m => (
+                                                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <select
-                                                    value={systemSettings.global_image_provider}
-                                                    onChange={(e) => setSystemSettings(s => ({ ...s, global_image_provider: e.target.value }))}
-                                                    className="w-full sm:w-1/3 bg-card border rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-primary outline-none cursor-pointer"
-                                                >
-                                                    {PROVIDERS.filter(p => p.id !== 'system_ops' && p.id !== 'prompt_setup' && p.id !== 'serp_crawl_setup' && p.id !== 'serpapi').map(p => (
-                                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
 
@@ -1047,36 +899,7 @@ export default function SiteSetupPage() {
                                                     />
                                                 </div>
                                             </div>
-                                        </div>
                                     </div>
-                                </div>
-
-                                {/* Super Admin System Setup Configuration */}
-                                <div className="space-y-6 pt-4">
-                                    <div className="border-b border-border/50 pb-4">
-                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
-                                            <Shield className="h-5 w-5 text-orange-500" /> Super Admin System Setup Configuration
-                                        </h3>
-                                        <p className="text-xs text-muted-foreground mt-1">These settings inherit the global configuration but allow specific overrides exclusively for super admins.</p>
-                                    </div>
-                                    <div className="grid gap-4">
-                                        <div className="p-4 rounded-xl border bg-background hover:border-orange-500/50 transition-colors">
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                <div className="space-y-1">
-                                                    <label className="block text-sm font-bold">Super Admin Image Generation Provider</label>
-                                                    <p className="text-[11px] text-muted-foreground">The dedicated provider for super admin workflows and tools.</p>
-                                                </div>
-                                                <select
-                                                    value={systemSettings.super_admin_image_provider}
-                                                    onChange={(e) => setSystemSettings(s => ({ ...s, super_admin_image_provider: e.target.value }))}
-                                                    className="w-full sm:w-1/3 bg-card border rounded-lg px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
-                                                >
-                                                    {PROVIDERS.filter(p => p.id !== 'system_ops' && p.id !== 'prompt_setup' && p.id !== 'serp_crawl_setup' && p.id !== 'serpapi').map(p => (
-                                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
