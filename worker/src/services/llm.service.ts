@@ -44,6 +44,7 @@ export class LLMService {
             if (sysError) {
                 console.warn(`[LLMService] resolveTask: Failed to read system_settings: ${sysError.message}`);
                 Logger.warn('LLMService', `resolveTask: Failed to read system_settings for "${taskRef}": ${sysError.message}. Defaulting to openrouter.`);
+                Logger.debug('LLMService', `resolveTask: Failed to read system_settings for "${taskRef}": ${sysError.message}. Defaulting to openrouter.`);
             }
 
             const rawSettingsValue = sysData?.value;
@@ -53,6 +54,7 @@ export class LLMService {
             const modelColumn = TASK_MODEL_COLUMN[taskRef];
 
             console.log(`[LLMService] Fetching ai_configurations for provider="${provider}"...`);
+            Logger.debug('LLMService', 'Fetching ai_configurations for provider="' + provider + '"...');
             const { data: config, error: configError } = await supabase
                 .from('ai_configurations')
                 .select(`api_key, ${modelColumn}`)
@@ -120,18 +122,19 @@ export class LLMService {
                 const supabase = SupabaseService.getClient();
                 const { data: config } = await supabase
                     .from('ai_configurations')
-                    .select('api_key, writer_model')
+                    .select('api_key, content_brief_model')
                     .eq('provider', 'openrouter')
                     .single();
-                model = config?.writer_model || 'google/gemini-2.0-flash-001';
+                model = config?.content_brief_model || 'google/gemini-2.0-flash-001';
                 apiKey = config?.api_key || '';
             }
 
             console.log(`[LLMService] 🤖 Dispatching to ${provider} (${model})...`);
             Logger.info('LLMService', `🤖 Dispatching to provider="${provider}" model="${model}"...`);
+            Logger.debug('LLMService', 'Dispatching to provider="' + provider + '" model="' + model + '"...');
 
             let result: string;
-            const timeout = 120000; // 120s
+            const timeout = 300000; // 300s
 
             if (provider === 'openrouter') {
                 result = await this.callOpenRouter(apiKey, model, options.system, options.user, options.json, timeout);
@@ -148,10 +151,10 @@ export class LLMService {
             return result;
 
         } catch (err: any) {
-            const errMsg = err?.response?.data 
-                ? (typeof err.response.data === 'string' ? err.response.data : JSON.stringify(err.response.data)) 
+            const errMsg = err?.response?.data
+                ? (typeof err.response.data === 'string' ? err.response.data : JSON.stringify(err.response.data))
                 : err.message;
-            
+
             console.error(`[LLMService] ❌ Error: ${errMsg.substring(0, 500)}`);
             Logger.error('LLMService', `❌ LLM Error | provider="${provider}" model="${model}" | ${errMsg.substring(0, 500)}`, err);
             throw new Error(`LLM call failed (${provider}/${model}): ${errMsg.substring(0, 200)}`);
@@ -180,15 +183,67 @@ export class LLMService {
     }
 
     // --- Kie API (Anthropic format) ---
+    // --- Kie API (Dynamic Format) ---
     private static async callKieApi(apiKey: string, model: string, system: string, user: string, timeout?: number): Promise<string> {
         console.log(`[LLMService] Sending Request to Kie API...`);
-        const response = await axios.post('https://api.kie.ai/claude/v1/messages', {
-            model,
-            system,
-            messages: [{ role: 'user', content: user }],
-            max_tokens: 4096,
-            stream: false
-        }, {
+        Logger.debug('[LLMService]', ` Kie API Request sending\nmodel:${model}\nsystem:${system}\nuser:${user}`);
+
+        let apiUrl = '';
+        let payload: any = {};
+        const lowerModel = model.toLowerCase();
+
+        // 1. Claude Default
+        if (lowerModel.includes('claude')) {
+            apiUrl = 'https://api.kie.ai/claude/v1/messages';
+            payload = {
+                model,
+                system,
+                messages: [{ role: 'user', content: user }],
+                max_tokens: 16384,
+                stream: false
+            };
+        }
+        // 2. Gemini and other GPT Models
+        else if (lowerModel.includes('gemini') || lowerModel.includes('gpt')) {
+            apiUrl = `https://api.kie.ai/${model}/v1/chat/completions`;
+            payload = {
+                model,
+                messages: [
+                    { role: 'system', content: system },
+                    { role: 'user', content: user }
+                ],
+                stream: false,
+                include_thoughts: true,
+                reasoning_effort: "high"
+            };
+        }
+        // 3. Special Case: GPT-5.4
+        else if (lowerModel.includes('gpt-5.4') || lowerModel.includes('gpt-5-4')) {
+            apiUrl = 'https://api.kie.ai/codex/v1/responses';
+            payload = {
+                model,
+                messages: [
+                    { role: 'system', content: system },
+                    { role: 'user', content: user }
+                ],
+                stream: false,
+                include_thoughts: true,
+                reasoning_effort: "high"
+            };
+        }
+        // 4. Claude Default
+        else {
+            apiUrl = 'https://api.kie.ai/claude/v1/messages';
+            payload = {
+                model,
+                system,
+                messages: [{ role: 'user', content: user }],
+                max_tokens: 16384,
+                stream: false
+            };
+        }
+
+        const response = await axios.post(apiUrl, payload, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
@@ -196,18 +251,47 @@ export class LLMService {
             timeout
         });
 
-        const content = response.data?.content;
-        if (Array.isArray(content) && content.length > 0) {
-            return content[0].text || '';
+        const data = response.data;
+        // Properly stringify the response data for debugging
+        Logger.debug(`Kie API Response`, `Response: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
+
+        // If stream is true, data might be a raw string of SSE (Server-Sent Events) starting with 'data: '
+        if (typeof data === 'string' && data.includes('data: ')) {
+            // Very basic SSE aggregation for complete text
+            try {
+                const chunks = data.split('\n\n').filter(chunk => chunk.startsWith('data: ') && !chunk.includes('[DONE]'));
+                const parsedChunks = chunks.map(chunk => JSON.parse(chunk.replace('data: ', '').trim()));
+                const fullText = parsedChunks.map(c => c.choices?.[0]?.delta?.content || c.choices?.[0]?.message?.content || '').join('');
+                if (fullText) return fullText;
+            } catch (sseErr: any) {
+                Logger.warn('LLMService', `Failed to parse SSE chunks: ${sseErr.message}`);
+            }
         }
-        throw new Error(`[LLMService] Kie API returned unexpected response format.`);
+
+        // 1. Anthropic Format Check
+        if (data?.content && Array.isArray(data.content)) {
+            const textBlock = data.content.find((block: any) => block.text);
+            if (textBlock) {
+                return textBlock.text;
+            }
+        }
+
+        // 2. OpenAI Format Fallback Check
+        if (data?.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+            const msg = data.choices[0].message;
+            if (msg && msg.content) {
+                return msg.content;
+            }
+        }
+
+        throw new Error(`[LLMService] Kie API returned unexpected response format. Received: ${typeof data === 'string' ? data.substring(0, 200) : JSON.stringify(data).substring(0, 200)}`);
     }
 
     // --- Google AI (REST) ---
     private static async callGoogleAI(apiKey: string, model: string, system: string, user: string, timeout?: number): Promise<string> {
         const modelId = model.startsWith('google/') ? model.replace('google/', '') : model;
         const apiBase = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}`;
-        
+
         console.log(`[LLMService] Sending Request to Google AI (${modelId})...`);
 
         const response = await axios.post(
@@ -216,7 +300,7 @@ export class LLMService {
                 system_instruction: { parts: [{ text: system }] },
                 contents: [{ role: 'user', parts: [{ text: user }] }]
             },
-            { 
+            {
                 headers: { 'Content-Type': 'application/json' },
                 timeout
             }

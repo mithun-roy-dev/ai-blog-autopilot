@@ -105,8 +105,7 @@ export class ImageService {
             system: promptConfig.system_prompt,
             user: userPrompt,
             provider: provider,
-            model: metadataModel,
-            json: false
+            model: metadataModel
         });
 
         Logger.debug(`Job:${jobId}`, `IMAGE_METADATA_RESPONSE [${block.type}#${block.number}]:\n${metadataContent}`);
@@ -657,6 +656,6 @@ export class ImageService {
      * Formats the replacement HTML for an image block.
      */
     static formatImageHtml(block: ImageBlock, imageUrl: string): string {
-        return `<figure>\n  <img src="${imageUrl}" alt="${block.alt}" title="${block.title}">\n  <figcaption>${block.caption}</figcaption>\n</figure>`;
+        return `<figure>\n  <img class="${block.type}" style="margin:0px auto;" src="${imageUrl}" alt="${block.alt}" title="${block.title}">\n  <figcaption>${block.caption}</figcaption>\n</figure>`;
     }
 }
