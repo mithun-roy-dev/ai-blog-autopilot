@@ -108,7 +108,7 @@ export class ClusterService {
             }, {
                 headers: {
                     'Authorization': `Bearer ${config.api_key}`,
-                    'HTTP-Referer': 'https://ai-blog-autopilot.com',
+                    'HTTP-Referer': process.env.SITE_URL || 'https://ai-blog-autopilot.com',
                     'X-Title': 'AI Blog Autopilot'
                 }
             });

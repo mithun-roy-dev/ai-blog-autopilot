@@ -174,7 +174,7 @@ export class LLMService {
         }, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': 'https://ai-blog-autopilot.com',
+                'HTTP-Referer': process.env.SITE_URL || 'https://ai-blog-autopilot.com',
                 'X-Title': 'AI Blog Autopilot'
             },
             timeout
@@ -214,7 +214,8 @@ export class LLMService {
                 ],
                 stream: false,
                 include_thoughts: true,
-                reasoning_effort: "high"
+                reasoning_effort: "high",
+                max_tokens: 16384
             };
         }
         // 3. Special Case: GPT-5.4
@@ -228,7 +229,8 @@ export class LLMService {
                 ],
                 stream: false,
                 include_thoughts: true,
-                reasoning_effort: "high"
+                reasoning_effort: "high",
+                max_tokens: 16384
             };
         }
         // 4. Claude Default
