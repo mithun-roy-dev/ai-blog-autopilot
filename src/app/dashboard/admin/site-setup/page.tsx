@@ -566,6 +566,7 @@ export default function SiteSetupPage() {
                                                 system_prompt: "",
                                                 user_prompt_template: "",
                                                 variables: "[]",
+                                                mockup_image_url: "",
                                                 is_published: true
                                             });
                                         }}
