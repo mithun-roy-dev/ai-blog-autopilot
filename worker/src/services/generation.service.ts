@@ -251,24 +251,23 @@ ${promptConfig.user_prompt_template}`;
                 }
             }
 
-            // Step 5: Editor Agent (stub)
-            if (progress['editing']?.status !== 'completed') {
-                await this.executeStep(jobId, 'editing', async () => {
-                    console.log(`[Job ${jobId}] ✏️ Editor Agent step (stub – AI logic coming soon)`);
-                    return { dataUpdate: {} };
+            // Step 5: Humanizer Agent
+            if (progress['humanizing']?.status !== 'completed') {
+                await this.executeStep(jobId, 'humanizing', async () => {
+                    return await this.step5HumanizerAgent(job, jobId, supabase);
                 });
 
                 const currentMode = await this.getCurrentWritingMode(job.blog_id);
                 if (currentMode === 'Manual') {
-                    await this.pauseForApproval(jobId, 'editing');
+                    await this.pauseForApproval(jobId, 'humanizing');
                     return;
                 }
             }
 
-            // Step 6: Humanizer Agent (stub)
-            if (progress['humanizing']?.status !== 'completed') {
-                await this.executeStep(jobId, 'humanizing', async () => {
-                    console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent step (stub – AI logic coming soon)`);
+            // Step 6: Editor Agent (stub)
+            if (progress['editing']?.status !== 'completed') {
+                await this.executeStep(jobId, 'editing', async () => {
+                    console.log(`[Job ${jobId}] ✏️ Editor Agent step (stub – AI logic coming soon)`);
                     return { dataUpdate: {} };
                 });
 
@@ -763,6 +762,116 @@ ${promptConfig.user_prompt_template}`;
                     image_urls: imageUrls,
                     article_with_images: updatedContent,
                 }
+            }
+        };
+    }
+
+    /**
+     * Extracts the ```post-info ... ``` fenced block from an article string.
+     * Returns the block text and the article without the block.
+     */
+    private static extractPostInfoBlock(article: string): { postInfoBlock: string; articleWithout: string } {
+        // Match the full ```post-info ... ``` block (including the fences)
+        const postInfoRegex = /```post-info\r?\n[\s\S]*?```/;
+        const match = article.match(postInfoRegex);
+        if (!match) {
+            return { postInfoBlock: '', articleWithout: article };
+        }
+        const postInfoBlock = match[0];
+        // Remove the block (and any trailing blank line left behind)
+        const articleWithout = article.replace(postInfoRegex, '').replace(/^\s*\n/, '');
+        return { postInfoBlock, articleWithout };
+    }
+
+    /**
+     * Re-inserts a post-info block immediately after the first H1 line in an article.
+     */
+    private static reinsertPostInfoBlock(article: string, postInfoBlock: string): string {
+        if (!postInfoBlock) return article;
+        const lines = article.split('\n');
+        const h1Index = lines.findIndex(l => /^#\s/.test(l.trim()));
+        if (h1Index === -1) {
+            // No H1 found — prepend the block at the top
+            return postInfoBlock + '\n\n' + article;
+        }
+        lines.splice(h1Index + 1, 0, '', postInfoBlock, '');
+        return lines.join('\n');
+    }
+
+    /**
+     * Step 5: Humanizer Agent — takes the post-image article and humanizes it using the
+     * "humanizer-prompt" prompt config. Replaces {{ARTICLE}} with article content.
+     *
+     * Token optimization: strips the ```post-info``` block before sending to the LLM
+     * (it's pure SEO metadata, not prose — no need to pay tokens for it).
+     * After the LLM responds, the block is re-inserted after the first H1, exactly as before.
+     */
+    private static async step5HumanizerAgent(job: any, jobId: string, supabase: any) {
+        console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent: Starting humanization...`);
+
+        // 1. Fetch current article content (output of Image Agent step)
+        const { data: jobData } = await supabase
+            .from('writing_jobs')
+            .select('content')
+            .eq('id', jobId)
+            .single();
+
+        const articleContent: string = jobData?.content || '';
+
+        if (!articleContent || articleContent.trim().length === 0) {
+            Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT: No article content found — skipping`);
+            console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent: No content to humanize — skipping`);
+            return { dataUpdate: { humanized_content: '' } };
+        }
+
+        // 2. Strip the post-info block to save tokens — we'll re-inject it after humanizing
+        const { postInfoBlock, articleWithout } = GenerationService.extractPostInfoBlock(articleContent);
+        if (postInfoBlock) {
+            console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent: Stripped post-info block (${postInfoBlock.length} chars saved)`);
+        }
+
+        // 3. Fetch humanizer-prompt from ai_prompts
+        const promptConfig = await PromptService.getPrompt('humanizer-prompt');
+        if (!promptConfig) {
+            throw new Error("Prompt 'humanizer-prompt' not found in ai_prompts. Please create it in Admin > Site Setup > Prompt Setup.");
+        }
+
+        Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT: Loaded prompt slug="humanizer-prompt"`);
+
+        // 4. Build prompts — inject the article WITHOUT the post-info block
+        const systemPrompt = promptConfig.system_prompt || '';
+        const userPrompt = PromptService.injectVariables(
+            promptConfig.user_prompt_template,
+            { ARTICLE: articleWithout }
+        );
+
+        Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT_PROMPT_SYSTEM:\n${systemPrompt}`);
+        Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT_PROMPT_USER (first 500 chars):\n${userPrompt.substring(0, 500)}`);
+
+        // 5. Call LLM — provider/model resolved dynamically from system_settings
+        const humanizedRaw = await LLMService.completion({
+            system: systemPrompt,
+            user: userPrompt,
+            taskRef: 'humanizer',
+            json: false
+        });
+
+        Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT_RESPONSE (first 500 chars):\n${humanizedRaw.substring(0, 500)}`);
+
+        // 6. Re-insert the post-info block after the H1 in the humanized output
+        const humanizedContent = GenerationService.reinsertPostInfoBlock(humanizedRaw, postInfoBlock);
+
+        console.log(`[Job ${jobId}] ✅ Humanizer Agent: Completed (${humanizedContent.length} chars, post-info re-injected: ${!!postInfoBlock})`);
+
+        // 7. Save humanized content as the main article content (for Editor to use)
+        await supabase
+            .from('writing_jobs')
+            .update({ content: humanizedContent, updated_at: new Date() })
+            .eq('id', jobId);
+
+        return {
+            dataUpdate: {
+                humanized_content: humanizedContent
             }
         };
     }

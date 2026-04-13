@@ -43,8 +43,8 @@ const STEPS = [
     { id: 'briefing', name: 'Content Brief', icon: FileText, description: 'Generating article structure' },
     { id: 'writing', name: 'Writer Agent', icon: PenTool, description: 'AI Writing in progress' },
     { id: 'imaging', name: 'Image Agent', icon: Image, description: 'Generating & placing AI images' },
-    { id: 'editing', name: 'Editor Agent', icon: Edit, description: 'Reviewing and refining' },
     { id: 'humanizing', name: 'Humanizer Agent', icon: UserCheck, description: 'Final persona polish' },
+    { id: 'editing', name: 'Editor Agent', icon: Edit, description: 'Reviewing and refining' },
 ]
 
 export default function JobDetailPage() {
@@ -145,8 +145,8 @@ export default function JobDetailPage() {
         serp_analyzing: 'briefing',
         briefing: 'writing',
         writing: 'imaging',
-        imaging: 'editing',
-        editing: 'humanizing',
+        imaging: 'humanizing',
+        humanizing: 'editing',
     }
 
     const handleCopy = (text: string, stepId: string) => {
@@ -720,13 +720,13 @@ export default function JobDetailPage() {
                 )}
 
                 {/* Steps 3-7: Panels with inline Proceed buttons in Manual mode */}
-                {(['briefing', 'writing', 'imaging', 'editing', 'humanizing'] as const).map((stepId) => {
+                {(['briefing', 'writing', 'imaging', 'humanizing', 'editing'] as const).map((stepId) => {
                     const stepMeta = STEPS.find(s => s.id === stepId)!
                     const nextStepLabel =
                         stepId === 'briefing' ? 'Proceed to Writing' :
                         stepId === 'writing' ? 'Proceed to Image Agent' :
-                        stepId === 'imaging' ? 'Proceed to Editing' :
-                        stepId === 'editing' ? 'Proceed to Humanizing' :
+                        stepId === 'imaging' ? 'Proceed to Humanizer' :
+                        stepId === 'humanizing' ? 'Proceed to Editing' :
                         'Finish'
                     const isStepPaused = job?.status === 'awaiting_approval' && job?.generation_status === stepId
                     const isStepActive = job?.generation_status === stepId && job?.status === 'processing'
@@ -1297,7 +1297,97 @@ export default function JobDetailPage() {
                                         )}
                                     </>
                                 )}
-                                {!isStepActive && (!job?.generation_data?.brief && stepId === 'briefing' || !job?.generation_data?.article_content && stepId === 'writing' || !job?.generation_data?.imaging && stepId === 'imaging' || (stepId !== 'briefing' && stepId !== 'writing' && stepId !== 'imaging')) && (
+                                {!isStepActive && stepId === 'humanizing' && job?.generation_data?.humanized_content && (
+                                    <>
+                                        {/* Humanized Content */}
+                                        <div className={cn(
+                                            "rounded-[2rem] bg-accent/5 border border-border/30 text-left transition-all duration-500 relative z-10",
+                                            expandedStepData === 'humanizing' ? "hidden" : "p-8"
+                                        )}>
+                                            <div className="flex items-center justify-between mb-6 pb-6 border-b border-border/50">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                                                        <UserCheck className="h-5 w-5 text-violet-500" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black uppercase tracking-widest text-foreground">Humanized Article</h4>
+                                                        <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                                                            {job.generation_data.humanized_content.split(/\s+/).length.toLocaleString()} words · AI-humanized output
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleCopy(job.generation_data.humanized_content, 'humanizing')}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground/80"
+                                                    >
+                                                        {copiedStep === 'humanizing' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                        <span className="hidden sm:inline">{copiedStep === 'humanizing' ? 'Copied' : 'Copy'}</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setExpandedStepData('humanizing')}
+                                                        className="p-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center justify-center"
+                                                    >
+                                                        <Maximize2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent pr-4 custom-article-view">
+                                                <div className="prose prose-base dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-semibold prose-img:rounded-2xl prose-img:shadow-lg">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                                        {job.generation_data.humanized_content}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded Full-Screen Overlay */}
+                                        {expandedStepData === 'humanizing' && (
+                                            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200">
+                                                <div className="bg-card w-full max-w-5xl h-full shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden border border-border/50 animate-in zoom-in-95 duration-300">
+                                                    <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20 shadow-inner">
+                                                                <UserCheck className="h-6 w-6 text-violet-500" />
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="text-base sm:text-lg font-black uppercase tracking-widest text-foreground">Humanized Article</h4>
+                                                                <p className="text-xs font-medium text-muted-foreground mt-1">
+                                                                    {job.generation_data.humanized_content.split(/\s+/).length.toLocaleString()} words · Full reading mode
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleCopy(job.generation_data.humanized_content, 'humanizing_max')}
+                                                                className="p-3 sm:px-5 sm:py-3 rounded-2xl bg-card border hover:bg-accent transition-all shadow-sm flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-foreground/80"
+                                                            >
+                                                                {copiedStep === 'humanizing_max' ? <Check className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" /> : <Copy className="h-4 sm:h-5 w-4 sm:w-5" />}
+                                                                <span className="hidden sm:inline">{copiedStep === 'humanizing_max' ? 'Copied' : 'Copy'}</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setExpandedStepData(null)}
+                                                                className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm flex items-center justify-center"
+                                                            >
+                                                                <Minimize2 className="h-4 sm:h-5 w-4 sm:w-5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 overflow-y-auto p-6 sm:p-12 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent bg-card">
+                                                        <div className="max-w-[800px] mx-auto custom-article-view">
+                                                            <div className="prose prose-base sm:prose-lg prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-semibold prose-img:rounded-2xl prose-img:shadow-xl">
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                                                    {job.generation_data.humanized_content}
+                                                                </ReactMarkdown>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                                {!isStepActive && (!job?.generation_data?.brief && stepId === 'briefing' || !job?.generation_data?.article_content && stepId === 'writing' || !job?.generation_data?.imaging && stepId === 'imaging' || !job?.generation_data?.humanized_content && stepId === 'humanizing' || (stepId !== 'briefing' && stepId !== 'writing' && stepId !== 'imaging' && stepId !== 'humanizing')) && (
                                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
                                         <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center">
                                             <stepMeta.icon className="h-8 w-8 opacity-40" />

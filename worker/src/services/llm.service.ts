@@ -9,6 +9,7 @@ const TASK_MODEL_COLUMN: Record<string, string> = {
     image_metadata: 'image_metadata_model',
     feature_image: 'feature_image_model',
     inbody_image: 'inbody_image_model',
+    humanizer: 'humanizer_model',
 };
 
 // system_settings key names for provider per task
@@ -18,6 +19,7 @@ const TASK_PROVIDER_KEY: Record<string, string> = {
     image_metadata: 'image_metadata_provider',
     feature_image: 'feature_image_provider',
     inbody_image: 'inbody_image_provider',
+    humanizer: 'humanizer_provider',
 };
 
 export class LLMService {

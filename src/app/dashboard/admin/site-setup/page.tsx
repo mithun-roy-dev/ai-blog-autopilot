@@ -27,6 +27,7 @@ const OPENROUTER_MODELS = [
     { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6" },
     { id: "google/gemma-3-27b-it:free", name: "Gemma 3 27B IT (Free)" },
     { id: "openai/gpt-oss-120b:free", name: "GPT-OSS 120B (Free)" },
+    { id: "openai/gpt-5.4", name: "GPT 5.4" },
     { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large Preview (Free)" },
     { id: "google/gemini-2.0-flash-001", name: "Gemini 2.0 Flash" },
     { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet" },
@@ -117,6 +118,8 @@ export default function SiteSetupPage() {
         feature_image_model: "bytedance/seedream-v4-text-to-image",
         inbody_image_provider: "kie_api",
         inbody_image_model: "bytedance/seedream-v4-text-to-image",
+        humanizer_provider: "kie_api",
+        humanizer_model: "claude-haiku-4-5",
         image_featured_width: 1200,
         image_featured_height: 630,
         image_featured_format: "webp",
@@ -198,6 +201,8 @@ export default function SiteSetupPage() {
                     feature_image_model: sysData.value.feature_image_model ?? "bytedance/seedream-v4-text-to-image",
                     inbody_image_provider: sysData.value.inbody_image_provider ?? "kie_api",
                     inbody_image_model: sysData.value.inbody_image_model ?? "bytedance/seedream-v4-text-to-image",
+                    humanizer_provider: sysData.value.humanizer_provider ?? "kie_api",
+                    humanizer_model: sysData.value.humanizer_model ?? "claude-haiku-4-5",
                     image_featured_width: sysData.value.image_featured_width ?? 1200,
                     image_featured_height: sysData.value.image_featured_height ?? 630,
                     image_featured_format: sysData.value.image_featured_format ?? "webp",
@@ -304,6 +309,7 @@ export default function SiteSetupPage() {
                     { provider: systemSettings.image_metadata_provider, column: 'image_metadata_model', model: systemSettings.image_metadata_model },
                     { provider: systemSettings.feature_image_provider, column: 'feature_image_model', model: systemSettings.feature_image_model },
                     { provider: systemSettings.inbody_image_provider, column: 'inbody_image_model', model: systemSettings.inbody_image_model },
+                    { provider: systemSettings.humanizer_provider, column: 'humanizer_model', model: systemSettings.humanizer_model },
                 ]
 
                 // Group by provider to batch upserts
@@ -823,6 +829,7 @@ export default function SiteSetupPage() {
                                             { id: 'content_brief', label: 'Content Brief Model', isImage: false },
                                             { id: 'writer', label: 'Writer AI Model', isImage: false },
                                             { id: 'image_metadata', label: 'Image Metadata Model', isImage: false },
+                                            { id: 'humanizer', label: 'Humanizer Model', isImage: false },
                                             { id: 'feature_image', label: 'Feature Image Model', isImage: true },
                                             { id: 'inbody_image', label: 'In-Body Image Model', isImage: true }
                                         ].map(category => {
