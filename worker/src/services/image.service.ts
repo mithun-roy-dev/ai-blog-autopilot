@@ -134,9 +134,21 @@ export class ImageService {
     ): Promise<{ buffer: Buffer; extension: string }> {
         const supabase = SupabaseService.getClient();
 
-        const imageGenSlug = imageType === 'featured'
-            ? 'feature-img-01-26-101'
-            : 'infographic-image-01-26-101';
+        const { data: sysSet } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'logging_config')
+            .single();
+
+        let featureSlug = 'feature-img-01-26-101';
+        let inbodySlug = 'infographic-image-01-26-101';
+
+        if (sysSet?.value) {
+            if (sysSet.value.feature_image_prompt) featureSlug = sysSet.value.feature_image_prompt;
+            if (sysSet.value.inbody_image_prompt) inbodySlug = sysSet.value.inbody_image_prompt;
+        }
+
+        const imageGenSlug = imageType === 'featured' ? featureSlug : inbodySlug;
 
         const promptConfig = await PromptService.getPrompt(imageGenSlug);
         if (!promptConfig) {

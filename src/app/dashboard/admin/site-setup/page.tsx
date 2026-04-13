@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal, Bot, Database } from "lucide-react"
+import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal, Bot, Database, Image as ImageIcon } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/utils/cn"
@@ -16,6 +16,7 @@ const PROVIDERS = [
     { id: "serpapi", name: "SerpAPI", icon: Search, description: "Google Search results for content research and analysis." },
     { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
     { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
+    { id: "image_templates", name: "Image Template Setup", icon: ImageIcon, description: "Select visual prompts used for featured and in-body images." },
     { id: "system_ops", name: "System Setup", icon: Shield, description: "Manage global application settings and operational toggles." },
     { id: "cloudflare_r2", name: "Cloudflare R2", icon: Database, description: "Configure API credentials for Cloudflare R2 object storage." },
 ]
@@ -123,7 +124,9 @@ export default function SiteSetupPage() {
         image_inbody_width: 500,
         image_inbody_height: 1000,
         image_inbody_format: "webp",
-        image_inbody_quality: 85
+        image_inbody_quality: 85,
+        feature_image_prompt: "feature-img-01-26-101",
+        inbody_image_prompt: "infographic-image-01-26-101"
     })
 
     // Crawl Setup State
@@ -144,6 +147,7 @@ export default function SiteSetupPage() {
         system_prompt: "",
         user_prompt_template: "",
         variables: "[]",
+        mockup_image_url: "",
         is_published: true
     })
 
@@ -201,7 +205,9 @@ export default function SiteSetupPage() {
                     image_inbody_width: sysData.value.image_inbody_width ?? 500,
                     image_inbody_height: sysData.value.image_inbody_height ?? 1000,
                     image_inbody_format: sysData.value.image_inbody_format ?? "webp",
-                    image_inbody_quality: sysData.value.image_inbody_quality ?? 85
+                    image_inbody_quality: sysData.value.image_inbody_quality ?? 85,
+                    feature_image_prompt: sysData.value.feature_image_prompt ?? "feature-img-01-26-101",
+                    inbody_image_prompt: sysData.value.inbody_image_prompt ?? "infographic-image-01-26-101"
                 })
             }
 
@@ -264,6 +270,7 @@ export default function SiteSetupPage() {
             system_prompt: prompt.system_prompt || "",
             user_prompt_template: prompt.user_prompt_template || "",
             variables: JSON.stringify(prompt.variables, null, 2) || "[]",
+            mockup_image_url: prompt.mockup_image_url || "",
             is_published: prompt.is_published ?? true
         })
     }
@@ -279,7 +286,7 @@ export default function SiteSetupPage() {
         const toastId = toast.loading("Saving configuration...")
 
         try {
-            if (selectedProvider === 'system_ops') {
+            if (selectedProvider === 'system_ops' || selectedProvider === 'image_templates') {
                 // 1. Save full system settings (operators + other config) to system_settings
                 const { error: sysError } = await supabase
                     .from("system_settings")
@@ -328,6 +335,7 @@ export default function SiteSetupPage() {
                         system_prompt: promptFormData.system_prompt,
                         user_prompt_template: promptFormData.user_prompt_template,
                         variables: JSON.parse(promptFormData.variables || "[]"),
+                        mockup_image_url: promptFormData.mockup_image_url || null,
                         is_published: promptFormData.is_published,
                         updated_at: new Date().toISOString()
                     }, { onConflict: "slug" })
@@ -419,7 +427,7 @@ export default function SiteSetupPage() {
                             </div>
                         </div>
 
-                        {selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && (
+                        {selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium flex items-center gap-2">
@@ -586,6 +594,17 @@ export default function SiteSetupPage() {
                                     </div>
 
                                     <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mockup Image URL</label>
+                                        <input
+                                            type="text"
+                                            value={promptFormData.mockup_image_url || ""}
+                                            onChange={(e) => setPromptFormData({ ...promptFormData, mockup_image_url: e.target.value })}
+                                            className="w-full bg-background border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                            placeholder="https://example.com/mockup.png"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">System Prompt</label>
                                         <textarea
                                             value={promptFormData.system_prompt}
@@ -637,10 +656,107 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
-                        {selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2' && (
+                        {selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && (
                             <div className="p-4 mt-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
                                 <AlertCircle className="h-5 w-5 shrink-0" />
                                 <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> or <strong>Google</strong> for immediate multi-model functionality.</p>
+                            </div>
+                        )}
+
+                        {selectedProvider === 'image_templates' && (
+                            <div className="space-y-8 mt-4 animate-in fade-in duration-300">
+                                <div className="space-y-6">
+                                    <div className="border-b border-border/50 pb-4">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                                            <ImageIcon className="h-5 w-5 text-primary" /> Image Template Selection
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">Select the AI prompts to use when generating Featured and In-Body images.</p>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        {/* Featured Image Selector */}
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-bold text-primary">Featured Image Template</label>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {prompts.filter(p => p.name.includes("Feature Image") && !p.slug.toLowerCase().includes("metadata") && !p.name.toLowerCase().includes("metadata")).map(p => (
+                                                    <button
+                                                        key={p.slug}
+                                                        type="button"
+                                                        onClick={() => setSystemSettings(s => ({ ...s, feature_image_prompt: p.slug }))}
+                                                        className={cn(
+                                                            "flex flex-row items-center p-4 rounded-2xl border text-left transition-all gap-4 overflow-hidden min-h-[140px]",
+                                                            systemSettings.feature_image_prompt === p.slug
+                                                                ? "bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20"
+                                                                : "bg-background hover:bg-accent hover:border-primary/50"
+                                                        )}
+                                                    >
+                                                        <div className="flex-1 min-w-0 py-2">
+                                                            <div className="font-bold text-base truncate">{p.name}</div>
+                                                            <div className="text-xs mt-1 font-mono text-muted-foreground opacity-80 break-all">{p.slug}</div>
+                                                            {systemSettings.feature_image_prompt === p.slug && (
+                                                                <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-primary bg-primary/10 w-fit px-2.5 py-1.5 rounded-md">
+                                                                    <CheckCircle2 className="h-4 w-4" /> Selected
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {p.mockup_image_url ? (
+                                                            <img src={p.mockup_image_url} alt="mockup" className="w-[160px] h-[90px] sm:w-[220px] sm:h-[120px] object-cover rounded-xl border border-border shadow-sm shrink-0 bg-muted" />
+                                                        ) : (
+                                                            <div className="w-[160px] h-[90px] sm:w-[220px] sm:h-[120px] rounded-xl border border-dashed border-border/50 bg-accent/20 flex flex-col gap-1 items-center justify-center shrink-0 text-muted-foreground">
+                                                                <ImageIcon className="h-5 w-5 opacity-50" />
+                                                                <span className="text-[10px] font-medium opacity-50">No Preview</span>
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                                {prompts.filter(p => p.name.includes("Feature Image") && !p.slug.toLowerCase().includes("metadata") && !p.name.toLowerCase().includes("metadata")).length === 0 && (
+                                                    <div className="text-xs text-muted-foreground p-4 border rounded-2xl border-dashed bg-accent/30 text-center">No "Feature Image" templates found.</div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* In-Body Image Selector */}
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-bold text-primary">In-Body Image Template</label>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {prompts.filter(p => p.name.includes("Infographic Image") && !p.slug.toLowerCase().includes("metadata") && !p.name.toLowerCase().includes("metadata")).map(p => (
+                                                    <button
+                                                        key={p.slug}
+                                                        type="button"
+                                                        onClick={() => setSystemSettings(s => ({ ...s, inbody_image_prompt: p.slug }))}
+                                                        className={cn(
+                                                            "flex flex-row items-center p-4 rounded-2xl border text-left transition-all gap-4 overflow-hidden min-h-[140px]",
+                                                            systemSettings.inbody_image_prompt === p.slug
+                                                                ? "bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20"
+                                                                : "bg-background hover:bg-accent hover:border-primary/50"
+                                                        )}
+                                                    >
+                                                        <div className="flex-1 min-w-0 py-2">
+                                                            <div className="font-bold text-base truncate">{p.name}</div>
+                                                            <div className="text-xs mt-1 font-mono text-muted-foreground opacity-80 break-all">{p.slug}</div>
+                                                            {systemSettings.inbody_image_prompt === p.slug && (
+                                                                <div className="mt-4 flex items-center gap-1.5 text-[11px] font-bold text-primary bg-primary/10 w-fit px-2.5 py-1.5 rounded-md">
+                                                                    <CheckCircle2 className="h-4 w-4" /> Selected
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {p.mockup_image_url ? (
+                                                            <img src={p.mockup_image_url} alt="mockup" className="w-[80px] h-[140px] sm:w-[100px] sm:h-[180px] object-cover rounded-lg border border-border shadow-sm shrink-0 bg-muted" />
+                                                        ) : (
+                                                            <div className="w-[80px] h-[140px] sm:w-[100px] sm:h-[180px] rounded-lg border border-dashed border-border/50 bg-accent/20 flex flex-col gap-1 items-center justify-center shrink-0 text-muted-foreground">
+                                                                <ImageIcon className="h-5 w-5 opacity-50" />
+                                                                <span className="text-[10px] font-medium opacity-50 text-center px-2">No Preview</span>
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                                {prompts.filter(p => p.name.includes("Infographic Image") && !p.slug.toLowerCase().includes("metadata") && !p.name.toLowerCase().includes("metadata")).length === 0 && (
+                                                    <div className="text-xs text-muted-foreground p-4 border rounded-2xl border-dashed bg-accent/30 text-center">No "Infographic Image" templates found.</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -913,7 +1029,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'kie_api' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'kie_api' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'image_templates' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
