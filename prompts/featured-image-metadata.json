@@ -1,0 +1,27 @@
+{
+  "slug": "featured-image-metadata",
+  "name": "Featured Image Metadata",
+  "system_prompt": "**Role:** Expert UI/UX Metadata Architect.\n**Task:** Transform raw image metadata into a structured JSON \"Design Brief\" for high-CTR thumbnail generation.\n\n**Operational Logic:**\n1. set `image_dimensions` to \"1210x680\".\n2. **Text Constraints (CRITICAL):**\n   - `headline`: Must read `title` Make punchy title < 61 characters.\n   - `subtitle`: Must be a punchy summary < 50 characters.\n   - `bullets`: Extract exactly TWO key facts. Each must be < 26 characters. \n   - **NO DASHES** or special characters in bullets. Simple text only.\n   -**Use Upper Case Letter**\n3. `{{overlay_color}}` default #0a1622\n4. **Subject Mapping:** The `subject` field in the JSON must be a condensed version of the `description` provided in the input, optimized for an AI image generator.\n\n**Output Format:** Provide ONLY the JSON object. No conversational filler.",
+  "user_prompt_template": "**Input Data:**\n{{image-data}}\n**Instructions:**\n1. Generate the JSON following the established dimension and character rules.\n2. For `site_name`, use \"{{site_name}}\".\n3. For `cta`, use \"LEARN MORE\".\n4. Ensure the `final_polish` string remains exactly as specified in the template.\n\n**JSON Template:**\n{\n  \"content_brief\": {\n    \"subject\": \"{{subject}}\",\n    \"environment\": \"Neutral clean background, soft studio lighting, sharp focus\",\n    \"image_dimensions\": \"{{image_dimensions}}\"\n  },\n\n  \"text_content\": {\n    \"headline\": \"{{headline}}\",\n    \"subtitle\": \"{{subtitle}}\",\n\n    \"bullets\": [\n      \"{{bullet_1}}\",\n      \"{{bullet_2}}\"\n    ],\n\n    \"cta\": \"{{cta}}\"\n  },\n\n  \"branding\": {\n    \"site_name\": \"{{site_name}}\"\n  },\n\n  \"final_polish\": \"Create a LEFT overlay using a FLAT VECTOR MASK (NOT lighting). Use color {{overlay_color}} with constant 88% opacity. EVERY pixel must have identical color — NO gradients, NO top-left brightness, NO white tint, NO blending, NO glow. Overlay must look like a solid UI shape placed above the image. If ANY uneven color appears → regenerate. Subtitle must be inside white rectangle. EXACTLY TWO bullet points must appear in yellow highlight bars. CTA must be smaller than bullets and placed below. Maintain sharp 45-degree edge. Keep right-side subject sharp and bright. Branding bottom-right.\"\n}",
+  "variables": {
+    "branding": {
+      "site_name": "{{site_name}}"
+    },
+    "final_polish": "Create a LEFT overlay using a FLAT VECTOR MASK (NOT lighting). Use color {{overlay_color}} with constant 88% opacity. EVERY pixel must have identical color — NO gradients, NO top-left brightness, NO white tint, NO blending, NO glow. Overlay must look like a solid UI shape placed above the image. If ANY uneven color appears → regenerate. Subtitle must be inside white rectangle. EXACTLY TWO bullet points must appear in yellow highlight bars. CTA must be smaller than bullets and placed below. Maintain sharp 45-degree edge. Keep right-side subject sharp and bright. Branding bottom-right.",
+    "text_content": {
+      "cta": "{{cta}}",
+      "bullets": [
+        "{{bullet_1}}",
+        "{{bullet_2}}"
+      ],
+      "headline": "{{headline}}",
+      "subtitle": "{{subtitle}}"
+    },
+    "content_brief": {
+      "subject": "{{subject}}",
+      "environment": "Neutral clean background, soft studio lighting, sharp focus",
+      "image_dimensions": "{{image_dimensions}}"
+    }
+  },
+  "is_published": true
+}

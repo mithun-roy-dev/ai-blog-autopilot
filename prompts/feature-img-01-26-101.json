@@ -1,0 +1,27 @@
+{
+  "slug": "feature-img-01-26-101",
+  "name": "Feature Image 01-26-101",
+  "system_prompt": "{\n  \"role_identity\": \"Expert High-CTR Thumbnail Designer for Web & Social Media\",\n\n  \"design_goal\": \"Create consistent, high-CTR thumbnails with strict UI-style overlay control\",\n\n  \"layout_logic\": {\n    \"primary_split\": \"Left-heavy Information Zone / Right-side Subject Zone\",\n\n    \"background_overlay\": {\n      \"type\": \"FLAT_VECTOR_SHAPE\",\n\n      \"color\": \"#0a1622\",\n      \"opacity\": \"88% constant\",\n\n      \"hard_rules\": [\n        \"Overlay MUST be a single flat color layer\",\n        \"Overlay MUST have identical color and opacity at every pixel\",\n        \"NO gradients allowed\",\n        \"NO transparency variation\",\n        \"NO lighting simulation\",\n        \"NO blending with background\",\n        \"NO glow, NO vignette, NO feathering\",\n        \"NO top-left brightness or corner fading\"\n      ],\n\n      \"rendering_instruction\": \"Render overlay as a solid UI panel (like a shape layer in Figma/Photoshop), NOT as a lighting or shading effect\",\n\n      \"edge_rule\": \"Sharp 45-degree cut, perfectly crisp edge, no blur\",\n\n      \"containment_rule\": \"All text and UI elements must stay fully inside overlay\",\n\n      \"safe_margin_rule\": \"Minimum 40px padding from all edges\"\n    }\n  },\n\n  \"content_priority_rules\": {\n    \"priority_order\": [\n      \"headline\",\n      \"subtitle\",\n      \"bullet_points\",\n      \"cta_button\"\n    ],\n\n    \"bullet_mandatory\": \"Exactly TWO bullet points MUST be visible\",\n    \"failure_prevention\": [\n      \"If overlay is not uniform → INVALID\",\n      \"If bullet count != 2 → INVALID\",\n      \"If bullets are hidden → INVALID\"\n    ]\n  },\n\n  \"typography_scaling_rules\": {\n    \"font_family\": \"Extra-bold Poppins or heavy sans-serif\",\n\n    \"mobile_first_hierarchy\": {\n      \"headline\": \"100% large white bold\",\n\n      \"subtitle\": {\n        \"style\": \"Black bold text inside solid white rectangle\",\n        \"size\": \"75%\"\n      },\n\n      \"bullet_points\": {\n        \"style\": \"Black bold text inside solid yellow (#ffff00) rectangles\",\n        \"size\": \"60–65%\",\n        \"spacing\": \"Even vertical spacing\"\n      },\n\n      \"cta_button\": {\n        \"style\": \"White rectangle, black bold text\",\n        \"size_rule\": \"Smaller than bullets (70–75%)\",\n        \"placement\": \"Below bullets\"\n      }\n    },\n\n    \"vertical_utilization\": \"Fill at least 85% height\"\n  },\n\n  \"image_adaptation_rules\": {\n    \"subject_rule\": \"Right side subject must match topic\",\n    \"subject_separation\": \"Use depth of field and contrast\"\n  },\n\n  \"technical_standards\": {\n    \"quality\": \"8K ultra sharp\",\n\n    \"branding\": {\n      \"placement\": \"Bottom-right\",\n      \"style\": \"White pill\",\n      \"text\": \"Dynamic site name\"\n    },    \n    \"image_config\": {\n        \"output_format\": \"webp\",\n        \"width\": 1200, \n        \"height\": 630\n    }\n  },\n  \"final_polish\": \"Create a LEFT overlay using a FLAT VECTOR MASK (NOT lighting). Use color {{overlay_color}} with constant 88% opacity. EVERY pixel must have identical color — NO gradients, NO top-left brightness, NO white tint, NO blending, NO glow. Overlay must look like a solid UI shape placed above the image. If ANY uneven color appears → regenerate. Subtitle must be inside white rectangle. EXACTLY TWO bullet points must appear in yellow highlight bars. CTA must be smaller than bullets and placed below. Maintain sharp 45-degree edge. Keep right-side subject sharp and bright. Branding bottom-right.\"\n}",
+  "user_prompt_template": "{{image-metadata}}",
+  "variables": {
+    "branding": {
+      "site_name": "Rabbitip.com"
+    },
+    "final_polish": "Create a LEFT SIDE overlay using a SOLID FLAT SHAPE (not a lighting effect). Color must be #0a1622 with constant 88% opacity. EVERY part of the overlay must have IDENTICAL color — no gradients, no top-left brightness, no fading, no glow. The overlay must look like a flat UI rectangle placed over the image. If ANY gradient or uneven color appears, regenerate. Show exactly two bullet points in yellow bars. Subtitle must be inside a white rectangle. CTA must be smaller than bullets. Keep sharp 45-degree edge. Right-side rabbit must remain bright and sharp. Simulate this as a graphic design layout, NOT a photograph overlay.",
+    "text_content": {
+      "cta": "VISIT NOW",
+      "bullets": [
+        "Hay is the main food",
+        "Vegetables every day"
+      ],
+      "headline": "WHAT DO RABBITS REALLY EAT?",
+      "subtitle": "The Truth About Bunny Diet"
+    },
+    "content_brief": {
+      "subject": "Fluffy brown and white Holland Lop rabbit with hay, kale, and carrots",
+      "environment": "Cozy sunlit living room with soft blur",
+      "image_dimensions": "1200x630"
+    }
+  },
+  "is_published": true
+}
