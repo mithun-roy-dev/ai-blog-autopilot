@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+/**
+ * .githooks/prepare-commit-msg
+ *
+ * Appends a prompt-export reminder as a comment to the commit message template.
+ * This reminds you to run `npm run prompts:export` if you've updated any prompts
+ * in the Admin UI before committing.
+ *
+ * Activated automatically after `npm install` via the `prepare` script in package.json.
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const msgFile = process.argv[2];
+if (!msgFile) process.exit(0);
+
+const existing = fs.readFileSync(msgFile, 'utf8');
+
+const reminder = `
+# ─────────────────────────────────────────────────────────────────
+# 📝 PROMPT VERSION TRACKING REMINDER
+#
+# If you updated any prompts in Admin → Site Setup → Prompt Setup:
+#
+#   1. Run:  npm run prompts:export
+#   2. Stage the updated files in /prompts/*.json
+#   3. Then commit with a message like:
+#      feat(prompt): improve humanizer tone instructions
+#
+# Prompt slugs tracked: content-brief, writer-system-prompt,
+#   humanizer-prompt, featured-image-metadata, infographic-image-*
+#
+# If no prompts were changed, ignore this reminder.
+# ─────────────────────────────────────────────────────────────────
+`;
+
+fs.writeFileSync(msgFile, existing + reminder, 'utf8');
