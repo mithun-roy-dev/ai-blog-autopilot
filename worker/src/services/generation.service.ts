@@ -809,14 +809,14 @@ ${promptConfig.user_prompt_template}`;
     private static async step5HumanizerAgent(job: any, jobId: string, supabase: any) {
         console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent: Starting humanization...`);
 
-        // 1. Fetch current article content (output of Image Agent step)
-        const { data: jobData } = await supabase
-            .from('writing_jobs')
-            .select('content')
-            .eq('id', jobId)
-            .single();
-
-        const articleContent: string = jobData?.content || '';
+        // 1. Fetch the frozen output of the Image Agent step from generation_data.
+        //    Using imaging.article_with_images (immutable snapshot) is safer than reading
+        //    writing_jobs.content, which is mutable and would cause double-humanization on retries.
+        const generationData = await GenerationService.getGenerationData(jobId);
+        const articleContent: string =
+            generationData?.imaging?.article_with_images   // ✅ preferred: explicit post-image output
+            || generationData?.article_content             // fallback: raw writer output (if imaging was skipped)
+            || '';
 
         if (!articleContent || articleContent.trim().length === 0) {
             Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT: No article content found — skipping`);

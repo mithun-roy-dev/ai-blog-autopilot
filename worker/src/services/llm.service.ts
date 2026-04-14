@@ -194,10 +194,11 @@ export class LLMService {
         let payload: any = {};
         const lowerModel = model.toLowerCase();
 
-        // 1. Claude Default
+        // 1. Claude models
         if (lowerModel.includes('claude')) {
             apiUrl = 'https://api.kie.ai/claude/v1/messages';
             payload = {
+                thinkingFlag: true,
                 model,
                 system,
                 messages: [{ role: 'user', content: user }],
@@ -205,22 +206,7 @@ export class LLMService {
                 stream: false
             };
         }
-        // 2. Gemini and other GPT Models
-        else if (lowerModel.includes('gemini') || lowerModel.includes('gpt')) {
-            apiUrl = `https://api.kie.ai/${model}/v1/chat/completions`;
-            payload = {
-                model,
-                messages: [
-                    { role: 'system', content: system },
-                    { role: 'user', content: user }
-                ],
-                stream: false,
-                include_thoughts: true,
-                reasoning_effort: "high",
-                max_tokens: 16384
-            };
-        }
-        // 3. Special Case: GPT-5.4
+        // 2. Special Case: GPT-5.4 (must be checked BEFORE the generic 'gpt' check)
         else if (lowerModel.includes('gpt-5.4') || lowerModel.includes('gpt-5-4')) {
             apiUrl = 'https://api.kie.ai/codex/v1/responses';
             payload = {
@@ -235,10 +221,26 @@ export class LLMService {
                 max_tokens: 16384
             };
         }
-        // 4. Claude Default
+        // 3. Gemini and other GPT models
+        else if (lowerModel.includes('gemini') || lowerModel.includes('gpt')) {
+            apiUrl = `https://api.kie.ai/${model}/v1/chat/completions`;
+            payload = {
+                model,
+                messages: [
+                    { role: 'system', content: system },
+                    { role: 'user', content: user }
+                ],
+                stream: false,
+                include_thoughts: true,
+                reasoning_effort: "high",
+                max_tokens: 16384
+            };
+        }
+        // 4. Fallback: default to Claude endpoint
         else {
             apiUrl = 'https://api.kie.ai/claude/v1/messages';
             payload = {
+                thinkingFlag: true,
                 model,
                 system,
                 messages: [{ role: 'user', content: user }],
@@ -246,6 +248,8 @@ export class LLMService {
                 stream: false
             };
         }
+
+        Logger.debug('LLMService [callKieApi]', `Request → url: ${apiUrl}\npayload: ${JSON.stringify(payload, null, 2)}`);
 
         const response = await axios.post(apiUrl, payload, {
             headers: {
