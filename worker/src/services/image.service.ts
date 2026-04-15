@@ -2,7 +2,7 @@ import axios from 'axios';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SupabaseService } from './supabase.service';
 import { PromptService } from './prompt.service';
-import { LLMService } from './llm.service';
+import { LLMService, KieApiRetryableError } from './llm.service';
 import { Logger } from '../utils/logger';
 import sharp from 'sharp';
 
@@ -101,12 +101,24 @@ export class ImageService {
         Logger.debug(`Job:${jobId}`, `IMAGE_METADATA_REQUEST [${block.type}#${block.number}] slug:${metadataSlug} provider:${provider} model:${metadataModel}\nSYSTEM:\n${promptConfig.system_prompt}\nUSER:\n${userPrompt}`);
 
         // 7. Call LLM for metadata (use centralized service for logs and timeouts)
-        const metadataContent = await LLMService.completion({
-            system: promptConfig.system_prompt,
-            user: userPrompt,
-            provider: provider,
-            model: metadataModel
-        });
+        let metadataContent: string;
+        try {
+            metadataContent = await LLMService.completion({
+                system: promptConfig.system_prompt,
+                user: userPrompt,
+                provider: provider,
+                model: metadataModel
+            });
+        } catch (error: any) {
+            Logger.error(`Job:${jobId}`, `❌ Image Metadata Agent LLM call failed at LLMService.completion(): ${error.message}`);
+            Logger.debug(`Job:${jobId}`, `Image Metadata Agent LLM call failed at LLMService.completion(): ${error.message}`);
+            
+            if (error instanceof KieApiRetryableError) {
+                throw error;
+            }
+            
+            throw new Error(`Image Metadata Agent failed at LLMService.completion(): ${error.message}`);
+        }
 
         Logger.debug(`Job:${jobId}`, `IMAGE_METADATA_RESPONSE [${block.type}#${block.number}]:\n${metadataContent}`);
 
@@ -396,7 +408,17 @@ export class ImageService {
 
             Logger.debug(`Job:${jobId}`, `IMAGE_GEN_RAW_RESPONSE [Kie API Create Task]: ${JSON.stringify(response.data).substring(0, 400)}`);
 
-            const taskId = response.data?.data?.taskId;
+            const responseData = response.data;
+            if (responseData && typeof responseData === 'object' && responseData.code !== undefined && responseData.code !== 200) {
+                const errorMsg = responseData.msg || 'Unknown Kie API JSON error';
+                const msgStr = typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
+                if (responseData.code === 500) {
+                    throw new KieApiRetryableError(`Kie API temporarily unavailable: ${msgStr}`, 500);
+                }
+                throw new Error(`Kie API Error (${responseData.code}): ${msgStr}`);
+            }
+
+            const taskId = responseData?.data?.taskId;
 
             if (!taskId) {
                 throw new Error(`[ImageService] Kie API returned no taskId. Response: ${JSON.stringify(response?.data).substring(0, 300)}`);
@@ -426,7 +448,11 @@ export class ImageService {
 
                     // If API returns 200 OK HTTP but its internal custom code is a failure
                     if (responseCode !== 200 && responseCode !== undefined) {
-                        throw new Error(`Kie API generation failed with internal code ${responseCode}: ${statusRes.data?.msg || 'Error'}`);
+                        const errorMsg = statusRes.data?.msg || 'Error';
+                        if (responseCode === 500) {
+                            throw new KieApiRetryableError(`Kie API polling temporarily unavailable: ${errorMsg}`, 500);
+                        }
+                        throw new Error(`Kie API generation failed with internal code ${responseCode}: ${errorMsg}`);
                     }
 
                     if (state === 'success') {

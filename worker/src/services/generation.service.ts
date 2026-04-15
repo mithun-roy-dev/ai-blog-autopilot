@@ -169,13 +169,24 @@ ${promptConfig.user_prompt_template}`;
                     // Log the full user message as requested
                     Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_PROMPT_USER:\n${userPromptMessage}`);
 
-                    // 5. LLM Call — provider and model resolved dynamically from System Setup
-                    const brief = await LLMService.completion({
-                        system: systemPrompt,
-                        user: userPromptMessage,
-                        taskRef: 'content_brief',
-                        json: false
-                    });
+                    let brief: string;
+                    try {
+                        brief = await LLMService.completion({
+                            system: systemPrompt,
+                            user: userPromptMessage,
+                            taskRef: 'content_brief',
+                            json: false
+                        });
+                    } catch (error: any) {
+                        Logger.error(`Job:${jobId}`, `❌ Content Brief Agent LLM call failed at LLMService.completion(): ${error.message}`);
+                        Logger.debug(`Job:${jobId}`, `Content Brief Agent LLM call failed at LLMService.completion(): ${error.message}`);
+                        
+                        if (error instanceof KieApiRetryableError) {
+                            throw error;
+                        }
+                        
+                        throw new Error(`Content Brief Agent failed at LLMService.completion(): ${error.message}`);
+                    }
 
                     // Log response for verification as requested
                     Logger.debug(`Job:${jobId}`, `CONTENT_BRIEF_RESPONSE:\n${brief}`);
@@ -220,11 +231,23 @@ ${promptConfig.user_prompt_template}`;
                     Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_SYSTEM:\n${systemPrompt}`);
                     Logger.debug(`Job:${jobId}`, `WRITER_AGENT_PROMPT_USER:\n${userPrompt}`);
 
-                    const articleContent = await LLMService.completion({
-                        system: systemPrompt,
-                        user: userPrompt,
-                        taskRef: 'writer'
-                    });
+                    let articleContent: string;
+                    try {
+                        articleContent = await LLMService.completion({
+                            system: systemPrompt,
+                            user: userPrompt,
+                            taskRef: 'writer'
+                        });
+                    } catch (error: any) {
+                        Logger.error(`Job:${jobId}`, `❌ Writer Agent LLM call failed at LLMService.completion(): ${error.message}`);
+                        Logger.debug(`Job:${jobId}`, `Writer Agent LLM call failed at LLMService.completion(): ${error.message}`);
+                        
+                        if (error instanceof KieApiRetryableError) {
+                            throw error;
+                        }
+                        
+                        throw new Error(`Writer Agent failed at LLMService.completion(): ${error.message}`);
+                    }
 
                     // Logging response for verification as requested
                     Logger.debug(`Job:${jobId}`, `WRITER_AGENT_RESPONSE:\n${articleContent}`);
@@ -820,9 +843,27 @@ ${promptConfig.user_prompt_template}`;
 
                 console.log(`[Job ${jobId}] ✅ Image #${block.number} generated and uploaded: ${publicUrl}`);
             } catch (imgError: any) {
-                // Log error but don't fail the whole step for a single image
                 Logger.debug(`Job:${jobId}`, `IMAGE_AGENT_ERROR [#${block.number}]: ${imgError.message}`);
                 console.error(`[Job ${jobId}] ⚠️ Failed to generate image #${block.number}: ${imgError.message}`);
+
+                if (imgError instanceof KieApiRetryableError) {
+                    throw imgError; // Let executeStep handle retries
+                }
+
+                // If this is a structural API failure from ANY provider (Kie API, OpenRouter, Google),
+                // we crash the entire job instead of publishing an article with a broken image slot.
+                const errMsg = imgError.message || '';
+                if (
+                    errMsg.includes('Kie API Error') ||
+                    errMsg.includes('permanently') ||
+                    errMsg.includes('internal code') ||
+                    errMsg.includes('Google AI') ||
+                    errMsg.includes('OpenRouter')
+                ) {
+                    throw new Error(`Image Agent API failure: ${errMsg}`);
+                }
+                
+                // Otherwise, for minor format errors (like sharp resizing issues), log and continue
             }
         }
 

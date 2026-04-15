@@ -181,22 +181,38 @@ export class LLMService {
     // --- OpenRouter ---
     private static async callOpenRouter(apiKey: string, model: string, system: string, user: string, json?: boolean, timeout?: number): Promise<string> {
         console.log(`[LLMService] Sending Request to OpenRouter...`);
-        const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-            model,
-            messages: [
-                { role: 'system', content: system },
-                { role: 'user', content: user }
-            ],
-            response_format: json ? { type: 'json_object' } : undefined
-        }, {
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'HTTP-Referer': process.env.SITE_URL || 'https://ai-blog-autopilot.com',
-                'X-Title': 'AI Blog Autopilot'
-            },
-            timeout
-        });
-        return response.data.choices[0].message.content;
+        try {
+            const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+                model,
+                messages: [
+                    { role: 'system', content: system },
+                    { role: 'user', content: user }
+                ],
+                response_format: json ? { type: 'json_object' } : undefined
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': process.env.SITE_URL || 'https://ai-blog-autopilot.com',
+                    'X-Title': 'AI Blog Autopilot'
+                },
+                timeout
+            });
+            return response.data.choices[0].message.content;
+        } catch (axiosErr: any) {
+            const statusCode: number = axiosErr?.response?.status;
+            const rawBody = axiosErr?.response?.data;
+            const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody || {});
+
+            Logger.error('LLMService [callOpenRouter]', `❌ OpenRouter HTTP ${statusCode} error. Body: ${bodyStr.substring(0, 400)}`);
+            
+            // 500 Internal Server Error is considered transient/retryable
+            if (statusCode === 500) {
+                throw new KieApiRetryableError(`OpenRouter temporarily unavailable (HTTP 500): ${bodyStr.substring(0, 200)}`, 500);
+            }
+
+            // All other errors (4xx, 429, etc.) are fatal
+            throw new Error(`OpenRouter Error (${statusCode}): ${bodyStr.substring(0, 200)}`);
+        }
     }
 
     // --- Kie API (Anthropic format) ---
@@ -356,23 +372,42 @@ export class LLMService {
 
         console.log(`[LLMService] Sending Request to Google AI (${modelId})...`);
 
-        const response = await axios.post(
-            `${apiBase}:generateContent?key=${apiKey}`,
-            {
-                system_instruction: { parts: [{ text: system }] },
-                contents: [{ role: 'user', parts: [{ text: user }] }]
-            },
-            {
-                headers: { 'Content-Type': 'application/json' },
-                timeout
-            }
-        );
+        try {
+            const response = await axios.post(
+                `${apiBase}:generateContent?key=${apiKey}`,
+                {
+                    system_instruction: { parts: [{ text: system }] },
+                    contents: [{ role: 'user', parts: [{ text: user }] }]
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout
+                }
+            );
 
-        const parts = response.data?.candidates?.[0]?.content?.parts || [];
-        for (const part of parts) {
-            if (part?.text) return part.text;
+            const parts = response.data?.candidates?.[0]?.content?.parts || [];
+            for (const part of parts) {
+                if (part?.text) return part.text;
+            }
+            throw new Error(`[LLMService] Google AI returned no text.`);
+        } catch (axiosErr: any) {
+            // If it's the custom "returned no text" error we just threw, rethrow it
+            if (axiosErr.message.includes('returned no text')) throw axiosErr;
+
+            const statusCode: number = axiosErr?.response?.status;
+            const rawBody = axiosErr?.response?.data;
+            const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody || {});
+
+            Logger.error('LLMService [callGoogleAI]', `❌ Google AI HTTP ${statusCode} error. Status: ${statusCode}, Body: ${bodyStr.substring(0, 400)}`);
+
+            // 500 Internal Server Error is considered transient/retryable
+            if (statusCode === 500) {
+                throw new KieApiRetryableError(`Google AI temporarily unavailable (HTTP 500): ${bodyStr.substring(0, 200)}`, 500);
+            }
+
+            // All other errors (4xx, 429, etc.) are fatal
+            throw new Error(`Google AI Error (${statusCode}): ${bodyStr.substring(0, 200)}`);
         }
-        throw new Error(`[LLMService] Google AI returned no text.`);
     }
 
     static extractJson(text: string) {
