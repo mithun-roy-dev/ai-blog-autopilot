@@ -2,9 +2,16 @@ import axios from 'axios';
 import { SupabaseService } from './supabase.service';
 import * as cheerio from 'cheerio';
 import { PromptService } from './prompt.service';
-import { LLMService } from './llm.service';
+import { LLMService, KieApiRetryableError } from './llm.service';
 import { Logger } from '../utils/logger';
 import { ImageService } from './image.service';
+
+/** Retry config for transient Kie API 500 errors */
+const MAX_KIE_RETRIES = 2;       // max re-attempts after first failure (4 total calls)
+const KIE_RETRY_DELAY_MS = 20_000; // 20 seconds between retries
+
+/** Simple async delay */
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
 export class GenerationService {
     /**
@@ -291,17 +298,22 @@ ${promptConfig.user_prompt_template}`;
             Logger.info(`Job:${jobId}`, `🎉 All steps completed successfully!`);
 
         } catch (error: any) {
-            Logger.error(`Job:${jobId}`, `❌ Generation pipeline failed: ${error.message}`, error);
+            Logger.error(`Job:${jobId}`, `❌ Generation pipeline failed at processGeneration: ${error.message}`, error);
             const supabase = SupabaseService.getClient();
-            await supabase
+            const { error: dbError } = await supabase
                 .from('writing_jobs')
                 .update({
                     status: 'failed',
                     generation_status: 'failed',
-                    error_message: error.message,
                     updated_at: new Date()
                 })
                 .eq('id', jobId);
+            
+            if (dbError) {
+                Logger.error(`Job:${jobId}`, `❌ Failed to update writing_jobs to failed state in processGeneration`, dbError);
+            }
+            
+            throw error;
         }
     }
 
@@ -325,7 +337,74 @@ ${promptConfig.user_prompt_template}`;
             .eq('id', jobId);
 
         try {
-            const result = await stepFn();
+            // --- Retry loop for transient Kie API 500 errors ---
+            let lastError: any = null;
+            let result: any = null;
+
+            for (let attempt = 1; attempt <= MAX_KIE_RETRIES + 1; attempt++) {
+                try {
+                    result = await stepFn();
+                    lastError = null;
+                    break; // success — exit retry loop
+                } catch (err: any) {
+                    lastError = err;
+
+                    const isRetryable = err instanceof KieApiRetryableError;
+                    const hasRetriesLeft = attempt <= MAX_KIE_RETRIES;
+
+                    if (isRetryable && hasRetriesLeft) {
+                        const retryAt = new Date(Date.now() + KIE_RETRY_DELAY_MS).toISOString();
+                        const retryMsg = `Kie API temporarily unavailable. Auto-retrying in 20s... (attempt ${attempt}/${MAX_KIE_RETRIES})`;
+
+                        Logger.warn(`Job:${jobId}`, `⚠️ ${stepId}: KieApiRetryableError on attempt ${attempt}/${MAX_KIE_RETRIES}. Waiting ${KIE_RETRY_DELAY_MS / 1000}s before retry. Error: ${err.message}`);
+
+                        // Update DB so the frontend shows a retry message instead of infinite spinner
+                        await supabase
+                            .from('writing_jobs')
+                            .update({
+                                generation_progress: {
+                                    ...(await this.getProgress(jobId)),
+                                    [stepId]: {
+                                        status: 'retrying',
+                                        attempt,
+                                        max_attempts: MAX_KIE_RETRIES,
+                                        message: retryMsg,
+                                        retry_at: retryAt,
+                                        started_at: startedAt
+                                    }
+                                },
+                                updated_at: new Date()
+                            })
+                            .eq('id', jobId);
+
+                        await sleep(KIE_RETRY_DELAY_MS);
+
+                        // Reset step to 'processing' before retrying so the spinner shows again
+                        await supabase
+                            .from('writing_jobs')
+                            .update({
+                                generation_progress: {
+                                    ...(await this.getProgress(jobId)),
+                                    [stepId]: { status: 'processing', started_at: startedAt, retry_attempt: attempt + 1 }
+                                },
+                                updated_at: new Date()
+                            })
+                            .eq('id', jobId);
+
+                        continue; // next attempt
+                    }
+
+                    // Non-retryable error OR retries exhausted — exit loop and let catch below handle it
+                    if (isRetryable && !hasRetriesLeft) {
+                        Logger.error(`Job:${jobId}`, `❌ ${stepId}: All ${MAX_KIE_RETRIES} Kie API retries exhausted. Failing step.`, err);
+                        lastError = new Error(`Kie API failed after ${MAX_KIE_RETRIES} retries: ${err.message}`);
+                    }
+                    break;
+                }
+            }
+
+            if (lastError) throw lastError;
+
             const finishedAt = new Date().toISOString();
 
             // Update with results
@@ -347,7 +426,7 @@ ${promptConfig.user_prompt_template}`;
             return result;
         } catch (error: any) {
             // Step failure
-            await supabase
+            const { error: stepFailDbError } = await supabase
                 .from('writing_jobs')
                 .update({
                     generation_progress: {
@@ -357,6 +436,10 @@ ${promptConfig.user_prompt_template}`;
                     updated_at: new Date()
                 })
                 .eq('id', jobId);
+            
+            if (stepFailDbError) {
+                Logger.error(`Job:${jobId}`, `❌ Failed to update writing_jobs progress to failed state in executeStep`, stepFailDbError);
+            }
             throw error;
         }
     }
@@ -849,12 +932,26 @@ ${promptConfig.user_prompt_template}`;
         Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT_PROMPT_USER (first 500 chars):\n${userPrompt.substring(0, 500)}`);
 
         // 5. Call LLM — provider/model resolved dynamically from system_settings
-        const humanizedRaw = await LLMService.completion({
-            system: systemPrompt,
-            user: userPrompt,
-            taskRef: 'humanizer',
-            json: false
-        });
+        let humanizedRaw: string;
+        try {
+            humanizedRaw = await LLMService.completion({
+                system: systemPrompt,
+                user: userPrompt,
+                taskRef: 'humanizer',
+                json: false
+            });
+        } catch (error: any) {
+            Logger.error(`Job:${jobId}`, `❌ Humanizer Agent LLM call failed at LLMService.completion(): ${error.message}`);
+            Logger.debug(`Job:${jobId}`, `Humanizer Agent LLM call failed at LLMService.completion(): ${error.message}`);
+            
+            if (error instanceof KieApiRetryableError) {
+                throw error;
+            }
+            
+            // Throwing a standard Error ensures executeStep doesn't retry (even if it's KieApiRetryableError),
+            // and processGeneration marks the entire job as failed.
+            throw new Error(`Humanizer Agent failed at LLMService.completion(): ${error.message}`);
+        }
 
         Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT_RESPONSE (first 500 chars):\n${humanizedRaw.substring(0, 500)}`);
 

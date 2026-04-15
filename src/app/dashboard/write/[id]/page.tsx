@@ -27,7 +27,8 @@ import {
     Copy,
     Check,
     Eye,
-    Code
+    Code,
+    RefreshCw
 } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import ReactMarkdown from 'react-markdown'
@@ -368,8 +369,9 @@ export default function JobDetailPage() {
                 {STEPS.map((step, index) => {
                     const stepProgress = job?.generation_progress?.[step.id]
                     const isDone = stepProgress?.status === 'completed' || isCompleted
+                    const isRetrying = stepProgress?.status === 'retrying'
                     const isPaused = job?.status === 'awaiting_approval' && job?.generation_status === step.id
-                    const isCurrent = (job?.generation_status === step.id && job?.status === 'processing') || isPaused
+                    const isCurrent = (job?.generation_status === step.id && job?.status === 'processing') || isPaused || isRetrying
                     const isPending = !isDone && !isCurrent
                     const isSelected = selectedViewStep === step.id
                     const canView = isDone || isCurrent
@@ -384,6 +386,7 @@ export default function JobDetailPage() {
                                 canView ? "cursor-pointer hover:border-primary/40" : "cursor-not-allowed opacity-60",
                                 isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/10" : "",
                                 isDone ? "bg-emerald-500/5 border-emerald-500/20" :
+                                    isRetrying ? "bg-orange-500/5 border-orange-500/30 shadow-lg shadow-orange-500/5" :
                                     isPaused ? "bg-amber-500/5 border-amber-500/20 shadow-lg shadow-amber-500/5" :
                                         isCurrent ? "bg-primary/5 border-primary/30 shadow-lg shadow-primary/5 scale-[1.02]" :
                                             "bg-card/50 border-border/50"
@@ -393,23 +396,34 @@ export default function JobDetailPage() {
                                 <div className={cn(
                                     "h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-500",
                                     isDone ? "bg-emerald-500 text-white" :
+                                        isRetrying ? "bg-orange-500 text-white" :
                                         isPaused ? "bg-amber-500 text-white" :
                                             isCurrent ? "bg-primary text-white shadow-[0_0_15px_rgba(var(--primary),0.5)]" :
                                                 "bg-accent text-muted-foreground"
                                 )}>
-                                    {isDone ? <CheckCircle2 className="h-6 w-6" /> : 
+                                    {isDone ? <CheckCircle2 className="h-6 w-6" /> :
+                                     isRetrying ? <RefreshCw className="h-6 w-6 animate-spin" /> :
                                      isPaused ? <Clock className="h-6 w-6" /> :
                                      <step.icon className={cn("h-6 w-6", isCurrent ? "animate-pulse" : "")} />}
                                 </div>
                                 <div>
                                     <h3 className="font-black text-sm uppercase tracking-tight">{step.name}</h3>
                                     <p className="text-[10px] font-medium text-muted-foreground mt-1">{step.description}</p>
+                                    {isRetrying && stepProgress?.attempt && (
+                                        <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[9px] font-black uppercase tracking-widest">
+                                            Retrying {stepProgress.attempt}/{stepProgress.max_attempts}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Processing Animation Line */}
-                            {isCurrent && !isPaused && (
+                            {isCurrent && !isPaused && !isRetrying && (
                                 <div className="absolute bottom-0 left-0 h-1 bg-primary animate-shimmer" style={{ width: '100%' }} />
+                            )}
+                            {/* Retrying pulse line */}
+                            {isRetrying && (
+                                <div className="absolute bottom-0 left-0 h-1 bg-orange-500 animate-pulse" style={{ width: '100%' }} />
                             )}
                         </button>
                     )
@@ -753,12 +767,40 @@ export default function JobDetailPage() {
                                 )}
                             </div>
                             <div className="p-8">
-                                {isStepActive && (
-                                    <div className="flex flex-col items-center justify-center gap-4 py-8 text-muted-foreground">
-                                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                                        <p className="font-bold text-sm uppercase tracking-widest animate-pulse">Running {stepMeta.name}...</p>
-                                    </div>
-                                )}
+                                {isStepActive && (() => {
+                                    const stepProgress = job?.generation_progress?.[stepId]
+                                    const isStepRetrying = stepProgress?.status === 'retrying'
+                                    return (
+                                        <div className="flex flex-col items-center justify-center gap-4 py-8 text-muted-foreground">
+                                            {isStepRetrying ? (
+                                                <>
+                                                    {/* Retrying Warning Box */}
+                                                    <div className="w-full max-w-md p-5 rounded-2xl bg-orange-500/5 border border-orange-500/20 flex flex-col items-center gap-3 text-center">
+                                                        <div className="flex items-center gap-2 text-orange-600">
+                                                            <AlertCircle className="h-5 w-5 shrink-0" />
+                                                            <h4 className="font-black uppercase tracking-tight text-sm">Kie API Temporarily Unavailable</h4>
+                                                        </div>
+                                                        <p className="text-xs font-medium text-orange-700/80">
+                                                            {stepProgress?.message || 'Network error or maintenance. Auto-retrying...'}
+                                                        </p>
+                                                        <div className="flex items-center gap-3 mt-1">
+                                                            <span className="px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 border border-orange-500/20 text-[10px] font-black uppercase tracking-widest">
+                                                                Attempt {stepProgress?.attempt ?? '?'} / {stepProgress?.max_attempts ?? 3}
+                                                            </span>
+                                                            <RefreshCw className="h-4 w-4 text-orange-500 animate-spin" />
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-[11px] font-medium text-muted-foreground/60 mt-1">Job will resume automatically. No action needed.</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                                    <p className="font-bold text-sm uppercase tracking-widest animate-pulse">Running {stepMeta.name}...</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    )
+                                })()}
 
                                 {!isStepActive && job?.generation_data?.competitor_analysis && (
                                     <>

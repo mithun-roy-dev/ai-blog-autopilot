@@ -22,6 +22,17 @@ const TASK_PROVIDER_KEY: Record<string, string> = {
     humanizer: 'humanizer_provider',
 };
 
+/**
+ * Thrown when Kie API returns a transient HTTP 500 (network error / maintenance).
+ * executeStep catches this specific type to trigger automatic retry logic.
+ */
+export class KieApiRetryableError extends Error {
+    constructor(message: string, public readonly statusCode = 500) {
+        super(message);
+        this.name = 'KieApiRetryableError';
+    }
+}
+
 export class LLMService {
     /**
      * Resolves the provider and model for a given taskRef from system_settings and ai_configurations.
@@ -159,6 +170,10 @@ export class LLMService {
 
             console.error(`[LLMService] ❌ Error: ${errMsg.substring(0, 500)}`);
             Logger.error('LLMService', `❌ LLM Error | provider="${provider}" model="${model}" | ${errMsg.substring(0, 500)}`, err);
+            
+            if (err instanceof KieApiRetryableError) {
+                throw err;
+            }
             throw new Error(`LLM call failed (${provider}/${model}): ${errMsg.substring(0, 200)}`);
         }
     }
@@ -251,17 +266,56 @@ export class LLMService {
 
         Logger.debug('LLMService [callKieApi]', `Request → url: ${apiUrl}\npayload: ${JSON.stringify(payload, null, 2)}`);
 
-        const response = await axios.post(apiUrl, payload, {
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            timeout
-        });
+        let response: any;
+        try {
+            response = await axios.post(apiUrl, payload, {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout
+            });
+        } catch (axiosErr: any) {
+            const statusCode: number = axiosErr?.response?.status;
+            const rawBody = axiosErr?.response?.data;
+            const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody || {});
+
+            Logger.error('LLMService [callKieApi]', `❌ Kie API HTTP ${statusCode} error. Body: ${bodyStr.substring(0, 400)}`, axiosErr);
+            Logger.debug('LLMService [callKieApi]', `Kie API HTTP ${statusCode} error. Body: ${bodyStr.substring(0, 400)}`);
+            // Any 500 error is transient and eligible for automatic retry
+            if (statusCode === 500) {
+                Logger.warn('LLMService [callKieApi]', `⚠️ Kie API retryable 500 detected. Throwing KieApiRetryableError.`);
+                throw new KieApiRetryableError(`Kie API temporarily unavailable: ${bodyStr.substring(0, 300)}`, statusCode);
+            }
+            Logger.debug('LLMService [callKieApi]', `Kie API HTTP ${statusCode} error. Body: ${bodyStr.substring(0, 400)}`);
+            // All other HTTP errors (e.g. 400, 401, 402, 429) — fail the job immediately
+            const errorMessage = (rawBody && typeof rawBody === 'object' && rawBody.error?.message)
+                ? rawBody.error.message
+                : bodyStr.substring(0, 200);
+
+            throw new Error(`Kie API Error (${statusCode}): ${errorMessage}`);
+        }
 
         const data = response.data;
         // Properly stringify the response data for debugging
         Logger.debug(`Kie API Response`, `Response: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
+
+        // Detect API-level failures disguised as HTTP 200 OK
+        if (data && typeof data === 'object' && data.code !== undefined && data.code !== 200) {
+            const errorMsg = data.msg || 'Unknown Kie API JSON error';
+            const msgStr = typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg);
+            Logger.debug('LLMService [callKieApi]', `Kie API JSON error. Code: ${data.code}, Message: ${msgStr}`);
+            // Any 500 error is transient and eligible for automatic retry
+            if (data.code === 500) {
+                Logger.warn('LLMService [callKieApi]', `⚠️ Kie API fake-200 retryable 500 detected. Throwing KieApiRetryableError.`);
+                Logger.debug('LLMService [callKieApi]-KieApiRetryableError', `Kie API stop job`);
+                throw new KieApiRetryableError(`Kie API temporarily unavailable: ${msgStr}`, 500);
+                //throw new Error(`Kie API Error (${data.code}): ${msgStr}`);
+            }
+
+            // All other non-200 codes (e.g. 400) fail immediately and definitively stop the job.
+            throw new Error(`Kie API Error (${data.code}): ${msgStr}`);
+        }
 
         // If stream is true, data might be a raw string of SSE (Server-Sent Events) starting with 'data: '
         if (typeof data === 'string' && data.includes('data: ')) {
