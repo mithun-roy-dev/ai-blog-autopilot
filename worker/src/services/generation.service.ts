@@ -180,11 +180,11 @@ ${promptConfig.user_prompt_template}`;
                     } catch (error: any) {
                         Logger.error(`Job:${jobId}`, `❌ Content Brief Agent LLM call failed at LLMService.completion(): ${error.message}`);
                         Logger.debug(`Job:${jobId}`, `Content Brief Agent LLM call failed at LLMService.completion(): ${error.message}`);
-                        
+
                         if (error instanceof KieApiRetryableError) {
                             throw error;
                         }
-                        
+
                         throw new Error(`Content Brief Agent failed at LLMService.completion(): ${error.message}`);
                     }
 
@@ -241,11 +241,11 @@ ${promptConfig.user_prompt_template}`;
                     } catch (error: any) {
                         Logger.error(`Job:${jobId}`, `❌ Writer Agent LLM call failed at LLMService.completion(): ${error.message}`);
                         Logger.debug(`Job:${jobId}`, `Writer Agent LLM call failed at LLMService.completion(): ${error.message}`);
-                        
+
                         if (error instanceof KieApiRetryableError) {
                             throw error;
                         }
-                        
+
                         throw new Error(`Writer Agent failed at LLMService.completion(): ${error.message}`);
                     }
 
@@ -296,21 +296,25 @@ ${promptConfig.user_prompt_template}`;
 
             // Step 6: Editor Agent
             if (progress['editing']?.status !== 'completed') {
+                Logger.info(`Job:${jobId}`, `✏️ Starting Editor Agent pass-through...`);
                 await this.executeStep(jobId, 'editing', async () => {
                     console.log(`[Job ${jobId}] ✏️ Editor Agent: Running pass-through...`);
                     const generationData = await this.getGenerationData(jobId);
-                    const contentToPass = generationData.humanized_content || job.content || '';
-                    
-                    return { 
-                        dataUpdate: { 
-                            edited_content: contentToPass 
-                        } 
+                    const contentToPass = generationData.humanized_content || '';
+                    Logger.debug(`Job:${jobId}`, `EDITOR_AGENT: contentToPass = ${contentToPass}`);
+                    return {
+                        dataUpdate: {
+                            edited_content: contentToPass
+                        }
                     };
                 });
 
                 const autoEdit = await this.getAutoEditSetting();
+                Logger.debug(`Job:${jobId}`, `EDITOR_AGENT: autoEdit setting = ${autoEdit}`);
+
                 if (!autoEdit) {
                     await this.pauseForApproval(jobId, 'editing');
+                    Logger.debug(`Job:${jobId}`, `EDITOR_AGENT: autoEdit setting = ${autoEdit} pauseForApproval()`);
                     return;
                 }
             }
@@ -342,11 +346,11 @@ ${promptConfig.user_prompt_template}`;
                     updated_at: new Date()
                 })
                 .eq('id', jobId);
-            
+
             if (dbError) {
                 Logger.error(`Job:${jobId}`, `❌ Failed to update writing_jobs to failed state in processGeneration`, dbError);
             }
-            
+
             throw error;
         }
     }
@@ -356,25 +360,35 @@ ${promptConfig.user_prompt_template}`;
         const startedAt = new Date().toISOString();
 
         console.log(`[Job ${jobId}] 🔄 Executing step: ${stepId}...`);
+        Logger.info(`Job:${jobId}`, `STEP_START: ${stepId}`);
+
+        // Get current state once to avoid multiple DB calls
+        const initialProgress = await this.getProgress(jobId);
 
         // Update status to current step
-        await supabase
+        const { error: startUpdateError } = await supabase
             .from('writing_jobs')
             .update({
                 generation_status: stepId,
                 generation_progress: {
-                    ...(await this.getProgress(jobId)),
+                    ...initialProgress,
                     [stepId]: { status: 'processing', started_at: startedAt }
                 },
                 updated_at: new Date()
             })
             .eq('id', jobId);
 
+        if (startUpdateError) {
+            Logger.error(`Job:${jobId}`, `❌ Failed to update job to processing for ${stepId}: ${startUpdateError.message}`);
+            throw startUpdateError;
+        }
+
         try {
             // --- Retry loop for transient Kie API 500 errors ---
             let lastError: any = null;
             let result: any = null;
 
+            Logger.debug(`Job:${jobId}`, `STEP_EXECUTE: Calling stepFn for ${stepId}`);
             for (let attempt = 1; attempt <= MAX_KIE_RETRIES + 1; attempt++) {
                 try {
                     result = await stepFn();
@@ -392,12 +406,12 @@ ${promptConfig.user_prompt_template}`;
 
                         Logger.warn(`Job:${jobId}`, `⚠️ ${stepId}: KieApiRetryableError on attempt ${attempt}/${MAX_KIE_RETRIES}. Waiting ${KIE_RETRY_DELAY_MS / 1000}s before retry. Error: ${err.message}`);
 
-                        // Update DB so the frontend shows a retry message instead of infinite spinner
+                        const currentRetryingProgress = await this.getProgress(jobId);
                         await supabase
                             .from('writing_jobs')
                             .update({
                                 generation_progress: {
-                                    ...(await this.getProgress(jobId)),
+                                    ...currentRetryingProgress,
                                     [stepId]: {
                                         status: 'retrying',
                                         attempt,
@@ -413,12 +427,12 @@ ${promptConfig.user_prompt_template}`;
 
                         await sleep(KIE_RETRY_DELAY_MS);
 
-                        // Reset step to 'processing' before retrying so the spinner shows again
+                        const postRetryProgress = await this.getProgress(jobId);
                         await supabase
                             .from('writing_jobs')
                             .update({
                                 generation_progress: {
-                                    ...(await this.getProgress(jobId)),
+                                    ...postRetryProgress,
                                     [stepId]: { status: 'processing', started_at: startedAt, retry_attempt: attempt + 1 }
                                 },
                                 updated_at: new Date()
@@ -439,41 +453,58 @@ ${promptConfig.user_prompt_template}`;
 
             if (lastError) throw lastError;
 
+            Logger.debug(`Job:${jobId}`, `STEP_EXECUTE: stepFn finished for ${stepId}`);
             const finishedAt = new Date().toISOString();
 
+            // Fetch current state again to ensure we don't overwrite other parallel updates (though pipeline is linear)
+            const latestProgress = await this.getProgress(jobId);
+            const latestData = await this.getGenerationData(jobId);
+
+            Logger.info(`Job:${jobId}`, `STEP_UPDATE: Saving results for ${stepId}...`);
             // Update with results
-            await supabase
+            const { error: finalUpdateError } = await supabase
                 .from('writing_jobs')
                 .update({
                     generation_data: {
-                        ...(await this.getGenerationData(jobId)),
+                        ...latestData,
                         ...result.dataUpdate
                     },
                     generation_progress: {
-                        ...(await this.getProgress(jobId)),
+                        ...latestProgress,
                         [stepId]: { status: 'completed', started_at: startedAt, finished_at: finishedAt }
                     },
                     updated_at: new Date()
                 })
                 .eq('id', jobId);
 
+            if (finalUpdateError) {
+                Logger.error(`Job:${jobId}`, `❌ Failed to update job completion for ${stepId}: ${finalUpdateError.message}`);
+                throw finalUpdateError;
+            }
+
+            Logger.info(`Job:${jobId}`, `STEP_FINISH: ${stepId} completed successfully.`);
             return result;
         } catch (error: any) {
             // Step failure
-            const { error: stepFailDbError } = await supabase
-                .from('writing_jobs')
-                .update({
-                    generation_progress: {
-                        ...(await this.getProgress(jobId)),
-                        [stepId]: { status: 'failed', error: error.message, started_at: startedAt }
-                    },
-                    updated_at: new Date()
-                })
-                .eq('id', jobId);
-            
-            if (stepFailDbError) {
-                Logger.error(`Job:${jobId}`, `❌ Failed to update writing_jobs progress to failed state in executeStep`, stepFailDbError);
+            Logger.error(`Job:${jobId}`, `❌ Step ${stepId} failed: ${error.message}`);
+
+            // Try to record the failure in the progress object
+            try {
+                const errorProgress = await this.getProgress(jobId);
+                await supabase
+                    .from('writing_jobs')
+                    .update({
+                        generation_progress: {
+                            ...errorProgress,
+                            [stepId]: { status: 'failed', error: error.message, started_at: startedAt, failed_at: new Date().toISOString() }
+                        },
+                        updated_at: new Date()
+                    })
+                    .eq('id', jobId);
+            } catch (innerDbError: any) {
+                Logger.error(`Job:${jobId}`, `❌ Critical failure: Could not even record step failure for ${stepId} in DB: ${innerDbError.message}`);
             }
+
             throw error;
         }
     }
@@ -873,7 +904,7 @@ ${promptConfig.user_prompt_template}`;
                 ) {
                     throw new Error(`Image Agent API failure: ${errMsg}`);
                 }
-                
+
                 // Otherwise, for minor format errors (like sharp resizing issues), log and continue
             }
         }
@@ -995,11 +1026,11 @@ ${promptConfig.user_prompt_template}`;
         } catch (error: any) {
             Logger.error(`Job:${jobId}`, `❌ Humanizer Agent LLM call failed at LLMService.completion(): ${error.message}`);
             Logger.debug(`Job:${jobId}`, `Humanizer Agent LLM call failed at LLMService.completion(): ${error.message}`);
-            
+
             if (error instanceof KieApiRetryableError) {
                 throw error;
             }
-            
+
             // Throwing a standard Error ensures executeStep doesn't retry (even if it's KieApiRetryableError),
             // and processGeneration marks the entire job as failed.
             throw new Error(`Humanizer Agent failed at LLMService.completion(): ${error.message}`);
