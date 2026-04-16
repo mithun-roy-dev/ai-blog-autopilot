@@ -37,6 +37,7 @@ import rehypeRaw from 'rehype-raw'
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
 import { logUI } from "@/utils/logger"
+import EditorStep from "./EditorStep"
 
 const STEPS = [
     { id: 'serp_calling', name: 'SERP API Calling', icon: Search, description: 'Fetching Google search results' },
@@ -60,6 +61,7 @@ export default function JobDetailPage() {
     const [expandedStepData, setExpandedStepData] = useState<string | null>(null)
     const [copiedStep, setCopiedStep] = useState<string | null>(null)
     const [showFormattedWriter, setShowFormattedWriter] = useState(false)
+    const [isSavingEditor, setIsSavingEditor] = useState(false)
     const detailsRef = useRef<HTMLDivElement>(null)
 
     const prevGenerationStatus = useRef<string | null>(null)
@@ -148,6 +150,7 @@ export default function JobDetailPage() {
         writing: 'imaging',
         imaging: 'humanizing',
         humanizing: 'editing',
+        editing: 'completed',
     }
 
     const handleCopy = (text: string, stepId: string) => {
@@ -230,6 +233,42 @@ export default function JobDetailPage() {
         } catch (error: any) {
             logUI('ERROR', 'UI:JobDetails', 'Failed to update job status', { error: error.message, jobId: id, status })
             toast.error(error.message)
+        }
+    }
+
+    const handleEditorSave = async (content: string) => {
+        setIsSavingEditor(true)
+        try {
+            const { error } = await supabase
+                .from('writing_jobs')
+                .update({
+                    content: content,
+                    generation_data: {
+                        ...job.generation_data,
+                        edited_content: content
+                    },
+                    updated_at: new Date()
+                })
+                .eq('id', id)
+
+            if (error) throw error
+            
+            setJob((prev: any) => ({
+                ...prev,
+                content: content,
+                generation_data: {
+                    ...prev.generation_data,
+                    edited_content: content
+                }
+            }))
+
+            toast.success("Article saved successfully!")
+            logUI('INFO', 'UI:JobDetails', 'Article content updated via Editor', { jobId: id })
+        } catch (err: any) {
+            logUI('ERROR', 'UI:JobDetails', 'Failed to save editor content', { error: err.message, jobId: id })
+            toast.error("Failed to save article: " + err.message)
+        } finally {
+            setIsSavingEditor(false)
         }
     }
 
@@ -1429,7 +1468,16 @@ export default function JobDetailPage() {
                                         )}
                                     </>
                                 )}
-                                {!isStepActive && (!job?.generation_data?.brief && stepId === 'briefing' || !job?.generation_data?.article_content && stepId === 'writing' || !job?.generation_data?.imaging && stepId === 'imaging' || !job?.generation_data?.humanized_content && stepId === 'humanizing' || (stepId !== 'briefing' && stepId !== 'writing' && stepId !== 'imaging' && stepId !== 'humanizing')) && (
+                                {selectedViewStep === 'editing' && (
+                                    <div className="animate-in fade-in zoom-in-95 duration-500">
+                                        <EditorStep 
+                                            initialContent={job?.generation_data?.edited_content || job?.generation_data?.humanized_content || job?.content || ''}
+                                            onSave={handleEditorSave}
+                                            isSaving={isSavingEditor}
+                                        />
+                                    </div>
+                                )}
+                                {!isStepActive && stepId === 'imaging' && job?.generation_data?.imaging && (
                                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
                                         <div className="h-16 w-16 rounded-full bg-accent flex items-center justify-center">
                                             <stepMeta.icon className="h-8 w-8 opacity-40" />

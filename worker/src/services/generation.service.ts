@@ -294,14 +294,25 @@ ${promptConfig.user_prompt_template}`;
                 }
             }
 
-            // Step 6: Editor Agent (stub)
+            // Step 6: Editor Agent
             if (progress['editing']?.status !== 'completed') {
                 await this.executeStep(jobId, 'editing', async () => {
-                    console.log(`[Job ${jobId}] ✏️ Editor Agent step (stub – AI logic coming soon)`);
-                    return { dataUpdate: {} };
+                    console.log(`[Job ${jobId}] ✏️ Editor Agent: Running pass-through...`);
+                    const generationData = await this.getGenerationData(jobId);
+                    const contentToPass = generationData.humanized_content || job.content || '';
+                    
+                    return { 
+                        dataUpdate: { 
+                            edited_content: contentToPass 
+                        } 
+                    };
                 });
 
-                // No pause after the last step — mark job as completed in all modes
+                const autoEdit = await this.getAutoEditSetting();
+                if (!autoEdit) {
+                    await this.pauseForApproval(jobId, 'editing');
+                    return;
+                }
             }
 
             // All steps done — mark the writing_job as completed
@@ -1012,6 +1023,16 @@ ${promptConfig.user_prompt_template}`;
                 humanized_content: humanizedContent
             }
         };
+    }
+
+    private static async getAutoEditSetting(): Promise<boolean> {
+        const supabase = SupabaseService.getClient();
+        const { data } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'logging_config')
+            .single();
+        return data?.value?.auto_edit ?? false;
     }
 
     private static compressSerp(generationData: any): any {

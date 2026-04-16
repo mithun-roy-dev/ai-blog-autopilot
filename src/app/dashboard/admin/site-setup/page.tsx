@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal, Bot, Database, Image as ImageIcon } from "lucide-react"
+import { Settings, Shield, Save, Loader2, AlertCircle, CheckCircle2, Cpu, Globe, Zap, Key, Search, Terminal, Bot, Database, Image as ImageIcon, Edit } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/utils/cn"
@@ -17,6 +17,7 @@ const PROVIDERS = [
     { id: "serp_crawl_setup", name: "Crawl Setup", icon: Globe, description: "Configure SERP analysis extraction limits." },
     { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
     { id: "image_templates", name: "Image Template Setup", icon: ImageIcon, description: "Select visual prompts used for featured and in-body images." },
+    { id: "editor_setup", name: "Editor Setup", icon: Edit, description: "Configure AI editing behavior and manual review flows." },
     { id: "system_ops", name: "System Setup", icon: Shield, description: "Manage global application settings and operational toggles." },
     { id: "cloudflare_r2", name: "Cloudflare R2", icon: Database, description: "Configure API credentials for Cloudflare R2 object storage." },
 ]
@@ -108,6 +109,7 @@ export default function SiteSetupPage() {
     const [systemSettings, setSystemSettings] = useState({
         enable_debug: true,
         enable_error: true,
+        auto_edit: false,
         content_brief_provider: "kie_api",
         content_brief_model: "claude-haiku-4-5",
         writer_provider: "kie_api",
@@ -191,6 +193,7 @@ export default function SiteSetupPage() {
                 setSystemSettings({
                     enable_debug: sysData.value.enable_debug ?? true,
                     enable_error: sysData.value.enable_error ?? true,
+                    auto_edit: sysData.value.auto_edit ?? false,
                     content_brief_provider: sysData.value.content_brief_provider ?? "kie_api",
                     content_brief_model: sysData.value.content_brief_model ?? "claude-haiku-4-5",
                     writer_provider: sysData.value.writer_provider ?? "kie_api",
@@ -291,7 +294,7 @@ export default function SiteSetupPage() {
         const toastId = toast.loading("Saving configuration...")
 
         try {
-            if (selectedProvider === 'system_ops' || selectedProvider === 'image_templates') {
+            if (selectedProvider === 'system_ops' || selectedProvider === 'image_templates' || selectedProvider === 'editor_setup') {
                 // 1. Save full system settings (operators + other config) to system_settings
                 const { error: sysError } = await supabase
                     .from("system_settings")
@@ -433,7 +436,7 @@ export default function SiteSetupPage() {
                             </div>
                         </div>
 
-                        {selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && (
+                        {selectedProvider !== 'system_ops' && selectedProvider !== 'editor_setup' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium flex items-center gap-2">
@@ -663,7 +666,7 @@ export default function SiteSetupPage() {
                             </div>
                         )}
 
-                        {selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && (
+                        {selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'editor_setup' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && (
                             <div className="p-4 mt-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex gap-3">
                                 <AlertCircle className="h-5 w-5 shrink-0" />
                                 <p>Direct provider support is coming soon. Please use <strong>OpenRouter</strong> or <strong>Google</strong> for immediate multi-model functionality.</p>
@@ -761,6 +764,38 @@ export default function SiteSetupPage() {
                                                     <div className="text-xs text-muted-foreground p-4 border rounded-2xl border-dashed bg-accent/30 text-center">No "Infographic Image" templates found.</div>
                                                 )}
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedProvider === 'editor_setup' && (
+                            <div className="space-y-8 mt-4 animate-in fade-in duration-300">
+                                <div className="space-y-6">
+                                    <div className="border-b border-border/50 pb-4">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                                            <Edit className="h-5 w-5 text-primary" /> Editor Agent Setup
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">Configure how the Editor Agent behaves in the generation pipeline.</p>
+                                    </div>
+                                    <div className="grid gap-4">
+                                        <div className="flex items-center justify-between p-4 rounded-xl border bg-background hover:border-primary/50 transition-colors">
+                                            <div className="space-y-0.5">
+                                                <h4 className="text-sm font-bold flex items-center gap-2">
+                                                    Enable Auto Edit
+                                                </h4>
+                                                <p className="text-[11px] text-muted-foreground">Automatically complete the editing step using AI. If disabled, jobs will pause for manual review.</p>
+                                            </div>
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={systemSettings.auto_edit}
+                                                    onChange={(e) => setSystemSettings(s => ({ ...s, auto_edit: e.target.checked }))}
+                                                />
+                                                <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
@@ -1037,7 +1072,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'kie_api' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'image_templates' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'kie_api' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'editor_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
