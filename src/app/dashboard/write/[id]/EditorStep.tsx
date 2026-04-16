@@ -41,7 +41,7 @@ turndownService.addRule('underline', {
 turndownService.addRule('align', {
     filter: (node) => {
         return (node.nodeName === 'P' || /^H[1-6]$/.test(node.nodeName)) && 
-               (node.style.textAlign)
+               !!node.style.textAlign
     },
     replacement: (content, node) => {
         const tag = node.nodeName.toLocaleLowerCase()
