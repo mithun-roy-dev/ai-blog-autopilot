@@ -11,7 +11,7 @@ import TurndownService from "turndown"
 import { marked } from "marked"
 import {
     Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon,
-    Heading1, Heading2, Heading3, List, ListOrdered, Quote,
+    Heading2, Heading3, List, ListOrdered, Quote,
     Minus, Image as ImageIcon, Undo, Redo, AlignLeft, AlignCenter,
     AlignRight, Save, Eye, Code, Trash2, Maximize2, Minimize2, Edit, Link2Off
 } from "lucide-react"
@@ -127,7 +127,7 @@ export default function EditorStep({ initialContent, onSave, isSaving }: EditorS
         ],
         content: initialHtml as string,
         editorProps: {
-            handleClick: (view, pos, event) => {
+            handleClick: (view: any, pos: number, event: MouseEvent) => {
                 const target = (event.target as HTMLElement).closest('a')
                 if (target) {
                     event.preventDefault()
@@ -136,7 +136,7 @@ export default function EditorStep({ initialContent, onSave, isSaving }: EditorS
                 }
                 return false
             },
-            handleDoubleClick: (view, pos, event) => {
+            handleDoubleClick: (view: any, pos: number, event: MouseEvent) => {
                 const target = (event.target as HTMLElement).closest('a')
                 if (target) {
                     const href = target.getAttribute('href')
