@@ -33,7 +33,7 @@ export class SupabaseService {
                 slug = segments.length > 0 ? segments[segments.length - 1] : "";
             }
         }
-        
+
         // Ensure it starts with / and remove any leading slashes first to avoid //
         return `/${slug.replace(/^\/+/, '')}`;
     }
@@ -133,7 +133,7 @@ export class SupabaseService {
      */
     static async promoteJobToArticle(jobId: string) {
         const client = this.getClient()
-        
+
         // 1. Fetch Job Data
         const { data: job, error: jobError } = await client
             .from('writing_jobs')
@@ -146,13 +146,17 @@ export class SupabaseService {
         const genData = job.generation_data || {}
         const serpData = genData.serp || {}
         const intent = serpData.intent || 'Informational'
-        
+
         // Format Slug
         const formattedSlug = this.formatSlug(job.slug);
 
+        // Get Site URL for internal link
+        const siteUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');
+        const internalUrl = `${siteUrl}/dashboard/write/${job.id}`;
+
         // 2. Fetch or Create Article
         let articleId: string | undefined = undefined;
-        
+
         // Find existing article by slug and blog_id
         const { data: existingArticle } = await client
             .from('articles')
@@ -168,7 +172,8 @@ export class SupabaseService {
                 .update({
                     title: job.title,
                     content: job.content,
-                    source_url: job.source_url || `internal://${job.slug}`,
+                    source_url: job.source_url || null,
+                    internal_url: internalUrl || null,
                     status: 'generated',
                     cluster_id: job.cluster_id, // Link to cluster
                     updated_at: new Date()
@@ -183,18 +188,19 @@ export class SupabaseService {
                     title: job.title,
                     content: job.content,
                     slug: formattedSlug,
-                    source_url: job.source_url || `internal://${job.slug}`,
+                    source_url: job.source_url || null,
+                    internal_url: internalUrl || null,
                     status: 'generated',
                     cluster_id: job.cluster_id, // Link to cluster
                     updated_at: new Date()
                 })
                 .select()
                 .single()
-            
+
             if (newArticle) articleId = newArticle.id;
             if (createError) console.error(`[Job ${jobId}] ❌ Failed to create article:`, createError.message);
         }
-        
+
         // 3. Update cluster_pages (if linked)
         if (job.page_id && articleId) {
             const { error: pageUpdateError } = await client
@@ -205,7 +211,7 @@ export class SupabaseService {
                     updated_at: new Date()
                 })
                 .eq('id', job.page_id)
-            
+
             if (pageUpdateError) console.error(`[Job ${jobId}] ⚠️ Failed to update cluster_page status:`, pageUpdateError.message)
         }
 
@@ -242,7 +248,7 @@ export class SupabaseService {
                     status: 'completed',
                     updated_at: new Date()
                 })
-            
+
             if (insertIntelError) console.error(`[Job ${jobId}] ⚠️ Failed to insert site intelligence:`, insertIntelError.message)
         }
     }

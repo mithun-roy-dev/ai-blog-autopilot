@@ -110,14 +110,36 @@ export default function ArticlesPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <a
-                                                href={article.source_url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-primary hover:underline"
-                                            >
-                                                View <ExternalLink className="h-3 w-3" />
-                                            </a>
+                                            <div className="flex items-center justify-end gap-3">
+                                                {article.source_url && (article.status === 'published' || article.status === 'crawled') ? (
+                                                    <a
+                                                        href={article.source_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                                                    >
+                                                        Source <ExternalLink className="h-3 w-3" />
+                                                    </a>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-muted-foreground/40 cursor-not-allowed">
+                                                        Source <ExternalLink className="h-3 w-3" />
+                                                    </span>
+                                                )}
+                                                {article.internal_url ? (
+                                                    <a
+                                                        href={article.internal_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                                                    >
+                                                        Editor <ExternalLink className="h-3 w-3" />
+                                                    </a>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-muted-foreground/40 cursor-not-allowed font-medium">
+                                                        Editor <ExternalLink className="h-3 w-3" />
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
