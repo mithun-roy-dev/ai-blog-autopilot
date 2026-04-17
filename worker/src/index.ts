@@ -6,6 +6,8 @@ import { SupabaseService } from './services/supabase.service'
 import { IntelligenceService } from './services/intelligence.service'
 import { ClusterService } from './services/cluster.service'
 import { GenerationService } from './services/generation.service'
+import { SchedulerService } from './services/scheduler.service'
+import { PublisherService } from './services/publisher.service'
 
 // Load environment variables
 dotenv.config()
@@ -213,6 +215,8 @@ async function pollJobs() {
         await processArticleGenerationJob(job)
     } else if (job.type === 'link_slugs') {
         await processLinkSlugsJob(job)
+    } else if (job.type === 'publish_article') {
+        await PublisherService.publishArticle(job.id, job.payload)
     } else {
         console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`)
         await SupabaseService.updateJobStatus(job.id, 'failed', `Unknown job type: ${job.type}`)
@@ -235,6 +239,12 @@ async function main() {
         setInterval(async () => {
             await pollJobs()
         }, 5000)
+
+        // Start Scheduler loop (runs every 1 minute)
+        console.log('⏰ Scheduler active (polling every 60s)...')
+        setInterval(async () => {
+            await SchedulerService.checkSchedules()
+        }, 60000)
 
         // Heartbeat
         setInterval(() => {

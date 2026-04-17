@@ -1,4 +1,5 @@
 import axios from "axios"
+import { Logger } from "../utils/logger"
 
 export interface WPPost {
     id: number
@@ -206,6 +207,30 @@ export class WordPressService {
             }
         } catch (error) {
             return { title: url.split('/').filter(Boolean).pop() || 'Untitled', excerpt: 'Snippet not available' }
+        }
+    }
+
+    /**
+     * Creates a new post on the WordPress site.
+     */
+    static async createPost(baseUrl: string, postData: any, apiKey: string, wpUsername: string): Promise<WPPost> {
+        const url = `${baseUrl}/wp-json/wp/v2/posts`
+        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
+        Logger.debug("WordPress", `Creating post at ${url}`, postData)
+
+        try {
+            const response = await axios.post<WPPost>(url, postData, {
+                headers: {
+                    "Authorization": `Basic ${auth}`,
+                    "Content-Type": "application/json"
+                }
+            })
+            Logger.debug("WordPress", "✅ Post created successfully", response.data)
+            return response.data
+        } catch (error: any) {
+            console.error(`[WP] ❌ Failed to create post at ${url}:`, error.response?.data || error.message)
+            Logger.error("WordPress", `❌ Failed to create post at ${url}`, error.response?.data || error.message)
+            throw new Error(`WordPress API Error: ${JSON.stringify(error.response?.data) || error.message}`)
         }
     }
 

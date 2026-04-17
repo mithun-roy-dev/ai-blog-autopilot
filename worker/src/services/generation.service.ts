@@ -331,7 +331,27 @@ ${promptConfig.user_prompt_template}`;
 
             // 🚀 Promote to Article and Site Intelligence
             console.log(`[Job ${jobId}] 📦 Promoting job to public article and intelligence...`);
-            await SupabaseService.promoteJobToArticle(jobId);
+            const article = await SupabaseService.promoteJobToArticle(jobId);
+
+            // 🤖 Auto-Publish Logic
+            const { data: pubSettings } = await supabase
+                .from('blog_publishing_settings')
+                .select('auto_publish')
+                .eq('blog_id', job.blog_id)
+                .single();
+
+            if (pubSettings?.auto_publish && article) {
+                console.log(`[Job ${jobId}] 📡 Auto-publishing enabled. Queuing publish job...`);
+                await supabase.from('job_queue').insert({
+                    user_id: job.user_id,
+                    type: 'publish_article',
+                    payload: { article_id: article.id },
+                    status: 'queued'
+                });
+
+                // Update article status to track it's in progress
+                await supabase.from('articles').update({ status: 'scheduled' }).eq('id', article.id);
+            }
 
             Logger.info(`Job:${jobId}`, `🎉 All steps completed successfully!`);
 

@@ -251,6 +251,10 @@ export class SupabaseService {
 
             if (insertIntelError) console.error(`[Job ${jobId}] ⚠️ Failed to insert site intelligence:`, insertIntelError.message)
         }
+
+        // Return the final article data for pipeline orchestration
+        const { data: finalArticle } = await client.from('articles').select('*').eq('id', articleId).single();
+        return finalArticle;
     }
 
     /**

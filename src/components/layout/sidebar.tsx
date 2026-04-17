@@ -13,6 +13,7 @@ const navigation = [
     { name: "Intelligence", href: "/dashboard/intelligence", icon: BrainCircuit },
     { name: "Clusters", href: "/dashboard/clusters", icon: Layers },
     { name: "Write", href: "/dashboard/write", icon: FileText },
+    { name: "Publishing", href: "/dashboard/write/publishing", icon: Globe },
     { name: "Articles", href: "/dashboard/articles", icon: FileText },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]

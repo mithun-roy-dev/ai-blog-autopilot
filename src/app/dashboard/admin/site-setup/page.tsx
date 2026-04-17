@@ -18,6 +18,7 @@ const PROVIDERS = [
     { id: "prompt_setup", name: "Prompt Setup", icon: Terminal, description: "Manage and refine AI instructions dynamically." },
     { id: "image_templates", name: "Image Template Setup", icon: ImageIcon, description: "Select visual prompts used for featured and in-body images." },
     { id: "editor_setup", name: "Editor Setup", icon: Edit, description: "Configure AI editing behavior and manual review flows." },
+    { id: "publishing_setup", name: "Publishing Setup", icon: Globe, description: "Configure automated scheduling and WordPress publishing rules." },
     { id: "system_ops", name: "System Setup", icon: Shield, description: "Manage global application settings and operational toggles." },
     { id: "cloudflare_r2", name: "Cloudflare R2", icon: Database, description: "Configure API credentials for Cloudflare R2 object storage." },
 ]
@@ -94,6 +95,8 @@ export default function SiteSetupPage() {
 
     const [userEmail, setUserEmail] = useState<string | null>(null)
     const [configs, setConfigs] = useState<any[]>([])
+    const [blogs, setBlogs] = useState<any[]>([])
+    const [selectedBlogId, setSelectedBlogId] = useState<string>("")
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [selectedProvider, setSelectedProvider] = useState("openrouter")
@@ -134,6 +137,17 @@ export default function SiteSetupPage() {
         inbody_image_prompt: "infographic-image-01-26-101"
     })
 
+    // Publishing Settings State
+    const [publishingSettings, setPublishingSettings] = useState({
+        auto_publish: false,
+        publish_save_status: "draft",
+        schedule_active: false,
+        frequency: "daily",
+        times_per_period: 1,
+        schedule_logic: "spread_evenly",
+        start_time: "09:00"
+    })
+
     // Crawl Setup State
     const [serpCrawlSettings, setSerpCrawlSettings] = useState({
         max_h2: 30,
@@ -142,6 +156,13 @@ export default function SiteSetupPage() {
         max_h5: 2,
         max_h6: 2
     })
+
+    const [selectedBlog, setSelectedBlog] = useState<any>(null)
+    useEffect(() => {
+        if (selectedBlogId) {
+            setSelectedBlog(blogs.find(b => b.id === selectedBlogId))
+        }
+    }, [selectedBlogId, blogs])
 
     // Prompt State
     const [prompts, setPrompts] = useState<any[]>([])
@@ -169,8 +190,57 @@ export default function SiteSetupPage() {
         }
         setUserEmail(user.email)
         fetchConfigs()
+        fetchBlogs()
         fetchPrompts()
     }
+
+    const fetchBlogs = async () => {
+        const { data } = await supabase.from("blogs").select("id, name, url, wp_username").order("name")
+        setBlogs(data || [])
+        if (data && data.length > 0 && !selectedBlogId) {
+            setSelectedBlogId(data[0].id)
+        }
+    }
+
+    const fetchPublishingSettings = async (blogId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from("blog_publishing_settings")
+                .select("*")
+                .eq("blog_id", blogId)
+                .maybeSingle()
+
+            if (data) {
+                setPublishingSettings({
+                    auto_publish: data.auto_publish,
+                    publish_save_status: data.publish_save_status,
+                    schedule_active: data.schedule_active,
+                    frequency: data.frequency,
+                    times_per_period: data.times_per_period,
+                    schedule_logic: data.schedule_logic,
+                    start_time: data.start_time?.substring(0, 5) || "09:00"
+                })
+            } else {
+                setPublishingSettings({
+                    auto_publish: false,
+                    publish_save_status: "draft",
+                    schedule_active: false,
+                    frequency: "daily",
+                    times_per_period: 1,
+                    schedule_logic: "spread_evenly",
+                    start_time: "09:00"
+                })
+            }
+        } catch (err) {
+            console.error("Error fetching publishing settings:", err)
+        }
+    }
+
+    useEffect(() => {
+        if (selectedBlogId && selectedProvider === 'publishing_setup') {
+            fetchPublishingSettings(selectedBlogId)
+        }
+    }, [selectedBlogId, selectedProvider])
 
     const fetchConfigs = async () => {
         try {
@@ -352,6 +422,43 @@ export default function SiteSetupPage() {
                 if (error) throw error
                 toast.success(`Prompt "${promptFormData.name}" saved!`, { id: toastId })
                 fetchPrompts()
+            } else if (selectedProvider === 'publishing_setup') {
+                // 1. Update Blog Username if changed
+                if (selectedBlog) {
+                    const { error: blogError } = await supabase
+                        .from("blogs")
+                        .update({ wp_username: selectedBlog.wp_username })
+                        .eq("id", selectedBlogId)
+                    if (blogError) throw blogError
+                }
+
+                // Prepare settings with initialized next_run_at if activating
+                const upsertData: any = {
+                    blog_id: selectedBlogId,
+                    user_id: (await supabase.auth.getUser()).data.user?.id,
+                    ...publishingSettings,
+                    updated_at: new Date().toISOString()
+                };
+
+                if (publishingSettings.schedule_active) {
+                    const [hours, minutes] = publishingSettings.start_time.split(':').map(Number);
+                    const runDate = new Date();
+                    runDate.setUTCHours(hours, minutes, 0, 0);
+                    // If start time was earlier today, move to tomorrow
+                    if (runDate.getTime() < Date.now()) {
+                        runDate.setUTCDate(runDate.getUTCDate() + 1);
+                    }
+                    upsertData.next_run_at = runDate.toISOString();
+                }
+
+                const { error: pubError } = await supabase
+                    .from("blog_publishing_settings")
+                    .upsert(upsertData, { onConflict: "blog_id" })
+                
+                if (pubError) throw pubError
+                toast.success(`Publishing settings for ${selectedBlog?.name} saved!`, { id: toastId })
+                fetchPublishingSettings(selectedBlogId)
+
             } else {
                 // For individual provider pages: only save the API key
                 const { error } = await supabase
@@ -797,6 +904,178 @@ export default function SiteSetupPage() {
                                                 <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                             </label>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedProvider === 'publishing_setup' && (
+                            <div className="space-y-8 mt-4 animate-in fade-in duration-300">
+                                <div className="space-y-6">
+                                    <div className="border-b border-border/50 pb-4">
+                                        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                                            <Globe className="h-5 w-5 text-primary" /> Publishing & Scheduling
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">Configure automated content distribution and scheduling for your sites.</p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Select Site to Configure</label>
+                                            <select
+                                                value={selectedBlogId}
+                                                onChange={(e) => setSelectedBlogId(e.target.value)}
+                                                className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
+                                            >
+                                                {blogs.map(blog => (
+                                                    <option key={blog.id} value={blog.id}>{blog.name} ({blog.url})</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {selectedBlogId && (
+                                            <div className="grid gap-6">
+                                                <div className="p-6 rounded-2xl border bg-accent/5 space-y-4">
+                                                    <h4 className="font-bold text-primary flex items-center gap-2">
+                                                        <Settings className="h-4 w-4" /> WordPress Integration
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        <label className="text-sm font-medium">WP Application Username</label>
+                                                        <input
+                                                            type="text"
+                                                            value={selectedBlog?.wp_username || ""}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value
+                                                                setBlogs(prev => prev.map(b => b.id === selectedBlogId ? { ...b, wp_username: val } : b))
+                                                            }}
+                                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                                            placeholder="e.g. admin"
+                                                        />
+                                                        <p className="text-[10px] text-muted-foreground">Used for REST API authentication alongside the Application Password.</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div className="p-6 rounded-2xl border bg-background space-y-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <h4 className="font-bold">Auto-Publish</h4>
+                                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="sr-only peer"
+                                                                    checked={publishingSettings.auto_publish}
+                                                                    onChange={(e) => setPublishingSettings(s => ({ ...s, auto_publish: e.target.checked }))}
+                                                                />
+                                                                <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                            </label>
+                                                        </div>
+                                                        <p className="text-[11px] text-muted-foreground">Automatically trigger publishing when an article reaches 'generated' status.</p>
+                                                        
+                                                        <div className="space-y-2 pt-2">
+                                                            <label className="text-sm font-medium">Default Save Status</label>
+                                                            <select
+                                                                value={publishingSettings.publish_save_status}
+                                                                onChange={(e) => setPublishingSettings(s => ({ ...s, publish_save_status: e.target.value }))}
+                                                                className="w-full bg-background border rounded-xl px-4 py-3 text-sm"
+                                                            >
+                                                                <option value="draft">Draft (Manual Launch)</option>
+                                                                <option value="scheduled">Scheduled (WP Native)</option>
+                                                                <option value="published">Published (Go Live)</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="p-6 rounded-2xl border bg-background space-y-4">
+                                                        <div className="flex items-center justify-between">
+                                                            <h4 className="font-bold">Active Schedule</h4>
+                                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="sr-only peer"
+                                                                    checked={publishingSettings.schedule_active}
+                                                                    onChange={(e) => setPublishingSettings(s => ({ ...s, schedule_active: e.target.checked }))}
+                                                                />
+                                                                <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                                            </label>
+                                                        </div>
+                                                        <p className="text-[11px] text-muted-foreground">Periodically trigger new write jobs for this site automatically.</p>
+                                                        
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div className="space-y-1">
+                                                                <label className="text-[10px] uppercase font-bold text-muted-foreground">Frequency</label>
+                                                                <select 
+                                                                    value={publishingSettings.frequency}
+                                                                    onChange={(e) => setPublishingSettings(s => ({ ...s, frequency: e.target.value }))}
+                                                                    className="w-full bg-background border rounded-lg px-2 py-2 text-xs"
+                                                                >
+                                                                    <option value="daily">Daily</option>
+                                                                    <option value="weekly">Weekly</option>
+                                                                    <option value="monthly">Monthly</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <label className="text-[10px] uppercase font-bold text-muted-foreground">Times</label>
+                                                                <input 
+                                                                    type="number"
+                                                                    value={publishingSettings.times_per_period}
+                                                                    onChange={(e) => setPublishingSettings(s => ({ ...s, times_per_period: parseInt(e.target.value) || 1 }))}
+                                                                    className="w-full bg-background border rounded-lg px-2 py-2 text-xs"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-6 rounded-2xl border bg-card space-y-6">
+                                                    <h4 className="font-bold flex items-center gap-2">
+                                                        <CheckCircle2 className="h-4 w-4 text-primary" /> Schedule Refinement
+                                                    </h4>
+                                                    
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                        <div className="space-y-3">
+                                                            <label className="text-sm font-medium mb-2 block">Distribution Logic</label>
+                                                            <div className="space-y-2">
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={() => setPublishingSettings(s => ({ ...s, schedule_logic: 'spread_evenly' }))}
+                                                                    className={cn(
+                                                                        "w-full p-3 rounded-xl border text-xs text-left transition-all",
+                                                                        publishingSettings.schedule_logic === 'spread_evenly' ? "bg-primary/10 border-primary ring-1 ring-primary" : "hover:bg-accent"
+                                                                    )}
+                                                                >
+                                                                    <span className="font-bold block">Spread Evenly</span>
+                                                                    <span className="opacity-70">Distribute posts throughout the period.</span>
+                                                                </button>
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={() => setPublishingSettings(s => ({ ...s, schedule_logic: 'all_at_once' }))}
+                                                                    className={cn(
+                                                                        "w-full p-3 rounded-xl border text-xs text-left transition-all",
+                                                                        publishingSettings.schedule_logic === 'all_at_once' ? "bg-primary/10 border-primary ring-1 ring-primary" : "hover:bg-accent"
+                                                                    )}
+                                                                >
+                                                                    <span className="font-bold block">All at once</span>
+                                                                    <span className="opacity-70">Queue all posts starting from the set time.</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-3">
+                                                            <label className="text-sm font-medium mb-2 block">Start Time (UTC)</label>
+                                                            <input 
+                                                                type="time" 
+                                                                value={publishingSettings.start_time}
+                                                                onChange={(e) => setPublishingSettings(s => ({ ...s, start_time: e.target.value }))}
+                                                                className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all font-mono"
+                                                            />
+                                                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                                <AlertCircle className="h-3 w-3" /> System uses UTC for globally consistent scheduling.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
