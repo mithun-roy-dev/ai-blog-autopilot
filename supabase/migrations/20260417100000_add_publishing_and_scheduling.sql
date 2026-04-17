@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS public.blog_publishing_settings (
     start_time TIME DEFAULT '09:00:00',
     next_run_at TIMESTAMP WITH TIME ZONE,
     
+    enable_rankmath_metadata BOOLEAN DEFAULT FALSE,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
     UNIQUE(blog_id)
 );

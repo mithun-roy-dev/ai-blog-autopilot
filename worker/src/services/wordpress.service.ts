@@ -213,6 +213,9 @@ export class WordPressService {
     /**
      * Creates a new post on the WordPress site.
      */
+    /**
+     * Creates a new post on the WordPress site.
+     */
     static async createPost(baseUrl: string, postData: any, apiKey: string, wpUsername: string): Promise<WPPost> {
         const url = `${baseUrl}/wp-json/wp/v2/posts`
         const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
@@ -233,6 +236,134 @@ export class WordPressService {
             throw new Error(`WordPress API Error: ${JSON.stringify(error.response?.data) || error.message}`)
         }
     }
+
+    /**
+     * Uploads media to WordPress.
+     */
+    static async uploadMedia(
+        baseUrl: string,
+        fileBuffer: Buffer,
+        mimeType: string,
+        fileName: string,
+        metadata: { alt: string; caption: string; title: string; description: string },
+        apiKey: string,
+        wpUsername: string
+    ): Promise<number> {
+        const url = `${baseUrl}/wp-json/wp/v2/media`
+        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
+
+        try {
+            // 1. Upload Binary
+            const uploadResponse = await axios.post(url, fileBuffer, {
+                headers: {
+                    "Authorization": `Basic ${auth}`,
+                    "Content-Disposition": `attachment; filename="${fileName}"`,
+                    "Content-Type": mimeType
+                }
+            })
+
+            const mediaId = uploadResponse.data.id
+
+            // 2. Update Metadata (Alt, Caption, Title)
+            await axios.post(`${url}/${mediaId}`, {
+                alt_text: metadata.alt,
+                caption: metadata.caption,
+                title: metadata.title,
+                description: metadata.description,
+            }, {
+                headers: {
+                    "Authorization": `Basic ${auth}`,
+                    "Content-Type": "application/json"
+                }
+            })
+
+            return mediaId
+        } catch (error: any) {
+            Logger.error("WordPress", `❌ Failed to upload media to ${url}`, error.response?.data || error.message)
+            throw new Error(`Media Upload Failed: ${error.message}`)
+        }
+    }
+
+    /**
+     * Finds a category by name/slug or returns null.
+     */
+    static async getCategoryByName(
+        baseUrl: string,
+        name: string,
+        apiKey: string,
+        wpUsername: string
+    ): Promise<number | null> {
+        const url = `${baseUrl}/wp-json/wp/v2/categories?search=${encodeURIComponent(name)}`
+        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
+
+        try {
+            const response = await axios.get(url, {
+                headers: { "Authorization": `Basic ${auth}` }
+            })
+            const categories = response.data
+            // Look for exact match (search is fuzzy)
+            const match = categories.find((c: any) => c.name.toLowerCase() === name.toLowerCase())
+            return match ? match.id : null
+        } catch (error) {
+            return null
+        }
+    }
+
+    /**
+     * Creates a new category in WordPress.
+     */
+    static async createCategory(
+        baseUrl: string,
+        name: string,
+        apiKey: string,
+        wpUsername: string
+    ): Promise<number> {
+        const url = `${baseUrl}/wp-json/wp/v2/categories`
+        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
+
+        try {
+            const response = await axios.post(url, { name }, {
+                headers: {
+                    "Authorization": `Basic ${auth}`,
+                    "Content-Type": "application/json"
+                }
+            })
+            return response.data.id
+        } catch (error: any) {
+            console.warn(`[WP] ⚠️ Failed to create category "${name}":`, error.response?.data || error.message)
+            return 1; // Fallback to Uncategorized (ID 1)
+        }
+    }
+
+    /**
+     * Finds tags by names or returns empty array as fallback.
+     */
+    static async getTagIdsByNames(
+        baseUrl: string,
+        names: string[],
+        apiKey: string,
+        wpUsername: string
+    ): Promise<number[]> {
+        if (!names || names.length === 0) return []
+        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
+        const ids: number[] = []
+
+        for (const name of names) {
+            try {
+                const url = `${baseUrl}/wp-json/wp/v2/tags?search=${encodeURIComponent(name)}`
+                const response = await axios.get(url, {
+                    headers: { "Authorization": `Basic ${auth}` }
+                })
+                const tags = response.data
+                const match = tags.find((t: any) => t.name.toLowerCase() === name.toLowerCase())
+                if (match) ids.push(match.id)
+            } catch (error) {
+                // Skip if not found
+            }
+        }
+        return ids
+    }
+
 
     /**
      * Extracts clean text from WordPress HTML content.

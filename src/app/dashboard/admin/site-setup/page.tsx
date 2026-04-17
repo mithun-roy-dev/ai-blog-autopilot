@@ -145,7 +145,8 @@ export default function SiteSetupPage() {
         frequency: "daily",
         times_per_period: 1,
         schedule_logic: "spread_evenly",
-        start_time: "09:00"
+        start_time: "09:00",
+        enable_rankmath_metadata: false
     })
 
     // Crawl Setup State
@@ -189,9 +190,14 @@ export default function SiteSetupPage() {
             return
         }
         setUserEmail(user.email)
+        refreshData()
+    }
+
+    const refreshData = () => {
         fetchConfigs()
         fetchBlogs()
         fetchPrompts()
+        if (selectedBlogId) fetchPublishingSettings(selectedBlogId)
     }
 
     const fetchBlogs = async () => {
@@ -218,7 +224,8 @@ export default function SiteSetupPage() {
                     frequency: data.frequency,
                     times_per_period: data.times_per_period,
                     schedule_logic: data.schedule_logic,
-                    start_time: data.start_time?.substring(0, 5) || "09:00"
+                    start_time: data.start_time?.substring(0, 5) || "09:00",
+                    enable_rankmath_metadata: data.enable_rankmath_metadata ?? false
                 })
             } else {
                 setPublishingSettings({
@@ -228,7 +235,8 @@ export default function SiteSetupPage() {
                     frequency: "daily",
                     times_per_period: 1,
                     schedule_logic: "spread_evenly",
-                    start_time: "09:00"
+                    start_time: "09:00",
+                    enable_rankmath_metadata: false
                 })
             }
         } catch (err) {
@@ -457,8 +465,7 @@ export default function SiteSetupPage() {
                 
                 if (pubError) throw pubError
                 toast.success(`Publishing settings for ${selectedBlog?.name} saved!`, { id: toastId })
-                fetchPublishingSettings(selectedBlogId)
-
+                refreshData()
             } else {
                 // For individual provider pages: only save the API key
                 const { error } = await supabase
@@ -543,7 +550,7 @@ export default function SiteSetupPage() {
                             </div>
                         </div>
 
-                        {selectedProvider !== 'system_ops' && selectedProvider !== 'editor_setup' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && (
+                        {selectedProvider !== 'system_ops' && selectedProvider !== 'editor_setup' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'cloudflare_r2' && selectedProvider !== 'publishing_setup' && (
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium flex items-center gap-2">
@@ -1023,6 +1030,25 @@ export default function SiteSetupPage() {
                                                                 />
                                                             </div>
                                                         </div>
+                                                        
+                                                        {/* RankMath Toggle */}
+                                                        <div className="pt-2 border-t border-border/50">
+                                                            <div className="flex items-center justify-between p-3 rounded-xl bg-orange-500/5 border border-orange-500/10">
+                                                                <div className="space-y-0.5">
+                                                                    <h4 className="text-xs font-bold text-orange-600 dark:text-orange-400">RankMath SEO Sync</h4>
+                                                                    <p className="text-[10px] text-muted-foreground">Sync Focus Keywords, Meta Titles and Descriptions via API.</p>
+                                                                </div>
+                                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="sr-only peer"
+                                                                        checked={publishingSettings.enable_rankmath_metadata}
+                                                                        onChange={(e) => setPublishingSettings(s => ({ ...s, enable_rankmath_metadata: e.target.checked }))}
+                                                                    />
+                                                                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                                                                </label>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -1351,7 +1377,7 @@ export default function SiteSetupPage() {
                         <div className="pt-4 border-t border-border mt-8 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'google' && selectedProvider !== 'kie_api' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'editor_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2')}
+                                disabled={isSaving || (selectedProvider !== 'openrouter' && selectedProvider !== 'openai' && selectedProvider !== 'claude' && selectedProvider !== 'google' && selectedProvider !== 'kie_api' && selectedProvider !== 'serpapi' && selectedProvider !== 'system_ops' && selectedProvider !== 'editor_setup' && selectedProvider !== 'image_templates' && selectedProvider !== 'serp_crawl_setup' && selectedProvider !== 'prompt_setup' && selectedProvider !== 'cloudflare_r2' && selectedProvider !== 'publishing_setup')}
                                 className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.05] active:scale-[0.95] disabled:opacity-50 disabled:hover:scale-100"
                             >
                                 {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
