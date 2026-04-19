@@ -99,7 +99,7 @@ export class PublisherService {
                 Logger.debug(context, `Generated SEO filename: ${seoFileName}`);
 
                 try {
-                    
+
                     const imgResponse = await axios.get(featuredImgData.src, { responseType: 'arraybuffer' });
                     const imgBuffer = Buffer.from(imgResponse.data);
                     const mimeType = String(imgResponse.headers["content-type"] || "image/webp");
@@ -127,23 +127,26 @@ export class PublisherService {
             // 4. Resolve Taxonomies (Category and Tags)
             Logger.debug(context, "Resolving category and tags with fallbacks...");
             // Get cluster topic from db if available
-            const { data: cluster } = await supabase
+            const { data: cluster } = await (supabase
                 .from('content_clusters')
-                .select('topic')
+                .select('topic, strategy_summary')
                 .eq('id', article.cluster_id)
                 .limit(1)
-                .single();
+                .single() as any);
 
+            Logger.debug(context, "Cluster data:", cluster);
             const categoryName = cluster?.topic || 'Uncategorized';
-            let categoryId = await WordPressService.getCategoryByName(blog.url, categoryName, wpKey, wpUser);
-            
-            if (!categoryId) {
-                Logger.info(context, `Category "${categoryName}" not found. Creating it...`);
-                categoryId = await WordPressService.createCategory(blog.url, categoryName, wpKey, wpUser);
-            }
+            const categoryDescription = cluster?.strategy_summary || 'Category created by AI Blog Autopilot';
+
+            let categoryId = await WordPressService.getOrCreateCategoryByName(blog.url, categoryName, categoryDescription, wpKey, wpUser);
+            Logger.debug(context, "Category ID:" + categoryId + "\n");
 
             const tagNames = (meta.secondaryKeywords || '').split(',').map((s: string) => s.trim()).filter(Boolean);
             const tagIds = await WordPressService.getTagIdsByNames(blog.url, tagNames, wpKey, wpUser);
+
+            // Clean HTML (Remove H1 and Featured Img) BEFORE Gutenberg wrapping
+            const cleanHtml = this.removeH1FeatureImg(htmlPostBodyContent);
+            const htmlPostContentGutenberg = this.wrapInGutenbergBlocks(cleanHtml);
 
             // 5. Build WordPress Payload
             let wpStatus = settings?.publish_save_status || 'draft';
@@ -152,7 +155,7 @@ export class PublisherService {
 
             let postData: any = {
                 title: article.title || meta.h1Title,
-                content: htmlPostBodyContent,
+                content: htmlPostContentGutenberg,
                 status: wpStatus === 'future' ? 'publish' : wpStatus,
                 slug: article.slug || meta.slug?.replace(/^\//, ''),
                 categories: [categoryId],
@@ -233,24 +236,36 @@ export class PublisherService {
         }
 
         // 1. Convert Markdown to HTML
+        Logger.debug("Raw markdown: at (extractEditorialData)", rawMarkdown + "\n");
         let htmlPostBodyContent = marked.parse(rawMarkdown) as string;
-
+        Logger.debug("HTML content: at (extractEditorialData)", htmlPostBodyContent + "\n");
         // 2. Wrap in Gutenberg Blocks
-        htmlPostBodyContent = this.wrapInGutenbergBlocks(htmlPostBodyContent);
-
+        //htmlPostBodyContent = this.wrapInGutenbergBlocks(htmlPostBodyContent);
+        //Logger.debug("HTML content gutenberg: at (extractEditorialData)", htmlPostBodyContent + "\n");
         return { meta, htmlPostBodyContent };
+    }
+
+    /**
+ * Extracts SE0 and Content Metadata from raw editorial content.
+ */
+    /**
+     * Removes H1 and Featured Image from HTML content.
+     */
+    private static removeH1FeatureImg(html: string): string {
+        const $ = cheerio.load(html);
+        $('h1').first().remove();
+        $('figure').has('img.featured').first().remove();
+        // Return only the inner content
+        return $('body').html() || html;
     }
 
     /**
      * Wraps raw HTML tags in WordPress Gutenberg block comments.
      */
+
     private static wrapInGutenbergBlocks(html: string): string {
         const $ = cheerio.load(html);
         let blocks = '';
-
-        // Pre-processing: Remove first H1 and Featured Image before wrapping
-        $('h1').first().remove();
-        $('figure').has('img.featured').first().remove();
 
         $('body').children().each((_, el) => {
             const $el = $(el);
@@ -261,23 +276,62 @@ export class PublisherService {
 
             if (tag.match(/^h[1-6]$/)) {
                 const level = tag.substring(1);
-                blocks += `<!-- wp:heading {"level":${level}} -->\n${content}\n<!-- /wp:heading -->\n\n`;
+                blocks += `<!-- wp:heading {"level":${level}} -->${content}<!-- /wp:heading -->\n\n`;
             } else if (tag === 'p') {
-                blocks += `<!-- wp:paragraph -->\n${content}\n<!-- /wp:paragraph -->\n\n`;
+                blocks += `<!-- wp:paragraph -->${content}<!-- /wp:paragraph -->\n\n`;
             } else if (tag === 'ul' || tag === 'ol') {
-                blocks += `<!-- wp:list -->\n${content}\n<!-- /wp:list -->\n\n`;
+                blocks += `<!-- wp:list -->${content}<!-- /wp:list -->\n\n`;
             } else if (tag === 'figure' || tag === 'img') {
-                blocks += `<!-- wp:image -->\n${content}\n<!-- /wp:image -->\n\n`;
+                if (tag === 'figure') {
+                    const figureClasses = "wp-block-image aligncenter";
+                    $el.addClass(figureClasses);
+                    $el.find('figcaption').addClass('wp-element-caption');
+
+                    // ✅ Clean img class and style inside figure
+                    $el.find('img').removeAttr('class');
+                    $el.find('img').removeAttr('style');
+
+                    const updatedContent = $.html(el);
+                    blocks += `<!-- wp:image {"align":"center"} -->${updatedContent}<!-- /wp:image -->\n\n`;
+                    Logger.debug("Updated content block at tag=figure: tag:" + tag + " at (wrapInGutenbergBlocks)", blocks + "\n");
+                } else {
+                    $el.find('img').removeAttr('class');
+                    $el.find('img').removeAttr('style');
+                    $el.removeClass('in-body');
+                    $el.removeAttr('class');
+                    $el.removeAttr('style');
+                    const src = $el.attr('src');
+                    const alt = $el.attr('alt') || '';
+                    const title = $el.attr('title') || '';
+                    const imgHtml = `<figure class="wp-block-image aligncenter"><img src="${src}" alt="${alt}" title="${title}"/></figure>`;
+                    blocks += `<!-- wp:image {"align":"center"} -->${imgHtml}<!-- /wp:image -->\n\n`;
+                    Logger.debug("Updated content block at tag=img: tag:" + tag + " at (wrapInGutenbergBlocks)", blocks + "\n");
+                }
             } else if (tag === 'blockquote') {
-                blocks += `<!-- wp:quote -->\n${content}\n<!-- /wp:quote -->\n\n`;
+                blocks += `<!-- wp:quote -->${content}<!-- /wp:quote -->\n\n`;
             } else if (tag === 'table') {
-                blocks += `<!-- wp:table -->\n${content}\n<!-- /wp:table -->\n\n`;
+                const tableBlockAlignment = { "align": "wide" };
+                const figureClasses = "wp-block-table table-container alignwide";
+                $el.removeAttr('class').removeAttr('style');
+                $(el).find('colgroup').remove();
+                $(el).find('td p, th p').each(function () {
+                    $(this).replaceWith($(this).contents());
+                });
+                $(el).addClass('has-fixed-layout');
+                $(el).find('tr').each(function () {
+                    $(this).find('th, td').last()
+                        .addClass('has-text-align-center')
+                        .attr('data-align', 'center');
+                });
+                const updatedTable = $.html(el);
+                const wrappedContent = `<figure class="${figureClasses}">${updatedTable}</figure>`;
+                blocks += `<!-- wp:table ${JSON.stringify(tableBlockAlignment)} -->${wrappedContent}<!-- /wp:table -->\n\n`;
             } else {
-                // General fallback
                 blocks += `<!-- wp:html -->\n${content}\n<!-- /wp:html -->\n\n`;
             }
         });
 
+        Logger.debug("HTML content gutenberg full: at (wrapInGutenbergBlocks)", blocks + "\n");
         return blocks || html;
     }
 

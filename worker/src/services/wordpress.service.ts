@@ -302,10 +302,52 @@ export class WordPressService {
             })
             const categories = response.data
             // Look for exact match (search is fuzzy)
+            Logger.debug("WordPress: getCategoryByName", "Categories found", categories)
             const match = categories.find((c: any) => c.name.toLowerCase() === name.toLowerCase())
             return match ? match.id : null
         } catch (error) {
             return null
+        }
+    }
+
+        /**
+     * Finds a category by name/slug or returns null.
+     */
+    static async getOrCreateCategoryByName(
+        baseUrl: string,
+        name: string,
+        description: string,
+        apiKey: string,
+        wpUsername: string
+    ): Promise<number> {
+        const url = `${baseUrl}/wp-json/wp/v2/categories`
+        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
+        const slug = name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '');
+        try {
+            const response = await axios.post(url, { name, slug, description: description}, {
+                headers: {
+                    "Authorization": `Basic ${auth}`,
+                    "Content-Type": "application/json"
+                }
+            })
+            if(response.status === 201){
+                Logger.debug("WordPress: getOrCreateCategoryByName", "Category created successfully: response.data.id", response.data.id)
+                return response.data.id
+            }
+            else if(response.status === 400 && response.data.code === 'term_exists' && response.data.data.status === 400){
+                Logger.debug("WordPress: getOrCreateCategoryByName", "Category already exists: response.data.data.term_id", response.data.data.term_id)
+                return response.data.data.term_id;
+            }
+            return 1; // Fallback to Uncategorized (ID 1)
+        } catch (error: any) {
+            console.warn(`[WP] ⚠️ Failed to create category "${name}":`, error.response?.data || error.message)
+            Logger.debug("WordPress: getOrCreateCategoryByName", "Failed to create category: error.response?.data || error.message", error.response?.data || error.message)
+            Logger.error("WordPress: getOrCreateCategoryByName", "Failed to create category", error.response?.data || error.message)
+            if(error.response.status === 400 && error.response.data.code === 'term_exists' && error.response.data.data.status === 400){
+                Logger.debug("WordPress: getOrCreateCategoryByName catch", "Category already exists: error.response.data.data.term_id", error.response.data.data.term_id)
+                return error.response.data.data.term_id;
+            }
+            return 1; // Fallback to Uncategorized (ID 1)
         }
     }
 

@@ -46,9 +46,9 @@ export class SchedulerService {
             
             try {
                 // 1. Find the next article to write
-                const { data: page } = await supabase
+                const { data: page } = await (supabase
                     .rpc('get_next_cluster_page_for_blog', { p_blog_id: schedule.blog_id })
-                    .maybeSingle();
+                    .maybeSingle() as any);
 
                 if (!page) {
                     console.warn(`[Scheduler] ⚠️ No 'not_generated' pages found for Site ${schedule.blog_id}. Stopping catch-up.`);
@@ -119,9 +119,9 @@ export class SchedulerService {
     }
 
     private static async triggerSingleJob(schedule: any, supabase: any) {
-        const { data: page } = await supabase
+        const { data: page } = await (supabase
             .rpc('get_next_cluster_page_for_blog', { p_blog_id: schedule.blog_id })
-            .maybeSingle();
+            .maybeSingle() as any);
 
         if (page) {
             const { data: job } = await supabase
