@@ -1,0 +1,73 @@
+/*
+ * AI Autopilot - Main Stylesheet
+ * This file contains all styles for the AI Autopilot plugin.
+ */
+
+/* Responsive Table Styles */
+.rmits-scroll-hint {
+    display: none;
+    font-size: .9em;
+    opacity: .5;
+    margin-bottom: 8px;
+    padding-left: 2rem;
+}
+
+.responsive-table-wrapper-mits {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    text-align: center;
+    border: 2px solid rgba(128, 128, 128, .5);
+    border-radius: 16px;
+    border-width: 2px 0;
+}
+
+.responsive-table-wrapper-mits table {
+    min-width: 580px;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.responsive-table-wrapper-mits tbody,
+.responsive-table-wrapper-mits td {
+    border: 2px solid rgba(128, 128, 128, .5);
+}
+
+.responsive-table-wrapper-mits th {
+    padding: 12px 16px;
+    font-weight: 600;
+    background: rgba(128, 128, 128, .12);
+    white-space: normal;
+    font-size: inherit;
+    color: inherit;
+    line-height: 1.5;
+    text-align: center;
+    word-break: normal !important;
+    overflow-wrap: normal;
+}
+
+.responsive-table-wrapper-mits tr:last-child td {
+    border-bottom: none;
+}
+
+.responsive-table-wrapper-mits tbody tr:nth-child(2n) td {
+    background: rgba(128, 128, 128, .05);
+}
+
+.responsive-table-wrapper-mits tbody tr:hover td {
+    background: rgba(128, 128, 128, .08);
+}
+
+@media (max-width: 640px) {
+    .rmits-scroll-hint {
+        display: block;
+    }
+    .responsive-table-wrapper-mits td,
+    .responsive-table-wrapper-mits th {
+        font-size: inherit;
+        padding: 10px 12px;
+    }
+    .responsive-table-wrapper-mits th {
+        white-space: normal;
+    }
+}

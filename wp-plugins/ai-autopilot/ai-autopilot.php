@@ -39,6 +39,30 @@ add_action('init', function() {
 });
 
 /**
+ * High-Performance CSS Loading: 
+ * Only inline the CSS if the post content contains our specific table class.
+ * This prevents unnecessary HTTP requests and avoids loading unused CSS on other pages.
+ */
+add_action('wp_head', function() {
+    if (is_singular()) {
+        global $post;
+        
+        // Check if the content contains the responsive table class
+        if (isset($post->post_content) && strpos($post->post_content, 'responsive-table-wrapper-mits') !== false) {
+            $css_path = plugin_dir_path(__FILE__) . 'assets/css/ai-autopilot.css';
+            
+            if (file_exists($css_path)) {
+                $css_content = file_get_contents($css_path);
+                // Minify slightly on execution by removing extra whitespace (optional but good)
+                $css_minified = preg_replace('/\s+/', ' ', $css_content);
+                echo "\n<!-- AI Autopilot: Inline Responsive Table Styles -->\n";
+                echo '<style id="ai-autopilot-dynamic-styles">' . trim($css_minified) . '</style>' . "\n";
+            }
+        }
+    }
+}, 100); // Priority 100 to ensure it loads late in the <head>
+
+/**
  * Sync logic: 
  * Catch updates to our public keys and sync them to RankMath's internal hidden keys.
  */

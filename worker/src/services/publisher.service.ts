@@ -309,7 +309,8 @@ export class PublisherService {
                 }
             } else if (tag === 'blockquote') {
                 blocks += `<!-- wp:quote -->${content}<!-- /wp:quote -->\n\n`;
-            } else if (tag === 'table') {
+            }
+            else if (tag === 'table') {
                 const tableBlockAlignment = { "align": "wide" };
                 const figureClasses = "wp-block-table table-container alignwide";
                 $el.removeAttr('class').removeAttr('style');
@@ -324,10 +325,11 @@ export class PublisherService {
                         .attr('data-align', 'center');
                 });
                 const updatedTable = $.html(el);
-                const wrappedContent = `<figure class="${figureClasses}">${updatedTable}</figure>`;
+
+                // ✅ scroll hint injected here, hidden on desktop, visible on mobile via CSS
+                const scrollHint = `<p class="rmits-scroll-hint">← Scroll to see more →</p>`;
+                const wrappedContent = `<figure class="${figureClasses}">${scrollHint}<div class="responsive-table-wrapper-mits">${updatedTable}</div></figure>`;
                 blocks += `<!-- wp:table ${JSON.stringify(tableBlockAlignment)} -->${wrappedContent}<!-- /wp:table -->\n\n`;
-            } else {
-                blocks += `<!-- wp:html -->\n${content}\n<!-- /wp:html -->\n\n`;
             }
         });
 
