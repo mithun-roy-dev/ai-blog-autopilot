@@ -60,70 +60,46 @@ export class PublisherService {
             Logger.debug(context, "Meta data:\n" + meta + "\n");
             Logger.debug(context, "HTML content prepared for body.");
 
-            // 3. Handle Featured Image
-            let featuredMediaId: number | undefined;
-            const featuredImgData = this.extractFeaturedImage(htmlPostBodyContent);
-            Logger.debug(context, "Featured image data extracted from HTML.", { hasData: !!featuredImgData });
+            //**description loaded */
+            let descriptionAllImages: string[] = [];
+            const articleWritingJobId = article.internal_url?.split('/').pop();
 
-            if (featuredImgData) {
-                // 3.1 Fetch original job data to get the detailed [IMAGE] description
-                let featureImgDescription = "";
-                try {
-                    const originalJobId = article.internal_url?.split('/').pop();
-                    if (originalJobId) {
-                        Logger.debug(context, `Fetching original job ${originalJobId} for image metadata...`);
-                        const { data: jobData } = await supabase
-                            .from('writing_jobs')
-                            .select('generation_data')
-                            .eq('id', originalJobId)
-                            .single();
+            try {
+                if (articleWritingJobId) {
+                    Logger.debug(context, `Fetching original job ${articleWritingJobId} for image metadata...`);
+                    const { data: jobData } = await supabase
+                        .from('writing_jobs')
+                        .select('generation_data')
+                        .eq('id', articleWritingJobId)
+                        .single();
 
-                        if (jobData?.generation_data?.article_content) {
-                            featureImgDescription = this.extractImageDescriptionFromJob(jobData.generation_data.article_content);
-                            Logger.debug(context, "Extracted detailed image description from job data.");
-                        }
+                    if (jobData?.generation_data?.article_content) {
+                        descriptionAllImages = this.extractAllImageDescriptionFromWriterContent(jobData.generation_data.article_content);
+                        Logger.debug(context, "Extracted detailed all image description from job data. descriptionAllImages:\n" + descriptionAllImages + "\n");
                     }
-                } catch (jobErr: any) {
-                    Logger.debug(context, `Could not fetch original job description: ${jobErr.message}`);
                 }
-
-                Logger.debug(context, "Featured image detected. Processing SEO renaming and upload...", featuredImgData);
-
-                // SEO Friendly filename: [title from img tag]-[imageType].[ext]
-                // and extract imageType from writer agent output if possible, else fallback to 'featured'
-                // We use featuredImgData.title for the SEO name
-                const safeImageTitle = featuredImgData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                const ext = featuredImgData.src.split('.').pop()?.split('?')[0] || 'webp';
-                const seoFileName = `${safeImageTitle}-featured.${ext}`;
-
-                Logger.debug(context, `Generated SEO filename: ${seoFileName}`);
-
-                try {
-
-                    const imgResponse = await axios.get(featuredImgData.src, { responseType: 'arraybuffer' });
-                    const imgBuffer = Buffer.from(imgResponse.data);
-                    const mimeType = String(imgResponse.headers["content-type"] || "image/webp");
-
-                    featuredMediaId = await WordPressService.uploadMedia(
-                        blog.url,
-                        imgBuffer,
-                        mimeType,
-                        seoFileName,
-                        {
-                            alt: featuredImgData.alt,
-                            caption: featuredImgData.figcaption,
-                            title: featuredImgData.title,
-                            description: featureImgDescription
-                        },
-                        wpKey,
-                        wpUser
-                    );
-                    Logger.debug(context, `Uploaded featured image. WP Media ID: ${featuredMediaId}`);
-                } catch (imgErr: any) {
-                    Logger.error(context, `⚠️ Featured image upload failed: ${imgErr.message}. Proceeding without it.`);
-                }
+            } catch (jobErr: any) {
+                Logger.debug(context, "Could not fetch original job description: " + jobErr.message + "\n");
             }
+            //description loaded ended
 
+            //**new added handle all
+            let imageInArticles = [];
+            imageInArticles = this.extractAllImagesData(htmlPostBodyContent, descriptionAllImages);
+            Logger.debug(context, "Extracted detailed all image description from job data. imageInArticles:\n" + imageInArticles + "\n");
+            //**new added handle all images
+
+            //**upload images in wp */
+            let uploadedImages = [];
+            uploadedImages = await WordPressService.bulkUploadImages(imageInArticles, blog.url, wpUser, wpKey, 500);
+            Logger.debug(context, "Uploaded images to WordPress. uploadedImages:\n" + uploadedImages + "\n");
+            //**upload images in wp end */
+
+            //**set wordpress src for all images and get the html*/
+            let htmlPostBodyContentWithWpSrc = htmlPostBodyContent;
+
+            htmlPostBodyContentWithWpSrc = this.setImageWPSrc(htmlPostBodyContent, uploadedImages);
+            Logger.debug(context, "HTML content with WordPress src:\n" + htmlPostBodyContentWithWpSrc + "\n");
             // 4. Resolve Taxonomies (Category and Tags)
             Logger.debug(context, "Resolving category and tags with fallbacks...");
             // Get cluster topic from db if available
@@ -145,9 +121,9 @@ export class PublisherService {
             const tagIds = await WordPressService.getTagIdsByNames(blog.url, tagNames, wpKey, wpUser);
 
             // Clean HTML (Remove H1 and Featured Img) BEFORE Gutenberg wrapping
-            const cleanHtml = this.removeH1FeatureImg(htmlPostBodyContent);
+            const cleanHtml = this.removeH1FeatureImg(htmlPostBodyContentWithWpSrc);
             const htmlPostContentGutenberg = this.wrapInGutenbergBlocks(cleanHtml);
-
+            Logger.debug(context, "HTML content after removing H1 and Featured Img and wrapping in Gutenberg blocks:\n" + htmlPostContentGutenberg + "\n");
             // 5. Build WordPress Payload
             let wpStatus = settings?.publish_save_status || 'draft';
             if (wpStatus === 'published') wpStatus = 'publish';
@@ -162,7 +138,8 @@ export class PublisherService {
                 tags: tagIds,
             };
 
-            if (featuredMediaId) postData.featured_media = featuredMediaId;
+            /*if (featuredMediaId) postData.featured_media = featuredMediaId;*/
+            if (uploadedImages.length > 0) postData.featured_media = uploadedImages[0].id;
 
             if (wpStatus === 'future') {
                 postData.status = 'future';
@@ -358,6 +335,46 @@ export class PublisherService {
     }
 
     /**
+ * Extracts the all occurrence of images from the content
+ */
+    private static extractAllImagesData(html: string, allImageDescription: string[]) {
+        const $ = cheerio.load(html);
+        const images = [];
+        let imageIndex = 0;
+        Logger.debug("Publisher: extractAllImagesData", "All images description: " + JSON.stringify(allImageDescription) + " Length: " + allImageDescription.length);
+        while ($('figure').has('img') && imageIndex < allImageDescription.length) {
+            const figure = $('figure').has('img').first();
+            if (figure.length > 0) {
+                const img = figure.find('img');
+                const safeImageTitle = img.attr('title').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                const ext = img.attr('src').split('.').pop()?.split('?')[0] || 'webp';
+                const seoFileName = `${safeImageTitle}-featured.${ext}`;
+                const imageType = img.hasClass('in-body') ? 'in-body' : 'featured';
+                images.push({
+                    //design a model for this return
+                    src: img.attr('src') || '',
+                    alt: img.attr('alt') || '',
+                    title: img.attr('title') || '',
+                    description: allImageDescription[imageIndex] || 'Description by AI Autopilot',
+                    figcaption: figure.find('figcaption').text().trim(),
+                    imageType: imageType,
+                    seoFileName: seoFileName
+                });
+                figure.remove();
+                Logger.debug("Publisher: extractAllImagesData", "Single Image extracted successfully: " + img.attr('src') + " Images: " + JSON.stringify(images));
+            }
+            imageIndex++;
+            Logger.debug("Publisher: extractAllImagesData", "Image index: " + imageIndex);
+        }
+        if (images.length < 0) {
+            Logger.debug("Publisher: extractAllImagesData", "No images extracted successfully: " + images);
+            return [];
+        }
+        Logger.debug("Publisher: extractAllImagesData", "All images extracted successfully: " + images);
+        return images;
+    }
+
+    /**
      * Extracts the detailed description from the [IMAGE] block in writer output.
      */
     private static extractImageDescriptionFromJob(content: string): string {
@@ -375,4 +392,48 @@ export class PublisherService {
         }
         return "";
     }
+
+    /**
+ * Extracts the detailed description from the [IMAGE] block in writer output.
+ */
+    private static extractAllImageDescriptionFromWriterContent(writerContent: string): string[] {
+        const imageBlockRegex = /\[IMAGE([\s\S]*?)\]/g;
+        let match;
+        const descMatchImages: string[] = [];
+
+        while ((match = imageBlockRegex.exec(writerContent)) !== null) {
+            const block = match[1];
+            if (block.includes('type') && (block.includes('in-body') || block.includes('featured'))) {
+                const descMatch = block.match(/description\s*:\s*([\s\S]*?)(?=\n\s*[a-z]+\s*:|$)/i);
+                if (descMatch && descMatch[1]) {
+                    const description = descMatch[1].trim();
+                    descMatchImages.push(description);
+                    Logger.debug("Publisher: extractAllImageDescriptionFromWriterContent", "Image description extracted: " + description);
+                }
+            }
+        }
+        Logger.debug("Publisher: extractAllImageDescriptionFromWriterContent", "All image descriptions extracted: " + descMatchImages.length);
+        return descMatchImages;
+    }
+
+    /**
+* Extracts the all occurrence of images from the content
+*/
+    private static setImageWPSrc(html: string, uploadedImages: any[]) {
+        const $ = cheerio.load(html);
+        const images = $('figure').has('img');
+
+        images.each((i, el) => {
+            if (uploadedImages[i] && uploadedImages[i].newWpUrl) {
+                $(el).find('img').attr('src', uploadedImages[i].newWpUrl);
+                Logger.debug("Publisher: setImageWPSrc", `Updated image ${i} with WP URL: ${uploadedImages[i].newWpUrl}`);
+            }
+        });
+
+        const updatedHtml = $('body').html() || html;
+        Logger.debug("Publisher: setImageWPSrc", "All images src set successfully. updatedHtml");
+        return updatedHtml;
+    }
+
+
 }

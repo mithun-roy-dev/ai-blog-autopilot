@@ -248,7 +248,7 @@ export class WordPressService {
         metadata: { alt: string; caption: string; title: string; description: string },
         apiKey: string,
         wpUsername: string
-    ): Promise<number> {
+    ): Promise<{ id: number, source_url: string }> {
         const url = `${baseUrl}/wp-json/wp/v2/media`
         const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
 
@@ -277,7 +277,7 @@ export class WordPressService {
                 }
             })
 
-            return mediaId
+            return { id: mediaId, source_url: uploadResponse.data.source_url }
         } catch (error: any) {
             Logger.error("WordPress", `❌ Failed to upload media to ${url}`, error.response?.data || error.message)
             throw new Error(`Media Upload Failed: ${error.message}`)
@@ -413,5 +413,45 @@ export class WordPressService {
     static cleanHtml(html: string): string {
         // Basic cleaning logic for now
         return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim()
+    }
+
+    static async bulkUploadImages(images: any[], baseUrl: string, wpUsername: string, apiKey: string, delayMs: number = 500) {
+    const results = [];
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    for (const imgData of images) {
+        try {
+        // 1. Fetch image data into a buffer
+        const imgResponse = await axios.get(imgData.src, { responseType: 'arraybuffer' });
+        const imgBuffer = Buffer.from(imgResponse.data);
+        const mimeType = imgResponse.headers["content-type"] || "image/webp";
+
+        // 2. Upload to WordPress
+        const uploadResult = await WordPressService.uploadMedia(
+            baseUrl,
+            imgBuffer,
+            mimeType,
+            imgData.seoFileName,
+            { 
+                alt: imgData.alt,
+                caption: imgData.figcaption,
+                title: imgData.title,
+                description: imgData.description
+            },
+            apiKey,
+            wpUsername
+        );
+        Logger.debug("WordPress: bulkUploadImages", "Image uploaded successfully: mediaId", uploadResult.id);
+        results.push({ id: uploadResult.id, originalSrc: imgData.src, newWpUrl: uploadResult.source_url, status: 'success' });
+        Logger.debug("WordPress: bulkUploadImages", "Results: " + JSON.stringify(results));
+        // 3. Optional: 500ms delay to avoid rate limits
+        await delay(delayMs); 
+
+        } catch (error: any) {
+        Logger.debug("WordPress: bulkUploadImages", "Image upload failed: error.message", error.message);
+        results.push({ src: imgData.src, status: 'failed', error: error.message });
+        }
+    }
+
+    return results;
     }
 }
