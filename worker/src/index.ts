@@ -8,6 +8,7 @@ import { ClusterService } from './services/cluster.service'
 import { GenerationService } from './services/generation.service'
 import { SchedulerService } from './services/scheduler.service'
 import { PublisherService } from './services/publisher.service'
+import { Logger } from './utils/logger'
 
 // Load environment variables
 dotenv.config()
@@ -188,6 +189,31 @@ async function processLinkSlugsJob(job: any) {
     await SupabaseService.syncSlugLinks(job.id, job.payload)
 }
 
+async function processSingleImageGenerationJob(job: any) {
+    const { jobId, html } = job.payload
+    console.log(`[Job ${job.id}] 🖼️ Starting single image generation...`)
+    Logger.debug(`Job:${job.id}`, `processSingleImageGenerationJob: Starting...jobId=${jobId}, html=${html}`);
+
+    try {
+        await SupabaseService.updateJobStatus(job.id, 'processing')
+
+        const publicUrl = await GenerationService.createSingleImage(jobId, html)
+
+        const supabase = SupabaseService.getClient()
+        await supabase.from('job_queue').update({
+            status: 'completed',
+            payload: { ...job.payload, publicUrl }
+        }).eq('id', job.id)
+
+        console.log(`[Job ${job.id}] ✅ Single image generation completed successfully! publicUrl=${publicUrl}`)
+        Logger.debug(`Job:${job.id}`, `processSingleImageGenerationJob: Completed successfully! publicUrl=${publicUrl}`);
+    } catch (error: any) {
+        console.error(`[Job ${job.id}] ❌ Single image generation failed:`, error.message)
+        Logger.debug(`Job:${job.id}`, `processSingleImageGenerationJob: Failed! error=${error.message}`);
+        await SupabaseService.updateJobStatus(job.id, 'failed', error.message)
+    }
+}
+
 async function pollJobs() {
     const supabase = SupabaseService.getClient()
 
@@ -217,6 +243,8 @@ async function pollJobs() {
         await processLinkSlugsJob(job)
     } else if (job.type === 'publish_article') {
         await PublisherService.publishArticle(job.id, job.payload)
+    } else if (job.type === 'single_image_generation') {
+        await processSingleImageGenerationJob(job)
     } else {
         console.warn(`[Job ${job.id}] ⚠️ Unknown job type: ${job.type}`)
         await SupabaseService.updateJobStatus(job.id, 'failed', `Unknown job type: ${job.type}`)

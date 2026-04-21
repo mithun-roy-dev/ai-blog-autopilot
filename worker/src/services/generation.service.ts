@@ -952,6 +952,111 @@ ${promptConfig.user_prompt_template}`;
         };
     }
 
+    static async createSingleImage(jobId: string, imageHtml: string) {
+        const supabase = SupabaseService.getClient();
+        console.log(`[Job ${jobId}] 🖼️ Image Agent: Regenerating single image...`);
+        Logger.debug(`Job:${jobId}`, `createSingleImage: Starting...`);
+        // 1. Fetch current job data to get blog mapping
+        const { data: jobData, error: jobError } = await supabase
+            .from('writing_jobs')
+            .select('blog_id, user_id, blogs(name)')
+            .eq('id', jobId)
+            .single();
+
+        if (jobError || !jobData) {
+            Logger.debug(`Job:${jobId}`, `createSingleImage: Job not found or missing relations: ${jobError?.message}`);
+            throw new Error(`Job not found or missing relations: ${jobError?.message}`);
+        }
+
+        const siteName: string = (jobData as any)?.blogs?.name || 'Unknown Site';
+        const userId: string = jobData.user_id;
+        const blogId: string = jobData.blog_id;
+        Logger.debug(`Job:${jobId}`, `createSingleImage: siteName = ${siteName}, userId = ${userId}, blogId = ${blogId} ,\n\n imageHtml = ${imageHtml}`);
+        // 2. Parse the HTML using Cheerio
+        const $ = cheerio.load(imageHtml);
+        const $img = $('img');
+        const $figcaption = $('figcaption');
+
+        const altText = $img.attr('alt') || '';
+        const titleText = $img.attr('title') || '';
+        const imgClass = $img.attr('class') || '';
+        const captionText = $figcaption.text() || '';
+        const oldSrc = $img.attr('src') || '';
+
+        const type = imgClass.includes('featured') ? 'featured' : 'in-body';
+        
+        // Extract number from old src (e.g., img-inbody-2-12345.webp -> 2)
+        let imgNumber = Math.floor(Math.random() * 1000);
+        const match = oldSrc.match(/-(\d+)-\d+\./);
+        if (match) imgNumber = parseInt(match[1]);
+
+        // Build mock ImageBlock required by ImageService
+        const block: any = {
+            rawBlock: imageHtml,
+            number: imgNumber,
+            type: type,
+            title: titleText,
+            alt: altText,
+            caption: captionText,
+            description: `Title: ${titleText}. Context: ${captionText}`,
+        };
+
+        // 3. Resolve metadata model config
+        const metadataResolved = await LLMService.resolveTask('image_metadata');
+        const metadataModel = metadataResolved.model;
+        const metadataApiKey = metadataResolved.apiKey;
+        const metadataProvider = metadataResolved.provider;
+
+        // 4. Resolve Image Gen config and R2 Config from DB
+        const { data: sysConfig } = await supabase.from('system_settings').select('value').eq('key', 'logging_config').single();
+        const configValue = sysConfig?.value as any;
+
+        const { data: r2Data } = await supabase.from('ai_configurations').select('api_key').eq('provider', 'cloudflare_r2').single();
+        if (!r2Data?.api_key) throw new Error('Cloudflare R2 not configured in Site Setup.');
+        const r2Config = ImageService.parseR2Config(r2Data.api_key);
+
+        // 5. Generate Metadata
+        console.log(`[Job ${jobId}] 🧠 Generating image prompt/metadata...`);
+        const metadataContent = await ImageService.generateImageMetadata(
+            block,
+            metadataModel,
+            metadataApiKey,
+            jobId,
+            metadataProvider
+        );
+
+        // 6. Generate Image
+        console.log(`[Job ${jobId}] 🎨 Generating image via provider...`);
+        Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: Generating image via provider...metadataContent=${metadataContent}, block=${JSON.stringify(block)}`);
+        const imageProvider = block.type === 'featured' ? configValue?.feature_image_provider : configValue?.inbody_image_provider;
+        
+        const imageResult = await ImageService.generateImage(
+            metadataContent,
+            block.type,
+            imageProvider || 'openrouter',
+            siteName,
+            jobId,
+            configValue || {}
+        );
+
+        // 7. Upload to R2
+        console.log(`[Job ${jobId}] ☁️ Uploading to R2...`);
+        const timestamp = Date.now();
+        const imageType = block.type === 'featured' ? 'featured' : 'inbody';
+        const r2Key = `users/${userId}/blogs/${blogId}/jobs/${jobId}/img-${imageType}-${block.number}-${timestamp}.${imageResult.extension}`;
+        
+        const publicUrl = await ImageService.uploadToR2(imageResult.buffer, r2Key, r2Config, jobId);
+        if(!publicUrl)
+        {
+            console.error(`[Job ${jobId}] ❌ Image create via api. But Failed to upload image to R2`);
+            Logger.debug(`Job:${jobId}`, ` Image create via api. But Failed to upload image to R2`);
+            throw new Error('Failed to upload image to R2');
+        }
+        Logger.debug(`Job:${jobId}`, `SINGLE_IMAGE_REGEN: success, new URL: ${publicUrl}`);
+        
+        return publicUrl;
+    }
+
     /**
      * Extracts the ```post-info ... ``` fenced block from an article string.
      * Returns the block text and the article without the block.

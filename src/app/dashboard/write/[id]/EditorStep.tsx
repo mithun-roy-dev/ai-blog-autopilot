@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { useEditor, EditorContent, Node } from "@tiptap/react"
+import { useEditor, EditorContent, Node, ReactNodeViewRenderer } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Link from "@tiptap/extension-link"
 import Image from "@tiptap/extension-image"
@@ -22,6 +22,7 @@ import {
     Table as TableIcon, Plus, Layout, Copy, Check
 } from "lucide-react"
 import { cn } from "@/utils/cn"
+import { ImageNodeView } from "./ImageNodeView"
 
 interface EditorStepProps {
     initialContent: string
@@ -144,6 +145,9 @@ const CustomImage = Image.extend({
             ...(style ? { style } : {}), 
             src, alt, title, ...rest 
         }]
+    },
+    addNodeView() {
+        return ReactNodeViewRenderer(ImageNodeView)
     },
 })
 

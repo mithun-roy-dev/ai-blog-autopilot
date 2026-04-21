@@ -109,7 +109,7 @@ export class PublisherService {
                 .eq('id', article.cluster_id)
                 .limit(1)
                 .single() as any);
-                
+
             Logger.debug(context, "Cluster data:", cluster);
             const categoryName = cluster?.topic || 'Uncategorized';
             const categoryDescription = cluster?.strategy_summary || 'Category created by AI Blog Autopilot';
