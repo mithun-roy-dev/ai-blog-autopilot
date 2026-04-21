@@ -146,7 +146,8 @@ export default function SiteSetupPage() {
         times_per_period: 1,
         schedule_logic: "spread_evenly",
         start_time: "09:00",
-        enable_rankmath_metadata: false
+        enable_rankmath_metadata: false,
+        max_article_tags: 0
     })
 
     // Crawl Setup State
@@ -225,7 +226,8 @@ export default function SiteSetupPage() {
                     times_per_period: data.times_per_period,
                     schedule_logic: data.schedule_logic,
                     start_time: data.start_time?.substring(0, 5) || "09:00",
-                    enable_rankmath_metadata: data.enable_rankmath_metadata ?? false
+                    enable_rankmath_metadata: data.enable_rankmath_metadata ?? false,
+                    max_article_tags: data.max_article_tags ?? 0
                 })
             } else {
                 setPublishingSettings({
@@ -236,7 +238,8 @@ export default function SiteSetupPage() {
                     times_per_period: 1,
                     schedule_logic: "spread_evenly",
                     start_time: "09:00",
-                    enable_rankmath_metadata: false
+                    enable_rankmath_metadata: false,
+                    max_article_tags: 0
                 })
             }
         } catch (err) {
@@ -944,7 +947,7 @@ export default function SiteSetupPage() {
                                             <div className="grid gap-6">
                                                 <div className="p-6 rounded-2xl border bg-accent/5 space-y-4">
                                                     <h4 className="font-bold text-primary flex items-center gap-2">
-                                                        <Settings className="h-4 w-4" /> WordPress Integration
+                                                        <Settings className="h-4 w-4" /> WordPress Publishing
                                                     </h4>
                                                     <div className="space-y-2">
                                                         <label className="text-sm font-medium">WP Application Username</label>
@@ -959,6 +962,26 @@ export default function SiteSetupPage() {
                                                             placeholder="e.g. admin"
                                                         />
                                                         <p className="text-[10px] text-muted-foreground">Used for REST API authentication alongside the Application Password.</p>
+                                                    </div>
+
+                                                    <div className="space-y-2 pt-2 border-t border-border/50">
+                                                        <div className="flex items-center justify-between">
+                                                            <label className="text-sm font-medium">Maximum Article Tags</label>
+                                                            <div className="group relative">
+                                                                <AlertCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                                <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-popover text-[10px] text-popover-foreground border rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                                    0 means no tags will be published on WordPress.
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <input
+                                                            type="number"
+                                                            value={publishingSettings.max_article_tags}
+                                                            onChange={(e) => setPublishingSettings(s => ({ ...s, max_article_tags: parseInt(e.target.value) || 0 }))}
+                                                            className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all"
+                                                            min="0"
+                                                        />
+                                                        <p className="text-[10px] text-muted-foreground">Limit the number of secondary keywords converted to WordPress tags.</p>
                                                     </div>
                                                 </div>
 

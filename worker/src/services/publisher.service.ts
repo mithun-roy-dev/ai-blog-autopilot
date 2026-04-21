@@ -109,7 +109,7 @@ export class PublisherService {
                 .eq('id', article.cluster_id)
                 .limit(1)
                 .single() as any);
-
+                
             Logger.debug(context, "Cluster data:", cluster);
             const categoryName = cluster?.topic || 'Uncategorized';
             const categoryDescription = cluster?.strategy_summary || 'Category created by AI Blog Autopilot';
@@ -117,8 +117,17 @@ export class PublisherService {
             let categoryId = await WordPressService.getOrCreateCategoryByName(blog.url, categoryName, categoryDescription, wpKey, wpUser);
             Logger.debug(context, "Category ID:" + categoryId + "\n");
 
-            const tagNames = (meta.secondaryKeywords || '').split(',').map((s: string) => s.trim()).filter(Boolean);
-            const tagIds = await WordPressService.getTagIdsByNames(blog.url, tagNames, wpKey, wpUser);
+            const maxTags = settings?.max_article_tags ?? 0;
+            let tagIds: number[] = [];
+
+            if (maxTags > 0) {
+                let tagNames = (meta.primaryKeyword || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+                tagNames = tagNames.concat((meta.secondaryKeywords || '').split(',').map((s: string) => s.trim()).filter(Boolean));
+                Logger.debug(context, "Tag names:" + tagNames + "\n");
+                tagIds = await WordPressService.getAndCreateTagIdsAllByNames(tagNames, maxTags, 500, blog.url, wpKey, wpUser);
+            } else {
+                Logger.debug(context, "Skipping tag creation (Max Article Tags = 0)\n");
+            }
 
             // Clean HTML (Remove H1 and Featured Img) BEFORE Gutenberg wrapping
             const cleanHtml = this.removeH1FeatureImg(htmlPostBodyContentWithWpSrc);

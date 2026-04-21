@@ -111,7 +111,7 @@ export class WordPressService {
                 if (!locs) continue
 
                 const extracted = locs.map((loc: string) => loc.replace(/<\/?loc>/g, ""))
-                
+
                 // Track this URL as a sitemap if it's an XML file
                 if (currentSitemap.endsWith('.xml') || currentSitemap.endsWith('.xml.gz')) {
                     results.sitemaps.push(currentSitemap)
@@ -168,7 +168,7 @@ export class WordPressService {
      */
     static async fetchUrlMetadata(url: string): Promise<{ title: string; excerpt: string }> {
         try {
-            const response = await axios.get(url, { 
+            const response = await axios.get(url, {
                 timeout: 8000,
                 headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
             })
@@ -179,9 +179,9 @@ export class WordPressService {
             let title = titleMatch ? titleMatch[1] : url.split('/').filter(Boolean).pop() || 'Untitled'
 
             // 2. Extract Excerpt (Meta Description priority)
-            const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i) || 
-                              html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i)
-            
+            const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i) ||
+                html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i)
+
             let excerpt = descMatch ? descMatch[1] : ''
 
             // 3. Fallback: Extract from body if excerpt is missing or too short
@@ -193,7 +193,7 @@ export class WordPressService {
                     .replace(/<[^>]*>/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim()
-                
+
                 // Get roughly the first 200 characters/2 lines
                 excerpt = bodyText.substring(0, 200).trim()
                 if (excerpt.length > 0 && excerpt.length < bodyText.length) {
@@ -201,8 +201,8 @@ export class WordPressService {
                 }
             }
 
-            return { 
-                title: this.cleanHtml(title), 
+            return {
+                title: this.cleanHtml(title),
                 excerpt: this.cleanHtml(excerpt) || 'No summary available'
             }
         } catch (error) {
@@ -310,9 +310,9 @@ export class WordPressService {
         }
     }
 
-        /**
-     * Finds a category by name/slug or returns null.
-     */
+    /**
+ * Finds a category by name/slug or returns null.
+ */
     static async getOrCreateCategoryByName(
         baseUrl: string,
         name: string,
@@ -324,17 +324,17 @@ export class WordPressService {
         const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
         const slug = name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '');
         try {
-            const response = await axios.post(url, { name, slug, description: description}, {
+            const response = await axios.post(url, { name, slug, description: description }, {
                 headers: {
                     "Authorization": `Basic ${auth}`,
                     "Content-Type": "application/json"
                 }
             })
-            if(response.status === 201){
+            if (response.status === 201) {
                 Logger.debug("WordPress: getOrCreateCategoryByName", "Category created successfully: response.data.id", response.data.id)
                 return response.data.id
             }
-            else if(response.status === 400 && response.data.code === 'term_exists' && response.data.data.status === 400){
+            else if (response.status === 400 && response.data.code === 'term_exists' && response.data.data.status === 400) {
                 Logger.debug("WordPress: getOrCreateCategoryByName", "Category already exists: response.data.data.term_id", response.data.data.term_id)
                 return response.data.data.term_id;
             }
@@ -343,7 +343,7 @@ export class WordPressService {
             console.warn(`[WP] ⚠️ Failed to create category "${name}":`, error.response?.data || error.message)
             Logger.debug("WordPress: getOrCreateCategoryByName", "Failed to create category: error.response?.data || error.message", error.response?.data || error.message)
             Logger.error("WordPress: getOrCreateCategoryByName", "Failed to create category", error.response?.data || error.message)
-            if(error.response.status === 400 && error.response.data.code === 'term_exists' && error.response.data.data.status === 400){
+            if (error.response.status === 400 && error.response.data.code === 'term_exists' && error.response.data.data.status === 400) {
                 Logger.debug("WordPress: getOrCreateCategoryByName catch", "Category already exists: error.response.data.data.term_id", error.response.data.data.term_id)
                 return error.response.data.data.term_id;
             }
@@ -380,31 +380,76 @@ export class WordPressService {
     /**
      * Finds tags by names or returns empty array as fallback.
      */
-    static async getTagIdsByNames(
-        baseUrl: string,
+    static async getAndCreateTagIdsAllByNames(
         names: string[],
+        maxNumberOfTags: number = 3,
+        timeToWaitForEachTagCreation: number = 500,
+        baseUrl: string,
         apiKey: string,
         wpUsername: string
     ): Promise<number[]> {
         if (!names || names.length === 0) return []
-        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
-        const ids: number[] = []
-
+        if (!maxNumberOfTags || maxNumberOfTags <= 0) return []
+        const tagIds: number[] = []
+        let tagId: number = 0;
         for (const name of names) {
+            if (tagIds.length >= maxNumberOfTags) break;
             try {
-                const url = `${baseUrl}/wp-json/wp/v2/tags?search=${encodeURIComponent(name)}`
-                const response = await axios.get(url, {
-                    headers: { "Authorization": `Basic ${auth}` }
-                })
-                const tags = response.data
-                const match = tags.find((t: any) => t.name.toLowerCase() === name.toLowerCase())
-                if (match) ids.push(match.id)
+                await new Promise(resolve => setTimeout(resolve, timeToWaitForEachTagCreation));
+                tagId = await this.getOrCreateTagByName(name, name, baseUrl, apiKey, wpUsername);
+                if (tagId) tagIds.push(tagId);
+                Logger.debug("WordPress: getTagIdsByNames", "Tag ID: " + tagId);
             } catch (error) {
-                // Skip if not found
+                if (tagId) tagIds.push(tagId);
+                Logger.debug("WordPress: getTagIdsByNames", "Failed to get tag by name: " + name);
+                continue;
             }
         }
-        return ids
+        Logger.debug("WordPress: getTagIdsByNames", "Tag IDs: " + tagIds);
+        return tagIds;
     }
+
+    /**
+     * Finds tags by names or returns empty array as fallback.
+     */
+    static async getOrCreateTagByName(
+        name: string,
+        description: string,
+        baseUrl: string,
+        apiKey: string,
+        wpUsername: string
+    ): Promise<number> {
+        const url = `${baseUrl}/wp-json/wp/v2/tags`
+        const auth = Buffer.from(`${wpUsername}:${apiKey}`).toString("base64")
+        const slug = name.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-').replace(/^-+|-+$/g, '');
+        try {
+            const response = await axios.post(url, { name, slug, description: description }, {
+                headers: {
+                    "Authorization": `Basic ${auth}`,
+                    "Content-Type": "application/json"
+                }
+            })
+            if (response.status === 201) {
+                Logger.debug("WordPress: getOrCreateTagByName", "Tag created successfully: response.data.id", response.data.id)
+                return response.data.id
+            }
+            else if (response.status === 400 && response.data.code === 'term_exists' && response.data.data.status === 400) {
+                Logger.debug("WordPress: getOrCreateTagByName", "Tag already exists: response.data.data.term_id", response.data.data.term_id)
+                return response.data.data.term_id;
+            }
+            return 0; // Fallback to tag (ID 0)
+        } catch (error: any) {
+            if (error.response.status === 400 && error.response.data.code === 'term_exists' && error.response.data.data.status === 400) {
+                Logger.debug("WordPress: getOrCreateTagByName catch", "Tag already exists: error.response.data.data.term_id", error.response.data.data.term_id)
+                return error.response.data.data.term_id;
+            }
+            console.warn(`[WP] ⚠️ Failed to create tag "${name}":`, error.response?.data || error.message)
+            Logger.debug("WordPress: getOrCreateTagByName", "Failed to create tag: error.response?.data || error.message", error.response?.data || error.message)
+            Logger.error("WordPress: getOrCreateTagByName", "Failed to create tag", error.response?.data || error.message)
+            return 0; // Fallback to Untag (ID 0)
+        }
+    }
+
 
 
     /**
@@ -416,42 +461,42 @@ export class WordPressService {
     }
 
     static async bulkUploadImages(images: any[], baseUrl: string, wpUsername: string, apiKey: string, delayMs: number = 500) {
-    const results = [];
-    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-    for (const imgData of images) {
-        try {
-        // 1. Fetch image data into a buffer
-        const imgResponse = await axios.get(imgData.src, { responseType: 'arraybuffer' });
-        const imgBuffer = Buffer.from(imgResponse.data);
-        const mimeType = imgResponse.headers["content-type"] || "image/webp";
+        const results = [];
+        const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+        for (const imgData of images) {
+            try {
+                // 1. Fetch image data into a buffer
+                const imgResponse = await axios.get(imgData.src, { responseType: 'arraybuffer' });
+                const imgBuffer = Buffer.from(imgResponse.data);
+                const mimeType = imgResponse.headers["content-type"] || "image/webp";
 
-        // 2. Upload to WordPress
-        const uploadResult = await WordPressService.uploadMedia(
-            baseUrl,
-            imgBuffer,
-            mimeType,
-            imgData.seoFileName,
-            { 
-                alt: imgData.alt,
-                caption: imgData.figcaption,
-                title: imgData.title,
-                description: imgData.description
-            },
-            apiKey,
-            wpUsername
-        );
-        Logger.debug("WordPress: bulkUploadImages", "Image uploaded successfully: mediaId", uploadResult.id);
-        results.push({ id: uploadResult.id, originalSrc: imgData.src, newWpUrl: uploadResult.source_url, status: 'success' });
-        Logger.debug("WordPress: bulkUploadImages", "Results: " + JSON.stringify(results));
-        // 3. Optional: 500ms delay to avoid rate limits
-        await delay(delayMs); 
+                // 2. Upload to WordPress
+                const uploadResult = await WordPressService.uploadMedia(
+                    baseUrl,
+                    imgBuffer,
+                    mimeType,
+                    imgData.seoFileName,
+                    {
+                        alt: imgData.alt,
+                        caption: imgData.figcaption,
+                        title: imgData.title,
+                        description: imgData.description
+                    },
+                    apiKey,
+                    wpUsername
+                );
+                Logger.debug("WordPress: bulkUploadImages", "Image uploaded successfully: mediaId", uploadResult.id);
+                results.push({ id: uploadResult.id, originalSrc: imgData.src, newWpUrl: uploadResult.source_url, status: 'success' });
+                Logger.debug("WordPress: bulkUploadImages", "Results: " + JSON.stringify(results));
+                // 3. Optional: 500ms delay to avoid rate limits
+                await delay(delayMs);
 
-        } catch (error: any) {
-        Logger.debug("WordPress: bulkUploadImages", "Image upload failed: error.message", error.message);
-        results.push({ src: imgData.src, status: 'failed', error: error.message });
+            } catch (error: any) {
+                Logger.debug("WordPress: bulkUploadImages", "Image upload failed: error.message", error.message);
+                results.push({ src: imgData.src, status: 'failed', error: error.message });
+            }
         }
-    }
 
-    return results;
+        return results;
     }
 }
