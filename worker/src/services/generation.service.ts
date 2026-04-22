@@ -955,7 +955,7 @@ ${promptConfig.user_prompt_template}`;
     static async createSingleImage(jobId: string, imageHtml: string) {
         const supabase = SupabaseService.getClient();
         console.log(`[Job ${jobId}] 🖼️ Image Agent: Regenerating single image...`);
-        Logger.debug(`Job:${jobId}`, `createSingleImage: Starting...`);
+        Logger.debug(`Job:${jobId}`, `createSingleImage: Starting...imageHtml = ${imageHtml}`);
         // 1. Fetch current job data to get blog mapping
         const { data: jobData, error: jobError } = await supabase
             .from('writing_jobs')
@@ -983,8 +983,8 @@ ${promptConfig.user_prompt_template}`;
         const captionText = $figcaption.text() || '';
         const oldSrc = $img.attr('src') || '';
 
-        const type = imgClass.includes('featured') ? 'featured' : 'in-body';
-        
+        const type = imgClass.includes('featured') ? 'featured' : 'in-body'; // my img class will like class="in-body transition-opacity duration-300"
+
         // Extract number from old src (e.g., img-inbody-2-12345.webp -> 2)
         let imgNumber = Math.floor(Math.random() * 1000);
         const match = oldSrc.match(/-(\d+)-\d+\./);
@@ -1000,7 +1000,7 @@ ${promptConfig.user_prompt_template}`;
             caption: captionText,
             description: `Title: ${titleText}. Context: ${captionText}`,
         };
-
+        Logger.debug(`Job:${jobId}`, `createSingleImage: block = ${JSON.stringify(block)}`);
         // 3. Resolve metadata model config
         const metadataResolved = await LLMService.resolveTask('image_metadata');
         const metadataModel = metadataResolved.model;
@@ -1028,8 +1028,8 @@ ${promptConfig.user_prompt_template}`;
         // 6. Generate Image
         console.log(`[Job ${jobId}] 🎨 Generating image via provider...`);
         Logger.debug(`Job:${jobId}`, `IMAGE_AGENT: Generating image via provider...metadataContent=${metadataContent}, block=${JSON.stringify(block)}`);
-        const imageProvider = block.type === 'featured' ? configValue?.feature_image_provider : configValue?.inbody_image_provider;
-        
+        const imageProvider = block.type.includes('featured') ? configValue?.feature_image_provider : configValue?.inbody_image_provider;
+
         const imageResult = await ImageService.generateImage(
             metadataContent,
             block.type,
@@ -1042,18 +1042,17 @@ ${promptConfig.user_prompt_template}`;
         // 7. Upload to R2
         console.log(`[Job ${jobId}] ☁️ Uploading to R2...`);
         const timestamp = Date.now();
-        const imageType = block.type === 'featured' ? 'featured' : 'inbody';
+        const imageType = block.type.includes('featured') ? 'featured' : 'inbody';
         const r2Key = `users/${userId}/blogs/${blogId}/jobs/${jobId}/img-${imageType}-${block.number}-${timestamp}.${imageResult.extension}`;
-        
+
         const publicUrl = await ImageService.uploadToR2(imageResult.buffer, r2Key, r2Config, jobId);
-        if(!publicUrl)
-        {
+        if (!publicUrl) {
             console.error(`[Job ${jobId}] ❌ Image create via api. But Failed to upload image to R2`);
             Logger.debug(`Job:${jobId}`, ` Image create via api. But Failed to upload image to R2`);
             throw new Error('Failed to upload image to R2');
         }
         Logger.debug(`Job:${jobId}`, `SINGLE_IMAGE_REGEN: success, new URL: ${publicUrl}`);
-        
+
         return publicUrl;
     }
 

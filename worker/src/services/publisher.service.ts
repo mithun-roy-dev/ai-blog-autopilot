@@ -357,8 +357,8 @@ export class PublisherService {
                 const img = figure.find('img');
                 const safeImageTitle = img.attr('title').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                 const ext = img.attr('src').split('.').pop()?.split('?')[0] || 'webp';
-                const seoFileName = `${safeImageTitle}-featured.${ext}`;
-                const imageType = img.hasClass('in-body') ? 'in-body' : 'featured';
+                const imageType = img.attr('class').includes('in-body') ? 'in-body' : 'featured';
+                const seoFileName = `${safeImageTitle}-${imageType}.${ext}`;
                 images.push({
                     //design a model for this return
                     src: img.attr('src') || '',
