@@ -1,5 +1,7 @@
 import { SupabaseService } from './supabase.service';
 import { WordPressService } from './wordpress.service';
+import { PromptService } from './prompt.service';
+import { LLMService } from './llm.service';
 import { Logger } from '../utils/logger';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
@@ -29,7 +31,13 @@ export class PublisherService {
                         wp_api_key,
                         wp_username,
                         platform,
-                        id
+                        id,
+                        site_type,
+                        site_niche,
+                        site_description,
+                        target_country,
+                        author_name,
+                        author_url
                     )
                 `)
                 .eq('id', article_id)
@@ -131,8 +139,31 @@ export class PublisherService {
 
             // Clean HTML (Remove H1 and Featured Img) BEFORE Gutenberg wrapping
             const cleanHtml = this.removeH1FeatureImg(htmlPostBodyContentWithWpSrc);
-            const htmlPostContentGutenberg = this.wrapInGutenbergBlocks(cleanHtml);
+            let htmlPostContentGutenberg = this.wrapInGutenbergBlocks(cleanHtml);
             Logger.debug(context, "HTML content after removing H1 and Featured Img and wrapping in Gutenberg blocks:\n" + htmlPostContentGutenberg + "\n");
+
+            // SEO Schema Generation — inject JSON-LD before WordPress content if enabled
+            if (settings?.enable_seo_schema_generation) {
+                try {
+                    const schemaBlock = await this.generateSeoSchema({
+                        meta,
+                        htmlPostBodyContentWithWpSrc,
+                        article,
+                        blogInfo: blog,
+                        context
+                    });
+                    if (schemaBlock) {
+                        htmlPostContentGutenberg = htmlPostContentGutenberg + '\n' + schemaBlock;
+                        Logger.info(context, '🧩 SEO JSON-LD schema injected into post content.');
+                        Logger.debug(context, "schemaBlock:" + schemaBlock + "\n" + "htmlPostContentGutenberg:\n" + htmlPostContentGutenberg + "\n");
+                    }
+                } catch (schemaErr: any) {
+                    // Non-fatal — log and continue publishing without schema
+                    Logger.error(context, `⚠️ SEO schema generation failed (non-fatal): ${schemaErr.message}`);
+                    Logger.debug(context, "HEO schema generation failed (non-fatal): " + schemaErr.message + '\n');
+                }
+            }
+
             // 5. Build WordPress Payload
             let wpStatus = settings?.publish_save_status || 'draft';
             if (wpStatus === 'published') wpStatus = 'publish';
@@ -442,6 +473,195 @@ export class PublisherService {
         const updatedHtml = $('body').html() || html;
         Logger.debug("Publisher: setImageWPSrc", "All images src set successfully. updatedHtml");
         return updatedHtml;
+    }
+    /**
+     * Generates a JSON-LD <script> block for the article using the configured
+     * SEO schema prompt and LLM model. Falls back to a built-in BlogPosting
+     * schema template if no prompt is configured or LLM call fails.
+     */
+    private static async generateSeoSchema({
+        meta,
+        htmlPostBodyContentWithWpSrc,
+        article,
+        blogInfo,
+        context
+    }: {
+        meta: any;
+        htmlPostBodyContentWithWpSrc: string;
+        article: any;
+        blogInfo: any;
+        context: string;
+    }): Promise<string | null> {
+        const supabase = SupabaseService.getClient();
+        Logger.debug(context, '[SEO Schema] Starting schema generation...');
+
+        // 1. Fetch seo_schema_prompt slug from system_settings
+        const { data: sysData } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'logging_config')
+            .single();
+
+        const promptSlug: string = sysData?.value?.seo_schema_prompt || '';
+        Logger.debug(context, `[SEO Schema] Prompt slug from settings: "${promptSlug}"`);
+
+        // 2. Build article variables available for prompt injection
+        const articleUrl = `${blogInfo.url}/${article.slug}` || article.source_url;
+        const authorName = blogInfo.author_name || 'Editorial Team';
+        const authorUrl = blogInfo.author_url || blogInfo.url;
+        const siteUrl = blogInfo.url;
+        const siteName = blogInfo.name;
+        const siteDescription = blogInfo.site_description;
+        const siteNiche = blogInfo.site_niche;
+        const datePublished = article.created_at
+            ? new Date(article.created_at).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
+        const dateModified = article.updated_at
+            ? new Date(article.updated_at).toISOString().split('T')[0]
+            : datePublished;
+
+        // Strip HTML tags to get clean plain text for the LLM — capped at 32000 chars (~6000 tokens)
+        // const articlePlainText = (article.content || '')
+        //  .replace(/<[^>]+>/g, ' ')   // strip all HTML tags
+        // .replace(/&[a-z]+;/gi, ' ') // decode common HTML entities
+        // .replace(/\s{2,}/g, ' ')    // collapse whitespace
+        // .trim()
+        // .substring(0, 32000);
+
+        const variables: Record<string, string> = {
+            title: meta.h1Title || article.title || '',
+            metaTitle: meta.metaTitle || article.title || '',
+            metaDesc: meta.metaDesc || '',
+            keyword: meta.primaryKeyword || '',
+            secondaryKeywords: meta.secondaryKeywords || '',
+            slug: article.slug || '',
+            url: articleUrl,
+            siteUrl: siteUrl,
+            author: authorName,
+            authorUrl: authorUrl,
+            siteName: siteName,
+            siteDescription: siteDescription,
+            siteNiche: siteNiche,
+            datePublished,
+            dateModified,
+            articleHtmlContent: htmlPostBodyContentWithWpSrc.substring(0, 50000),   // full article html with wp src for LLM content analysis
+        };
+
+        let schemaJson: any;
+
+        // 3. Try prompt-driven generation
+        if (promptSlug) {
+            const promptConfig = await PromptService.getPrompt(promptSlug);
+
+            if (promptConfig) {
+                const systemPrompt = PromptService.injectVariables(promptConfig.system_prompt, variables);
+                const userPrompt = PromptService.injectVariables(promptConfig.user_prompt_template, variables);
+
+                Logger.debug(context, `[SEO Schema] Calling LLM (taskRef=seo_schema) with prompt "${promptSlug}"`);
+
+                try {
+                    const rawResponse = await LLMService.completion({
+                        system: systemPrompt,
+                        user: userPrompt,
+                        taskRef: 'seo_schema',
+                        json: true,
+                    });
+
+                    // Strip markdown code fences if present, then parse
+                    const cleaned = rawResponse.trim().replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '');
+                    schemaJson = JSON.parse(cleaned);
+                    Logger.debug(context, '[SEO Schema] LLM returned valid JSON schema.');
+                } catch (llmErr: any) {
+                    Logger.warn(context, `[SEO Schema] LLM call failed: ${llmErr.message}. Using built-in fallback.`);
+                    Logger.debug(context, `[SEO Schema] LLM call failed: ${llmErr}`);
+                }
+            } else {
+                Logger.warn(context, `[SEO Schema] Prompt slug "${promptSlug}" not found in DB. Using built-in fallback.`);
+                Logger.debug(context, `[SEO Schema] Prompt slug "${promptSlug}" not found in DB. Using built-in fallback.`);
+            }
+        }
+
+        // 4. Built-in fallback — @graph bundle with 5 always-required schema nodes
+        if (!schemaJson) {
+            const allKeywords = [
+                variables.keyword,
+                ...variables.secondaryKeywords.split(',').map((s: string) => s.trim())
+            ].filter(Boolean);
+
+            schemaJson = {
+                '@context': 'https://schema.org',
+                '@graph': [
+                    {
+                        '@type': 'BlogPosting',
+                        'headline': variables.metaTitle,
+                        'description': variables.metaDesc,
+                        'url': variables.url,
+                        'mainEntityOfPage': { '@type': 'WebPage', '@id': variables.url },
+                        'author': { '@id': variables.authorUrl },
+                        'publisher': { '@id': `${variables.siteUrl}/#organization` },
+                        'datePublished': variables.datePublished,
+                        'dateModified': variables.dateModified,
+                        'keywords': allKeywords,
+                        'inLanguage': 'en-US',
+                        'speakable': {
+                            '@type': 'SpeakableSpecification',
+                            'cssSelector': ['h1', '.entry-content p:first-of-type']
+                        }
+                    },
+                    {
+                        '@type': 'BreadcrumbList',
+                        'itemListElement': [
+                            { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': variables.siteUrl },
+                            { '@type': 'ListItem', 'position': 2, 'name': variables.siteNiche || 'Blog', 'item': variables.siteUrl },
+                            { '@type': 'ListItem', 'position': 3, 'name': variables.title, 'item': variables.url }
+                        ]
+                    },
+                    {
+                        '@type': 'Person',
+                        '@id': variables.authorUrl,
+                        'name': variables.author,
+                        'url': variables.authorUrl
+                    },
+                    {
+                        '@type': 'Organization',
+                        '@id': `${variables.siteUrl}/#organization`,
+                        'name': variables.siteName,
+                        'url': variables.siteUrl,
+                        'logo': { '@type': 'ImageObject', 'url': `${variables.siteUrl}/favicon.ico` },
+                        'description': variables.siteDescription || ''
+                    },
+                    {
+                        '@type': 'WebSite',
+                        '@id': `${variables.siteUrl}/#website`,
+                        'url': variables.siteUrl,
+                        'name': variables.siteName,
+                        'description': variables.siteDescription || '',
+                        'publisher': { '@id': `${variables.siteUrl}/#organization` }
+                    }
+                ]
+            };
+            Logger.debug(context, '[SEO Schema] Using built-in @graph fallback schema (5 nodes).');
+        }
+
+        // 5. Validate minimum required fields — supports both @graph bundle and single-object formats
+        const isGraphBundle = Array.isArray(schemaJson['@graph']) && schemaJson['@graph'].length > 0;
+        const isSingleObject = !!schemaJson['@type'];
+        if (!schemaJson['@context'] || (!isGraphBundle && !isSingleObject)) {
+            Logger.debug(context, '[SEO Schema] Invalid schema structure (missing @context or empty @graph/@type):', JSON.stringify(schemaJson));
+            Logger.warn(context, '[SEO Schema] Generated schema is invalid. Aborting injection.');
+            return null;
+        }
+        if (isGraphBundle) {
+            Logger.debug(context, `[SEO Schema] @graph bundle validated — ${schemaJson['@graph'].length} schema nodes.`);
+        }
+
+        const jsonLdBlock = `<script type="application/ld+json">
+${JSON.stringify(schemaJson, null, 2)}
+</script>`;
+
+        Logger.info(context, '[SEO Schema] ✅ Schema block ready for injection.');
+        Logger.debug(context, `[SEO Schema] JSON-LD block: ${JSON.stringify(jsonLdBlock)}`);
+        return jsonLdBlock;
     }
 
 

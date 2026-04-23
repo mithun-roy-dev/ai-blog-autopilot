@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
+import * as http from 'http'
 import { z } from 'zod'
 import { WordPressService } from './services/wordpress.service'
 import { SupabaseService } from './services/supabase.service'
@@ -8,6 +9,7 @@ import { ClusterService } from './services/cluster.service'
 import { GenerationService } from './services/generation.service'
 import { SchedulerService } from './services/scheduler.service'
 import { PublisherService } from './services/publisher.service'
+import { PromptService } from './services/prompt.service'
 import { Logger } from './utils/logger'
 
 // Load environment variables
@@ -251,6 +253,54 @@ async function pollJobs() {
     }
 }
 
+/**
+ * Lightweight internal HTTP server for cache-bust signals from Next.js.
+ * Only handles POST /internal/cache-bust/prompts — everything else returns 404.
+ * Protected by a shared secret header (WORKER_INTERNAL_SECRET).
+ */
+function startInternalServer() {
+    const port = parseInt(process.env.WORKER_INTERNAL_PORT || '3001', 10);
+    const secret = process.env.WORKER_INTERNAL_SECRET || '';
+
+    const server = http.createServer((req, res) => {
+        if (req.method === 'POST' && req.url === '/internal/cache-bust/prompts') {
+            // Validate shared secret
+            if (secret && req.headers['x-internal-secret'] !== secret) {
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Unauthorized' }));
+                return;
+            }
+
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', () => {
+                try {
+                    const parsed = body ? JSON.parse(body) : {};
+                    const slug: string | undefined = parsed?.slug;
+                    PromptService.clearCache(slug);
+                    Logger.info('InternalServer', `🗑️ Cache-bust received${slug ? ` for slug: "${slug}"` : ' (full clear)'}`);
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ ok: true }));
+                } catch (err: any) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: err.message }));
+                }
+            });
+        } else {
+            res.writeHead(404);
+            res.end();
+        }
+    });
+
+    server.listen(port, '127.0.0.1', () => {
+        console.log(`🔌 Internal server listening on http://127.0.0.1:${port} (cache-bust endpoint ready)`);
+    });
+
+    server.on('error', (err) => {
+        console.warn('[InternalServer] Failed to start:', err.message);
+    });
+}
+
 async function main() {
     console.log('🚀 AI Blog Autopilot Worker starting...')
 
@@ -261,6 +311,9 @@ async function main() {
         })
 
         console.log('✅ Connected to Supabase')
+
+        // Start internal HTTP server for cache-bust signals
+        startInternalServer()
 
         // Start polling loop
         console.log('🕵️ Polling for jobs...')

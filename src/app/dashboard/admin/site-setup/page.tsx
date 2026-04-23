@@ -125,6 +125,9 @@ export default function SiteSetupPage() {
         inbody_image_model: "bytedance/seedream-v4-text-to-image",
         humanizer_provider: "kie_api",
         humanizer_model: "claude-haiku-4-5",
+        seo_schema_provider: "kie_api",
+        seo_schema_model: "claude-haiku-4-5",
+        seo_schema_prompt: "",
         image_featured_width: 1200,
         image_featured_height: 630,
         image_featured_format: "webp",
@@ -147,6 +150,7 @@ export default function SiteSetupPage() {
         schedule_logic: "spread_evenly",
         start_time: "09:00",
         enable_rankmath_metadata: false,
+        enable_seo_schema_generation: false,
         max_article_tags: 0
     })
 
@@ -227,6 +231,7 @@ export default function SiteSetupPage() {
                     schedule_logic: data.schedule_logic,
                     start_time: data.start_time?.substring(0, 5) || "09:00",
                     enable_rankmath_metadata: data.enable_rankmath_metadata ?? false,
+                    enable_seo_schema_generation: data.enable_seo_schema_generation ?? false,
                     max_article_tags: data.max_article_tags ?? 0
                 })
             } else {
@@ -239,6 +244,7 @@ export default function SiteSetupPage() {
                     schedule_logic: "spread_evenly",
                     start_time: "09:00",
                     enable_rankmath_metadata: false,
+                    enable_seo_schema_generation: false,
                     max_article_tags: 0
                 })
             }
@@ -287,6 +293,9 @@ export default function SiteSetupPage() {
                     inbody_image_model: sysData.value.inbody_image_model ?? "bytedance/seedream-v4-text-to-image",
                     humanizer_provider: sysData.value.humanizer_provider ?? "kie_api",
                     humanizer_model: sysData.value.humanizer_model ?? "claude-haiku-4-5",
+                    seo_schema_provider: sysData.value.seo_schema_provider ?? "kie_api",
+                    seo_schema_model: sysData.value.seo_schema_model ?? "claude-haiku-4-5",
+                    seo_schema_prompt: sysData.value.seo_schema_prompt ?? "",
                     image_featured_width: sysData.value.image_featured_width ?? 1200,
                     image_featured_height: sysData.value.image_featured_height ?? 630,
                     image_featured_format: sysData.value.image_featured_format ?? "webp",
@@ -394,6 +403,7 @@ export default function SiteSetupPage() {
                     { provider: systemSettings.feature_image_provider, column: 'feature_image_model', model: systemSettings.feature_image_model },
                     { provider: systemSettings.inbody_image_provider, column: 'inbody_image_model', model: systemSettings.inbody_image_model },
                     { provider: systemSettings.humanizer_provider, column: 'humanizer_model', model: systemSettings.humanizer_model },
+                    { provider: systemSettings.seo_schema_provider, column: 'seo_schema_model', model: systemSettings.seo_schema_model },
                 ]
 
                 // Group by provider to batch upserts
@@ -433,6 +443,14 @@ export default function SiteSetupPage() {
                 if (error) throw error
                 toast.success(`Prompt "${promptFormData.name}" saved!`, { id: toastId })
                 fetchPrompts()
+
+                // Fire-and-forget: tell the worker to drop this prompt from its in-memory cache
+                // so the next publish job uses the updated version without waiting for TTL expiry
+                fetch('/api/prompts/cache-bust', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slug: promptFormData.slug }),
+                }).catch(() => { /* non-fatal — 1h TTL is the fallback */ })
             } else if (selectedProvider === 'publishing_setup') {
                 // 1. Update Blog Username if changed
                 if (selectedBlog) {
@@ -1071,6 +1089,21 @@ export default function SiteSetupPage() {
                                                                     <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
                                                                 </label>
                                                             </div>
+                                                            <div className="flex items-center justify-between p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 mt-2">
+                                                                <div className="space-y-0.5">
+                                                                    <h4 className="text-xs font-bold text-blue-600 dark:text-blue-400">SEO Schema Generation</h4>
+                                                                    <p className="text-[10px] text-muted-foreground">Generate comprehensive Article/NewsArticle JSON-LD schema for SEO.</p>
+                                                                </div>
+                                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="sr-only peer"
+                                                                        checked={publishingSettings.enable_seo_schema_generation}
+                                                                        onChange={(e) => setPublishingSettings(s => ({ ...s, enable_seo_schema_generation: e.target.checked }))}
+                                                                    />
+                                                                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                                                                </label>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1194,6 +1227,7 @@ export default function SiteSetupPage() {
                                             { id: 'writer', label: 'Writer AI Model', isImage: false },
                                             { id: 'image_metadata', label: 'Image Metadata Model', isImage: false },
                                             { id: 'humanizer', label: 'Humanizer Model', isImage: false },
+                                            { id: 'seo_schema', label: 'SEO Schema Generation Model', isImage: false },
                                             { id: 'feature_image', label: 'Feature Image Model', isImage: true },
                                             { id: 'inbody_image', label: 'In-Body Image Model', isImage: true }
                                         ].map(category => {
@@ -1266,6 +1300,28 @@ export default function SiteSetupPage() {
                                                                 ))}
                                                             </select>
                                                         </div>
+
+                                                        {/* SEO Schema Prompt Selector — only shown for the seo_schema card */}
+                                                        {category.id === 'seo_schema' && (
+                                                            <div className="space-y-1.5 pt-1 border-t border-border/40">
+                                                                <label className="text-xs font-semibold text-muted-foreground">Schema Generation Prompt</label>
+                                                                <select
+                                                                    value={systemSettings.seo_schema_prompt}
+                                                                    onChange={(e) => setSystemSettings(s => ({ ...s, seo_schema_prompt: e.target.value }))}
+                                                                    className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                                                >
+                                                                    <option value="">— Select a prompt —</option>
+                                                                    {prompts.map(p => (
+                                                                        <option key={p.slug} value={p.slug}>
+                                                                            {p.name} ({p.slug})
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <p className="text-[10px] text-muted-foreground">
+                                                                    This prompt&#39;s system &amp; user message will be used when generating JSON-LD schema at publish time.
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )

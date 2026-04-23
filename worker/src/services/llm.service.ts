@@ -10,6 +10,7 @@ const TASK_MODEL_COLUMN: Record<string, string> = {
     feature_image: 'feature_image_model',
     inbody_image: 'inbody_image_model',
     humanizer: 'humanizer_model',
+    seo_schema: 'seo_schema_model',
 };
 
 // system_settings key names for provider per task
@@ -20,6 +21,7 @@ const TASK_PROVIDER_KEY: Record<string, string> = {
     feature_image: 'feature_image_provider',
     inbody_image: 'inbody_image_provider',
     humanizer: 'humanizer_provider',
+    seo_schema: 'seo_schema_provider',
 };
 
 /**
