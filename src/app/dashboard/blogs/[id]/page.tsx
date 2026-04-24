@@ -96,7 +96,9 @@ export default function BlogDetailPage() {
     const [editData, setEditData] = useState({
         site_niche: "",
         custom_niche: "",
-        site_description: ""
+        site_description: "",
+        author_name: "",
+        author_url: ""
     })
     const [selectedCountries, setSelectedCountries] = useState<string[]>([])
     const [countryInput, setCountryInput] = useState("")
@@ -212,7 +214,9 @@ export default function BlogDetailPage() {
             setEditData({
                 site_niche: nicheOptions.includes(blogData.site_niche) ? blogData.site_niche : (blogData.site_niche ? "Others" : ""),
                 custom_niche: nicheOptions.includes(blogData.site_niche) ? "" : (blogData.site_niche || ""),
-                site_description: blogData.site_description || ""
+                site_description: blogData.site_description || "",
+                author_name: blogData.author_name || "",
+                author_url: blogData.author_url || ""
             })
             // Initialize countries
             if (blogData.target_country && blogData.target_country !== 'Global') {
@@ -270,13 +274,22 @@ export default function BlogDetailPage() {
                 .update({
                     site_niche: finalNiche,
                     site_description: editData.site_description,
-                    target_country: finalCountries
+                    target_country: finalCountries,
+                    author_name: editData.author_name,
+                    author_url: editData.author_url
                 })
                 .eq("id", params.id)
 
             if (error) throw error
             
-            setBlog({ ...blog, site_niche: finalNiche, site_description: editData.site_description, target_country: finalCountries })
+            setBlog({ 
+                ...blog, 
+                site_niche: finalNiche, 
+                site_description: editData.site_description, 
+                target_country: finalCountries,
+                author_name: editData.author_name,
+                author_url: editData.author_url
+            })
             setIsEditing(false)
             toast.success("Site details updated!", { id: toastId })
         } catch (err: any) {
@@ -558,6 +571,36 @@ export default function BlogDetailPage() {
                                 </div>
                             </div>
                         </div>
+
+                        <div className="space-y-4 pt-4 border-t border-border/50">
+                            <h4 className="font-bold text-sm text-primary">Article Author Profiles (Optional)</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                        <Users className="h-3 w-3" />
+                                        Author Name
+                                    </label>
+                                    <input
+                                        placeholder="e.g. John Doe"
+                                        value={editData.author_name}
+                                        onChange={(e) => setEditData({ ...editData, author_name: e.target.value })}
+                                        className="w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                        <ExternalLink className="h-3 w-3" />
+                                        Profile URL
+                                    </label>
+                                    <input
+                                        placeholder="https://example.com/author/john"
+                                        value={editData.author_url}
+                                        onChange={(e) => setEditData({ ...editData, author_url: e.target.value })}
+                                        className="w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -596,6 +639,22 @@ export default function BlogDetailPage() {
                                             {country}
                                         </div>
                                     ))
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="md:col-span-2 pt-4 border-t border-dashed border-white/5">
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2 mb-3">
+                                <Users className="h-3 w-3 text-primary/60" />
+                                Article Author Profile
+                            </span>
+                            <div className="flex flex-col gap-1">
+                                <p className="text-sm font-semibold">{blog.author_name || "No custom author set"}</p>
+                                {blog.author_url && (
+                                    <a href={blog.author_url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1 w-fit">
+                                        {blog.author_url}
+                                        <ExternalLink className="h-2.5 w-2.5" />
+                                    </a>
                                 )}
                             </div>
                         </div>

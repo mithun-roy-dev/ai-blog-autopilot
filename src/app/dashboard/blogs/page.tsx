@@ -86,7 +86,9 @@ export default function SitesPage() {
         site_niche: "",
         custom_niche: "",
         site_description: "",
-        target_country: "Global"
+        target_country: "Global",
+        author_name: "",
+        author_url: ""
     })
     const [selectedCountries, setSelectedCountries] = useState<string[]>([])
     const [countryInput, setCountryInput] = useState("")
@@ -202,7 +204,9 @@ export default function SitesPage() {
                     site_type: newSite.site_type,
                     site_niche: newSite.site_niche === 'Others' ? newSite.custom_niche : newSite.site_niche,
                     site_description: newSite.site_description,
-                    target_country: selectedCountries.length > 0 ? selectedCountries.join(',') : 'Global'
+                    target_country: selectedCountries.length > 0 ? selectedCountries.join(',') : 'Global',
+                    author_name: newSite.author_name,
+                    author_url: newSite.author_url
                 }])
                 .select()
 
@@ -211,7 +215,7 @@ export default function SitesPage() {
             // Trigger initial crawl job for all sites
             await triggerSync(data[0].id)
 
-            setNewSite({ name: "", url: "", wp_api_key: "", wp_username: "", site_type: "wordpress", site_niche: "", custom_niche: "", site_description: "", target_country: "Global" })
+            setNewSite({ name: "", url: "", wp_api_key: "", wp_username: "", site_type: "wordpress", site_niche: "", custom_niche: "", site_description: "", target_country: "Global", author_name: "", author_url: "" })
             setSelectedCountries([])
             setCountryInput("")
             setIsAdding(false)
@@ -408,6 +412,30 @@ export default function SitesPage() {
                                             ? `Priority: ${selectedCountries[0]} is #${1}` 
                                             : "Default priority: Global"}
                                     </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 md:col-span-2 pt-4 border-t border-border/50">
+                                <h4 className="font-bold text-sm text-primary">Article Author Profiles (Optional)</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Post Author Name</label>
+                                        <input
+                                            placeholder="e.g. John Doe"
+                                            value={newSite.author_name}
+                                            onChange={(e) => setNewSite({ ...newSite, author_name: e.target.value })}
+                                            className="flex h-10 w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium">Author Profile Url</label>
+                                        <input
+                                            placeholder="https://example.com/author/john"
+                                            value={newSite.author_url}
+                                            onChange={(e) => setNewSite({ ...newSite, author_url: e.target.value })}
+                                            className="flex h-10 w-full rounded-lg border bg-background/50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

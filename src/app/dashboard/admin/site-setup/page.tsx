@@ -206,7 +206,7 @@ export default function SiteSetupPage() {
     }
 
     const fetchBlogs = async () => {
-        const { data } = await supabase.from("blogs").select("id, name, url, wp_username").order("name")
+        const { data } = await supabase.from("blogs").select("id, name, url, wp_username, author_name, author_url").order("name")
         setBlogs(data || [])
         if (data && data.length > 0 && !selectedBlogId) {
             setSelectedBlogId(data[0].id)
@@ -456,7 +456,11 @@ export default function SiteSetupPage() {
                 if (selectedBlog) {
                     const { error: blogError } = await supabase
                         .from("blogs")
-                        .update({ wp_username: selectedBlog.wp_username })
+                        .update({ 
+                            wp_username: selectedBlog.wp_username,
+                            author_name: selectedBlog.author_name,
+                            author_url: selectedBlog.author_url
+                        })
                         .eq("id", selectedBlogId)
                     if (blogError) throw blogError
                 }
@@ -980,6 +984,39 @@ export default function SiteSetupPage() {
                                                             placeholder="e.g. admin"
                                                         />
                                                         <p className="text-[10px] text-muted-foreground">Used for REST API authentication alongside the Application Password.</p>
+                                                    </div>
+
+                                                    <div className="space-y-4 pt-4 border-t border-border/50">
+                                                        <h4 className="font-bold text-sm text-primary">Article Author profiles</h4>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                            <div className="space-y-2">
+                                                                <label className="text-xs font-semibold text-muted-foreground">Post Author Name</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={selectedBlog?.author_name || ""}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value
+                                                                        setBlogs(prev => prev.map(b => b.id === selectedBlogId ? { ...b, author_name: val } : b))
+                                                                    }}
+                                                                    className="w-full bg-background border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                                    placeholder="e.g. John Doe"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-2">
+                                                                <label className="text-xs font-semibold text-muted-foreground">Author Profile Url</label>
+                                                                <input
+                                                                    type="text"
+                                                                    value={selectedBlog?.author_url || ""}
+                                                                    onChange={(e) => {
+                                                                        const val = e.target.value
+                                                                        setBlogs(prev => prev.map(b => b.id === selectedBlogId ? { ...b, author_url: val } : b))
+                                                                    }}
+                                                                    className="w-full bg-background border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                                    placeholder="e.g. https://example.com/author/john"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[10px] text-muted-foreground">Optional fields for SEO schema and article attribution.</p>
                                                     </div>
 
                                                     <div className="space-y-2 pt-2 border-t border-border/50">
