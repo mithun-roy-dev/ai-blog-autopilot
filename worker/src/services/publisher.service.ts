@@ -183,9 +183,31 @@ export class PublisherService {
 
             if (wpStatus === 'future') {
                 postData.status = 'future';
-                const futureDate = new Date();
-                futureDate.setMinutes(futureDate.getMinutes() + 5);
-                postData.date = futureDate.toISOString();
+                let futureDate = new Date();
+
+                if (settings?.start_time) {
+                    const [hours, minutes] = settings.start_time.split(':').map(Number);
+                    futureDate = new Date(Date.UTC(
+                        futureDate.getUTCFullYear(),
+                        futureDate.getUTCMonth(),
+                        futureDate.getUTCDate(),
+                        hours,
+                        minutes,
+                        0,
+                        0
+                    ));
+
+                    // If the configured time has already passed today, schedule for tomorrow
+                    if (futureDate.getTime() <= Date.now()) {
+                        futureDate.setUTCDate(futureDate.getUTCDate() + 1);
+                    }
+                } else {
+                    // Fallback to 5 minutes from now if no start_time is set
+                    futureDate.setMinutes(futureDate.getMinutes() + 5);
+                }
+
+                // Use date_gmt to avoid WordPress timezone parsing issues (remove 'Z' to be safe with WP REST API)
+                postData.date_gmt = futureDate.toISOString().split('.')[0];
             }
 
             // Add RankMath SEO Meta
