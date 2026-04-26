@@ -655,9 +655,9 @@ export class PublisherService {
             Logger.debug(context, `[SEO Schema] @graph bundle validated — ${schemaJson['@graph'].length} schema nodes.`);
         }
 
-        const jsonLdBlock = `<script type="application/ld+json">
-${JSON.stringify(schemaJson, null, 2)}
-</script>`;
+        // Use JSON.stringify without formatting to avoid \n which wpautop turns into <br />
+        // Wrap in wp:html to prevent Gutenberg/wpautop from wrapping it in <p> tags
+        const jsonLdBlock = `<!-- wp:html -->\n<script type="application/ld+json">${JSON.stringify(schemaJson)}</script>\n<!-- /wp:html -->`;
 
         Logger.info(context, '[SEO Schema] ✅ Schema block ready for injection.');
         Logger.debug(context, `[SEO Schema] JSON-LD block: ${JSON.stringify(jsonLdBlock)}`);
