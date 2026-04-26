@@ -68,6 +68,16 @@ turndownService.addRule('preserve-figure', {
     }
 })
 
+// Configure marked to always open links in new tab
+marked.use({
+    renderer: {
+        link({ href, title, text }) {
+            const titleAttr = title ? ` title="${title}"` : ''
+            return `<a href="${href}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`
+        }
+    }
+})
+
 
 // Custom Figure and Figcaption extensions for Tiptap
 const Figure = Node.create({
@@ -230,7 +240,9 @@ export default function EditorStep({ initialContent, onSave, isSaving }: EditorS
                 autolink: true,
                 defaultProtocol: 'https',
                 HTMLAttributes: {
-                    class: 'text-primary underline cursor-pointer'
+                    class: 'text-primary underline cursor-pointer',
+                    target: '_blank',
+                    rel: 'noopener noreferrer'
                 }
             }),
 
