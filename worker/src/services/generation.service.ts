@@ -78,8 +78,16 @@ export class GenerationService {
                     console.log(`[Job ${jobId}] 📝 Generating Dynamic Content Brief...`);
 
                     const generationData = await this.getGenerationData(jobId);
-                    const promptConfig = await PromptService.getPrompt('content-brief');
-                    if (!promptConfig) throw new Error("Prompt 'content-brief' not found.");
+                    
+                    const { data: sysData } = await supabase
+                        .from('system_settings')
+                        .select('value')
+                        .eq('key', 'logging_config')
+                        .single();
+
+                    const promptSlug = sysData?.value?.content_brief_prompt || 'content-brief';
+                    const promptConfig = await PromptService.getPrompt(promptSlug);
+                    if (!promptConfig) throw new Error(`Prompt '${promptSlug}' not found.`);
 
                     // 1. Fetch Cluster & Articles Logic
                     const { data: cluster } = await supabase.from('content_clusters').select('*').eq('id', job.cluster_id).single();

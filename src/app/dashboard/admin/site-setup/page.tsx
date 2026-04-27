@@ -29,10 +29,14 @@ const OPENROUTER_MODELS = [
     { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6" },
     { id: "google/gemma-3-27b-it:free", name: "Gemma 3 27B IT (Free)" },
     { id: "openai/gpt-oss-120b:free", name: "GPT-OSS 120B (Free)" },
+    { id: "openai/gpt-5.5-pro", name: "GPT 5.5 Pro" },
+    { id: "openai/gpt-5.5", name: "GPT 5.5" },
     { id: "openai/gpt-5.4", name: "GPT 5.4" },
     { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large Preview (Free)" },
     { id: "google/gemini-2.0-flash-001", name: "Gemini 2.0 Flash" },
     { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet" },
+    { id: "deepseek/deepseek-v4-pro", name: "DeepSeek v4 Pro" },
+    { id: "deepseek/deepseek-v4-flash", name: "DeepSeek v4 Flash" },
     { id: "deepseek/deepseek-r1", name: "DeepSeek r1" },
     { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2" },
     { id: "deepseek/deepseek-chat", name: "DeepSeek Chat" },
@@ -115,6 +119,7 @@ export default function SiteSetupPage() {
         auto_edit: false,
         content_brief_provider: "kie_api",
         content_brief_model: "claude-haiku-4-5",
+        content_brief_prompt: "",
         writer_provider: "kie_api",
         writer_model: "claude-haiku-4-5",
         image_metadata_provider: "kie_api",
@@ -283,6 +288,7 @@ export default function SiteSetupPage() {
                     auto_edit: sysData.value.auto_edit ?? false,
                     content_brief_provider: sysData.value.content_brief_provider ?? "kie_api",
                     content_brief_model: sysData.value.content_brief_model ?? "claude-haiku-4-5",
+                    content_brief_prompt: sysData.value.content_brief_prompt ?? "",
                     writer_provider: sysData.value.writer_provider ?? "kie_api",
                     writer_model: sysData.value.writer_model ?? "claude-haiku-4-5",
                     image_metadata_provider: sysData.value.image_metadata_provider ?? "kie_api",
@@ -456,7 +462,7 @@ export default function SiteSetupPage() {
                 if (selectedBlog) {
                     const { error: blogError } = await supabase
                         .from("blogs")
-                        .update({ 
+                        .update({
                             wp_username: selectedBlog.wp_username,
                             author_name: selectedBlog.author_name,
                             author_url: selectedBlog.author_url
@@ -487,7 +493,7 @@ export default function SiteSetupPage() {
                 const { error: pubError } = await supabase
                     .from("blog_publishing_settings")
                     .upsert(upsertData, { onConflict: "blog_id" })
-                
+
                 if (pubError) throw pubError
                 toast.success(`Publishing settings for ${selectedBlog?.name} saved!`, { id: toastId })
                 refreshData()
@@ -1055,7 +1061,7 @@ export default function SiteSetupPage() {
                                                             </label>
                                                         </div>
                                                         <p className="text-[11px] text-muted-foreground">Automatically trigger publishing when an article reaches 'generated' status.</p>
-                                                        
+
                                                         <div className="space-y-2 pt-2">
                                                             <label className="text-sm font-medium">Default Save Status</label>
                                                             <select
@@ -1084,11 +1090,11 @@ export default function SiteSetupPage() {
                                                             </label>
                                                         </div>
                                                         <p className="text-[11px] text-muted-foreground">Periodically trigger new write jobs for this site automatically.</p>
-                                                        
+
                                                         <div className="grid grid-cols-2 gap-2">
                                                             <div className="space-y-1">
                                                                 <label className="text-[10px] uppercase font-bold text-muted-foreground">Frequency</label>
-                                                                <select 
+                                                                <select
                                                                     value={publishingSettings.frequency}
                                                                     onChange={(e) => setPublishingSettings(s => ({ ...s, frequency: e.target.value }))}
                                                                     className="w-full bg-background border rounded-lg px-2 py-2 text-xs"
@@ -1100,7 +1106,7 @@ export default function SiteSetupPage() {
                                                             </div>
                                                             <div className="space-y-1">
                                                                 <label className="text-[10px] uppercase font-bold text-muted-foreground">Times</label>
-                                                                <input 
+                                                                <input
                                                                     type="number"
                                                                     value={publishingSettings.times_per_period}
                                                                     onChange={(e) => setPublishingSettings(s => ({ ...s, times_per_period: parseInt(e.target.value) || 1 }))}
@@ -1108,7 +1114,7 @@ export default function SiteSetupPage() {
                                                                 />
                                                             </div>
                                                         </div>
-                                                        
+
                                                         {/* RankMath Toggle */}
                                                         <div className="pt-2 border-t border-border/50">
                                                             <div className="flex items-center justify-between p-3 rounded-xl bg-orange-500/5 border border-orange-500/10">
@@ -1149,12 +1155,12 @@ export default function SiteSetupPage() {
                                                     <h4 className="font-bold flex items-center gap-2">
                                                         <CheckCircle2 className="h-4 w-4 text-primary" /> Schedule Refinement
                                                     </h4>
-                                                    
+
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                                         <div className="space-y-3">
                                                             <label className="text-sm font-medium mb-2 block">Distribution Logic</label>
                                                             <div className="space-y-2">
-                                                                <button 
+                                                                <button
                                                                     type="button"
                                                                     onClick={() => setPublishingSettings(s => ({ ...s, schedule_logic: 'spread_evenly' }))}
                                                                     className={cn(
@@ -1165,7 +1171,7 @@ export default function SiteSetupPage() {
                                                                     <span className="font-bold block">Spread Evenly</span>
                                                                     <span className="opacity-70">Distribute posts throughout the period.</span>
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     type="button"
                                                                     onClick={() => setPublishingSettings(s => ({ ...s, schedule_logic: 'all_at_once' }))}
                                                                     className={cn(
@@ -1181,8 +1187,8 @@ export default function SiteSetupPage() {
 
                                                         <div className="space-y-3">
                                                             <label className="text-sm font-medium mb-2 block">Start Time (UTC)</label>
-                                                            <input 
-                                                                type="time" 
+                                                            <input
+                                                                type="time"
                                                                 value={publishingSettings.start_time}
                                                                 onChange={(e) => setPublishingSettings(s => ({ ...s, start_time: e.target.value }))}
                                                                 className="w-full bg-background border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-all font-mono"
@@ -1356,6 +1362,28 @@ export default function SiteSetupPage() {
                                                                 </select>
                                                                 <p className="text-[10px] text-muted-foreground">
                                                                     This prompt&#39;s system &amp; user message will be used when generating JSON-LD schema at publish time.
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Content Brief Prompt Selector */}
+                                                        {category.id === 'content_brief' && (
+                                                            <div className="space-y-1.5 pt-1 border-t border-border/40">
+                                                                <label className="text-xs font-semibold text-muted-foreground">Content Brief Prompt</label>
+                                                                <select
+                                                                    value={systemSettings.content_brief_prompt}
+                                                                    onChange={(e) => setSystemSettings(s => ({ ...s, content_brief_prompt: e.target.value }))}
+                                                                    className="w-full bg-card border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                                                                >
+                                                                    <option value="">— Select a prompt —</option>
+                                                                    {prompts.map(p => (
+                                                                        <option key={p.slug} value={p.slug}>
+                                                                            {p.name} ({p.slug})
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <p className="text-[10px] text-muted-foreground">
+                                                                    This prompt will be used to generate the content brief from the user&#39;s primary keyword.
                                                                 </p>
                                                             </div>
                                                         )}
