@@ -172,7 +172,7 @@ export class LLMService {
 
             console.error(`[LLMService] ❌ Error: ${errMsg.substring(0, 500)}`);
             Logger.error('LLMService', `❌ LLM Error | provider="${provider}" model="${model}" | ${errMsg.substring(0, 500)}`, err);
-            
+
             if (err instanceof KieApiRetryableError) {
                 throw err;
             }
@@ -206,7 +206,7 @@ export class LLMService {
             const bodyStr = typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody || {});
 
             Logger.error('LLMService [callOpenRouter]', `❌ OpenRouter HTTP ${statusCode} error. Body: ${bodyStr.substring(0, 400)}`);
-            
+
             // 500 Internal Server Error is considered transient/retryable
             if (statusCode === 500) {
                 throw new KieApiRetryableError(`OpenRouter temporarily unavailable (HTTP 500): ${bodyStr.substring(0, 200)}`, 500);
@@ -240,22 +240,49 @@ export class LLMService {
             };
         }
         // 2. Special Case: GPT-5.4 (must be checked BEFORE the generic 'gpt' check)
-        else if (lowerModel.includes('gpt-5.4') || lowerModel.includes('gpt-5-4')) {
-            apiUrl = 'https://api.kie.ai/codex/v1/responses';
-            payload = {
-                model,
-                messages: [
-                    { role: 'system', content: system },
-                    { role: 'user', content: user }
-                ],
-                stream: false,
-                include_thoughts: true,
-                reasoning_effort: "high",
-                max_tokens: 16384
-            };
+        else if (lowerModel.includes('gpt')) {
+            if (lowerModel.includes('gpt-2-2')) {
+                apiUrl = `https://api.kie.ai/${model}/v1/chat/completions`;
+                payload = {
+                    model,
+                    messages: [
+                        { role: 'system', content: system },
+                        { role: 'user', content: user }
+                    ],
+                    stream: false,
+                    include_thoughts: true,
+                    reasoning_effort: "high",
+                    max_tokens: 16384
+                };
+            }
+            else {
+                apiUrl = 'https://api.kie.ai/codex/v1/responses';
+                payload = {
+                    model,
+                    input: [
+                        {
+                            role: 'system',
+                            content: [
+                                { type: 'input_text', text: system }
+                            ]
+                        },
+                        {
+                            role: 'user',
+                            content: [
+                                { type: 'input_text', text: user }
+                            ]
+                        }
+                    ],
+                    stream: false,
+                    reasoning: {
+                        effort: "high"
+                    },
+                    max_output_tokens: 16384
+                };
+            }
         }
         // 3. Gemini and other GPT models
-        else if (lowerModel.includes('gemini') || lowerModel.includes('gpt')) {
+        else if (lowerModel.includes('gemini')) {
             apiUrl = `https://api.kie.ai/${model}/v1/chat/completions`;
             payload = {
                 model,
@@ -361,6 +388,16 @@ export class LLMService {
             const msg = data.choices[0].message;
             if (msg && msg.content) {
                 return msg.content;
+            }
+        }
+        // 3. Kie Codex / GPT-5.5 Output Format
+        if (data?.output && Array.isArray(data.output)) {
+            const message = data.output.find((item: any) => item.type === 'message');
+            if (message?.content && Array.isArray(message.content)) {
+                const textBlock = message.content.find((block: any) => block.type === 'output_text');
+                if (textBlock?.text) {
+                    return textBlock.text;
+                }
             }
         }
 

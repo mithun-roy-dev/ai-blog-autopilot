@@ -91,6 +91,7 @@ const KIE_LLM_MODELS = [
     { id: "gemini-3-flash", name: "Gemini 3 Flash" },
     { id: "gpt-5-2", name: "GPT 5.2" },
     { id: "gpt-5-4", name: "GPT 5.4" },
+    { id: "gpt-5-5", name: "GPT 5.5 OpenAI" },
 ]
 
 export default function SiteSetupPage() {
