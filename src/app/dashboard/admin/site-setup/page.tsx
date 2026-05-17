@@ -83,6 +83,7 @@ const KIE_LLM_MODELS = [
     { id: "claude-opus-4-5", name: "Claude Opus 4.5" },
     { id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5" },
     { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
+    { id: "claude-opus-4-7", name: "Claude Opus 4.7" },
     { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
     { id: "claude-haiku-4-5", name: "Claude Haiku 4.5" },
     { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },

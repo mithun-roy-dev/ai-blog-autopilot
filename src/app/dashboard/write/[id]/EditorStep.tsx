@@ -23,6 +23,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/utils/cn"
 import { ImageNodeView } from "./ImageNodeView"
+import { toast } from "sonner"
+import { resolveInternalLinksAction } from "@/app/actions/resolveLinks"
 
 interface EditorStepProps {
     initialContent: string
@@ -292,6 +294,51 @@ export default function EditorStep({ initialContent, onSave, isSaving }: EditorS
         },
         immediatelyRender: false,
     }, [initialContent])
+
+    // Resolve internal links automatically on load
+    useEffect(() => {
+        const resolveLinks = async () => {
+            if (!processedInitialContent) return;
+            
+            // Match all https?://.../?p=... URLs
+            const regex = /(https?:\/\/[^\/"\s]+\/\?p=\d+)/g;
+            const matches = processedInitialContent.match(regex);
+            
+            if (matches && matches.length > 0) {
+                // Deduplicate
+                const uniqueShortLinks = Array.from(new Set(matches));
+                
+                try {
+                    const mapping = await resolveInternalLinksAction(uniqueShortLinks);
+                    
+                    if (Object.keys(mapping).length > 0) {
+                        let newMarkdown = markdownContent;
+                        for (const [shortLink, liveLink] of Object.entries(mapping)) {
+                            newMarkdown = newMarkdown.split(shortLink).join(liveLink);
+                        }
+                        
+                        setMarkdownContent(newMarkdown);
+                        
+                        // If Tiptap editor is ready, update it too
+                        if (editor) {
+                            // marked.parse can be sync or async depending on setup, await handles both safely
+                            const newHtml = await Promise.resolve(marked.parse(newMarkdown));
+                            editor.commands.setContent(newHtml as string);
+                        }
+                        
+                        toast.success("Internal links resolved successfully!");
+                    }
+                } catch (error) {
+                    console.error("Failed to resolve internal links:", error);
+                }
+            }
+        };
+
+        if (editor) {
+            resolveLinks();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [processedInitialContent, editor]);
 
     // Sync markdown to editor if viewed and changed
     const handleMarkdownChange = (val: string) => {
