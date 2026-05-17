@@ -213,6 +213,7 @@ export default function EditorStep({ initialContent, onSave, isSaving }: EditorS
 
     const [markdownContent, setMarkdownContent] = useState(processedInitialContent)
     const [isMaximized, setIsMaximized] = useState(false)
+    const [hoveredLink, setHoveredLink] = useState<{ url: string, x: number, y: number } | null>(null)
 
     // Parse markdown to HTML for initial content
     const initialHtml = useMemo(() => {
@@ -263,6 +264,37 @@ export default function EditorStep({ initialContent, onSave, isSaving }: EditorS
         ],
         content: initialHtml as string,
         editorProps: {
+            handleDOMEvents: {
+                mouseover: (view, event) => {
+                    const target = (event.target as HTMLElement).closest('a')
+                    if (target) {
+                        const href = target.getAttribute('href')
+                        if (href) {
+                            const rect = target.getBoundingClientRect()
+                            setHoveredLink({
+                                url: href,
+                                x: rect.left + rect.width / 2,
+                                y: rect.top
+                            })
+                        }
+                    } else {
+                        setHoveredLink(null)
+                    }
+                    return false
+                },
+                mouseout: (view, event) => {
+                    const target = (event.target as HTMLElement).closest('a')
+                    const relatedTarget = event.relatedTarget as Node | null
+                    
+                    if (target) {
+                        if (relatedTarget && target.contains(relatedTarget)) {
+                            return false
+                        }
+                        setHoveredLink(null)
+                    }
+                    return false
+                }
+            },
             handleClick: (view: any, pos: number, event: MouseEvent) => {
                 const target = (event.target as HTMLElement).closest('a')
                 if (target) {
@@ -385,6 +417,15 @@ export default function EditorStep({ initialContent, onSave, isSaving }: EditorS
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+            {hoveredLink && (
+                <div 
+                    className="fixed z-[10000] px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-zinc-50 dark:text-zinc-900 text-xs font-medium rounded-lg shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full transition-opacity duration-150"
+                    style={{ left: hoveredLink.x, top: hoveredLink.y - 8 }}
+                >
+                    <div className="max-w-xs truncate">{hoveredLink.url}</div>
+                    <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-[4px] rotate-45 w-2 h-2 bg-zinc-900 dark:bg-zinc-100"></div>
+                </div>
+            )}
             <div className="p-6 sm:p-8 border-b border-border/50 bg-card/60 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
