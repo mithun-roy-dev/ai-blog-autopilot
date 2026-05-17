@@ -37,8 +37,8 @@ export async function resolveInternalLinksAction(shortLinks: string[]) {
             const siteType = (article.blogs as any)?.site_type?.toLowerCase();
             if (siteType !== "wordpress") continue;
 
-            // Pattern: https://example.com/?p=123
-            const match = shortLink.match(/^(https?:\/\/[^\/]+)\/\?p=(\d+)$/);
+            // Pattern: https://example.com/?p=1 to // Pattern: https://example.com/?p=99999999
+            const match = shortLink.match(/^(https?:\/\/[^\/]+)\/\?p=(\d+)/);
             if (!match) continue;
 
             const baseUrl = match[1];

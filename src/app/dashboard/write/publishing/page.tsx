@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/utils/cn"
 import { toast } from "sonner"
+import { updateWordpressDraftLinksAction } from "@/app/actions/updateDraftLinks"
 
 export default function PublishingQueuePage() {
     const supabase = createClient()
@@ -25,6 +26,7 @@ export default function PublishingQueuePage() {
     const [isPublishing, setIsPublishing] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
     const [activeStatus, setActiveStatus] = useState<string | null>(null)
+    const [isResolvingLinks, setIsResolvingLinks] = useState(false)
 
     const fetchQueue = async () => {
         setIsLoading(true)
@@ -87,6 +89,32 @@ export default function PublishingQueuePage() {
         }
     }
 
+    const handleUpdateDraftLinks = async () => {
+        setIsResolvingLinks(true);
+        const toastId = toast.loading("Updating WordPress draft links...");
+        
+        try {
+            const res = await updateWordpressDraftLinksAction();
+            if (res.success) {
+                toast.success(`Successfully updated ${res.count} link(s)!`, { id: toastId });
+                if (res.count > 0) {
+                    fetchQueue();
+                }
+            } else {
+                toast.error(`Failed: ${res.error}`, { id: toastId });
+            }
+        } catch (err: any) {
+            toast.error("An unexpected error occurred.", { id: toastId });
+        } finally {
+            setIsResolvingLinks(false);
+        }
+    }
+
+    const hasWordpressDraftLinks = articles.some(a => 
+        (a.blogs?.platform?.toLowerCase() === 'wordpress' || a.blogs?.site_type?.toLowerCase() === 'wordpress') 
+        && a.source_url?.includes('/?p=')
+    );
+
     const filteredArticles = articles.filter(a => {
         const matchesSearch = a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                              a.blogs?.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -108,6 +136,20 @@ export default function PublishingQueuePage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <button 
+                        onClick={handleUpdateDraftLinks}
+                        disabled={!hasWordpressDraftLinks || isResolvingLinks}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-bold shadow-sm",
+                            hasWordpressDraftLinks 
+                                ? "bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20 active:scale-95 border-primary" 
+                                : "bg-card text-muted-foreground/50 border-border/50 cursor-not-allowed"
+                        )}
+                        title={hasWordpressDraftLinks ? "Fetch live links for WP drafts" : "No WP drafts found"}
+                    >
+                        {isResolvingLinks ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                        Update WP Draft Links
+                    </button>
                     <button 
                         onClick={fetchQueue}
                         className="p-3 rounded-xl border bg-card hover:bg-accent transition-all text-muted-foreground"
