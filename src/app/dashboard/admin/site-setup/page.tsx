@@ -119,6 +119,7 @@ export default function SiteSetupPage() {
         enable_debug: true,
         enable_error: true,
         auto_edit: false,
+        enableHumanizer: true,
         content_brief_provider: "kie_api",
         content_brief_model: "claude-haiku-4-5",
         content_brief_prompt: "",
@@ -288,6 +289,7 @@ export default function SiteSetupPage() {
                     enable_debug: sysData.value.enable_debug ?? true,
                     enable_error: sysData.value.enable_error ?? true,
                     auto_edit: sysData.value.auto_edit ?? false,
+                    enableHumanizer: sysData.value.enableHumanizer ?? true,
                     content_brief_provider: sysData.value.content_brief_provider ?? "kie_api",
                     content_brief_model: sysData.value.content_brief_model ?? "claude-haiku-4-5",
                     content_brief_prompt: sysData.value.content_brief_prompt ?? "",
@@ -1299,6 +1301,20 @@ export default function SiteSetupPage() {
                                                 <div key={category.id} className="space-y-4 p-5 rounded-2xl border bg-background/50">
                                                     <h4 className="font-bold text-sm text-primary flex justify-between items-center">
                                                         {category.label}
+                                                        {category.id === 'humanizer' && (
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-xs text-muted-foreground font-normal">Enable Agent</span>
+                                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="sr-only peer"
+                                                                        checked={systemSettings.enableHumanizer}
+                                                                        onChange={(e) => setSystemSettings(s => ({ ...s, enableHumanizer: e.target.checked }))}
+                                                                    />
+                                                                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                                                                </label>
+                                                            </div>
+                                                        )}
                                                     </h4>
                                                     <div className="space-y-3">
                                                         <div className="space-y-1.5">

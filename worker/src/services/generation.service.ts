@@ -1122,6 +1122,32 @@ ${promptConfig.user_prompt_template}`;
             return { dataUpdate: { humanized_content: '' } };
         }
 
+        // 1.5. Check if Humanizer is enabled in System Settings
+        const { data: sysData } = await supabase
+            .from('system_settings')
+            .select('value')
+            .eq('key', 'logging_config')
+            .single();
+        
+        const enableHumanizer = sysData?.value?.enableHumanizer ?? true;
+
+        if (!enableHumanizer) {
+            console.log(`[Job ${jobId}] 🤖→🧑 Humanizer Agent: Disabled in settings. Skipping and saving previous content.`);
+            Logger.debug(`Job:${jobId}`, `HUMANIZER_AGENT: Disabled via System Setup. Bypassing API.`);
+            
+            // Just update writing_jobs with the article content to prepare for Editor step
+            await supabase
+                .from('writing_jobs')
+                .update({ content: articleContent, updated_at: new Date() })
+                .eq('id', jobId);
+
+            return {
+                dataUpdate: {
+                    humanized_content: articleContent
+                }
+            };
+        }
+
         // 2. Strip the post-info block to save tokens — we'll re-inject it after humanizing
         const { postInfoBlock, articleWithout } = GenerationService.extractPostInfoBlock(articleContent);
         if (postInfoBlock) {
